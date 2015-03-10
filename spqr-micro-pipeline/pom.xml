@@ -1,0 +1,113 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>	
+
+	<parent>
+		<groupId>com.ottogroup.bi.spqr</groupId>
+		<artifactId>spqr-parent</artifactId>
+		<version>0.1.0</version>
+	</parent>
+  
+  	<!-- maven specifc artifact grouping and versioning information -->
+	<artifactId>spqr-micro-pipeline</artifactId>
+  	<packaging>jar</packaging>
+
+  	<!-- general project information, eg. name and description -->
+  	<name>spqr-micro-pipeline</name>
+  	<description>SPQR micro pipeline</description>
+  	<url>https://github.com/ottogroup/SPQR.git</url>
+  	<inceptionYear>2015</inceptionYear>
+  	
+  	<licenses>
+	  <license>
+	    <name>Apache License, Version 2.0</name>
+	    <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+	    <distribution>repo</distribution>
+	  </license>
+	</licenses>
+  
+  	<dependencies>
+
+		<!-- junit -->
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.11</version>
+			<scope>test</scope>
+		</dependency>
+		
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-all</artifactId>
+			<version>1.10.8</version>
+			<scope>test</scope>
+		</dependency>
+		
+		<!-- spqr base -->
+		<dependency>
+			<groupId>com.ottogroup.bi.spqr</groupId>
+			<artifactId>spqr-base</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		
+		<!-- spqr repository -->
+		<dependency>
+			<groupId>com.ottogroup.bi.spqr</groupId>
+			<artifactId>spqr-repository</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+
+		<!-- logger -->
+  		<dependency>
+  			<groupId>log4j</groupId>
+  			<artifactId>log4j</artifactId>
+  			<version>1.2.17</version>
+  			<scope>compile</scope>
+  		</dependency>
+  		
+  		<!-- apache commons -->
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+			<version>3.3.2</version>
+	  		<scope>compile</scope>
+  		</dependency>
+  	
+  		<!-- jackson libraries -->
+		<dependency>
+    		<groupId>com.fasterxml.jackson.core</groupId>
+  			<artifactId>jackson-databind</artifactId>
+  			<version>2.3.1</version>
+	  		<scope>compile</scope>
+    	</dependency>
+    	
+    	<!-- openHFT chronicle used by default to exchange data -->
+    	<dependency>
+    		<groupId>net.openhft</groupId>
+    		<artifactId>chronicle</artifactId>
+    		<version>3.4.1</version>
+		</dependency>
+    	    
+  		
+  	</dependencies>
+  	
+  	<build>
+  			
+  		<pluginManagement>
+  			<plugins>
+	  			<!-- ensure to use java version 1.8 during compilation process -->
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-compiler-plugin</artifactId>
+					<version>3.2</version>
+					<configuration>
+						<source>1.8</source>
+						<target>1.8</target>
+						<encoding>UTF-8</encoding>
+					</configuration>
+				</plugin>
+
+  			</plugins>
+  		</pluginManagement>			
+  	</build>
+  	
+</project>
