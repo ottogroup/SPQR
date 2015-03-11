@@ -46,7 +46,7 @@ public class DefaultStreamingMessageQueueTest {
 
 	private static final Logger logger = Logger.getLogger(DefaultStreamingMessageQueueTest.class);
 	
-	private static final int numberOfMessagesPerfTest = 1000000;
+	private static final int numberOfMessagesPerfTest = 100000;
 	
 	/**
 	 * Test case for {@link DefaultStreamingMessageQueue#initialize(java.util.Properties)} being provided

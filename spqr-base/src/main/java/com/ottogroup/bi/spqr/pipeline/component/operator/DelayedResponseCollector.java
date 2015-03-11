@@ -1,5 +1,5 @@
 /**
- * Copyright 2014 Otto (GmbH & Co KG)
+ * Copyright 2015 Otto (GmbH & Co KG)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,19 +17,17 @@ package com.ottogroup.bi.spqr.pipeline.component.operator;
 
 import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
 
-
 /**
- * Receives an input {@link StreamingDataMessage message} and generates a response immediately, eg. filter, map or merge operator 
+ * Interface to be implemented by all classes that may be triggered by the {@link DelayedResponseOperatorWaitStrategy}
+ * to retrieve {@link StreamingDataMessage} instances from a {@link DelayedResponseOperator}
  * @author mnxfst
- * @since Dec 14, 2014
+ * @since Mar 11, 2015
  */
-public interface DirectResponseOperator extends Operator {
+public interface DelayedResponseCollector {
 
 	/**
-	 * Receives a single message, processes its contents and responds with zero
-	 * or multiple {@link StreamingDataMessage} instances
-	 * @param message
-	 * @return
+	 * Signal to retrieve messages from {@link DelayedResponseOperator}
 	 */
-	public StreamingDataMessage[] onMessage(final StreamingDataMessage message);	
+	public void retrieveMessages();
+	
 }

@@ -22,7 +22,7 @@ import org.apache.log4j.Logger;
 
 import com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponent;
 import com.ottogroup.bi.spqr.pipeline.component.emitter.EmitterRuntimeEnvironment;
-import com.ottogroup.bi.spqr.pipeline.component.operator.OperatorRuntimeEnvironment;
+import com.ottogroup.bi.spqr.pipeline.component.operator.DirectResponseOperatorRuntimeEnvironment;
 import com.ottogroup.bi.spqr.pipeline.component.source.SourceRuntimeEnvironment;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueue;
 
@@ -41,7 +41,7 @@ public class MicroPipeline {
 	/** references to source runtime environments */
 	private final Map<String, SourceRuntimeEnvironment> sources = new HashMap<>();
 	/** references to operator runtime environments */
-	private final Map<String, OperatorRuntimeEnvironment> operators = new HashMap<>();
+	private final Map<String, DirectResponseOperatorRuntimeEnvironment> operators = new HashMap<>();
 	/** references to emitter runtime environments */
 	private final Map<String, EmitterRuntimeEnvironment> emitters = new HashMap<>();
 	/** references to queues interconnecting the components */
@@ -68,12 +68,12 @@ public class MicroPipeline {
 	}
 	
 	/**
-	 * Adds a new {@link OperatorRuntimeEnvironment}
+	 * Adds a new {@link DirectResponseOperatorRuntimeEnvironment}
 	 * @param id
 	 * @param operatorRuntimeEnvironment
 	 * TODO test
 	 */
-	public void addOperator(final String id, final OperatorRuntimeEnvironment operatorRuntimeEnvironment) {
+	public void addOperator(final String id, final DirectResponseOperatorRuntimeEnvironment operatorRuntimeEnvironment) {
 		this.operators.put(id, operatorRuntimeEnvironment);
 		if(logger.isDebugEnabled())
 			logger.debug("Operator [id="+id+"] successfully attached to pipeline [id="+this.id+"]");
@@ -153,7 +153,7 @@ public class MicroPipeline {
 			}
 		}
 		for(final String operatorId : this.operators.keySet()) {
-			OperatorRuntimeEnvironment operatorEnv = this.operators.get(operatorId);
+			DirectResponseOperatorRuntimeEnvironment operatorEnv = this.operators.get(operatorId);
 			try {
 				operatorEnv.shutdown();
 				if(logger.isDebugEnabled())
@@ -202,7 +202,7 @@ public class MicroPipeline {
 		return sources;
 	}
 
-	public Map<String, OperatorRuntimeEnvironment> getOperators() {
+	public Map<String, DirectResponseOperatorRuntimeEnvironment> getOperators() {
 		return operators;
 	}
 

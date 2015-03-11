@@ -21,14 +21,11 @@ import java.util.concurrent.Executors;
 import org.apache.log4j.Logger;
 
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
-import com.ottogroup.bi.spqr.pipeline.component.emitter.Emitter;
-import com.ottogroup.bi.spqr.pipeline.component.operator.Operator;
 import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueProducer;
 
 /**
- * Runtime environment for {@link Source} instances. Compared to {@link Operator} and {@link Emitter} the source must be executed
- * in a thread as it may need to wait for incoming messages when listening to an event driven channel.
+ * Runtime environment for {@link Source} instances
  * @author mnxfst
  * @since Mar 5, 2015
  */
@@ -45,6 +42,8 @@ public class SourceRuntimeEnvironment implements Runnable, IncomingMessageCallba
 	private boolean running = false;
 	/** executor service that will run the source instance */
 	private final ExecutorService executorService;
+	/** local executor service? - must be shut down as well, otherwise the provider must take care of it */
+	private boolean localExecutorService = false;
 
 	/**
 	 * Initializes the runtime environment using the provided input
@@ -54,6 +53,7 @@ public class SourceRuntimeEnvironment implements Runnable, IncomingMessageCallba
 	 */
 	public SourceRuntimeEnvironment(final Source source, final StreamingMessageQueueProducer queueProducer) throws RequiredInputMissingException {
 		this(source, queueProducer, Executors.newCachedThreadPool());
+		this.localExecutorService = true;
 	}
 	
 	/**
@@ -93,6 +93,7 @@ public class SourceRuntimeEnvironment implements Runnable, IncomingMessageCallba
 		this.running = true;
 		while(running) {
 			// TODO thread notification on each incoming messages as it leads otherwise to active waiting
+			// TODO implement wait strategy
 		}
 	}
 
@@ -108,8 +109,20 @@ public class SourceRuntimeEnvironment implements Runnable, IncomingMessageCallba
 	 */
 	public void shutdown() {
 		this.running = false;
-		this.source.shutdown();
-		this.executorService.shutdownNow();
+		
+		try {
+			this.source.shutdown();
+		} catch(Exception e) {
+			logger.info("Failed to shut down source. Error: " + e.getMessage());
+		}
+		
+		if(this.localExecutorService) {
+			try {
+				this.executorService.shutdownNow();
+			} catch(Exception e) {
+				logger.error("Failed to shut down executor service. Error: " + e.getMessage());
+			}
+		}
 		
 		if(logger.isDebugEnabled())
 			logger.debug("source runtime environment shutdown [id="+this.source.getId()+"]");
