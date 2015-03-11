@@ -24,7 +24,7 @@ import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
  * @author mnxfst
  * @since Dec 15, 2014
  */
-public interface Emitter {
+public interface Emitter extends MicroPipelineComponent {
 
 	/**
 	 * Provides a new message to the operator
