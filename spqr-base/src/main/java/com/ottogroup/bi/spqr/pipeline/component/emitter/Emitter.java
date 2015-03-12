@@ -30,7 +30,7 @@ public interface Emitter extends MicroPipelineComponent {
 	 * Provides a new message to the operator
 	 * @param message
 	 */
-	public void onMessage(final StreamingDataMessage message);
+	public boolean onMessage(final StreamingDataMessage message);
 
 	/**
 	 * Returns the total number of messages processed by this component

@@ -49,11 +49,11 @@ public class MicroPipelineComponentConfiguration implements Serializable {
 	@JsonProperty(value="settings", required=true)
 	private Properties settings = null;
 	/** identifier of queues to consume content from */
-	@JsonProperty(value="fromQueues", required=true)
-	private Set<String> fromQueues = new HashSet<>();
+	@JsonProperty(value="fromQueue", required=true)
+	private String fromQueue = null;
 	/** identifier of queues to produce content to */
-	@JsonProperty(value="toQueues", required=true)
-	private Set<String> toQueues = new HashSet<>();
+	@JsonProperty(value="toQueue", required=true)
+	private String toQueue = null;
 	
 	public String getId() {
 		return id;

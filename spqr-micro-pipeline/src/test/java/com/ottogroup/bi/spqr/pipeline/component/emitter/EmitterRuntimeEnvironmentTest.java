@@ -85,7 +85,7 @@ public class EmitterRuntimeEnvironmentTest {
 	 * to constructor and some valid message which must be recorded at the emitter 
 	 */
 	@Test
-	public void testEmitterEnvironment_withValidInput() throws RequiredInputMissingException {
+	public void testEmitterEnvironment_withValidInput() throws RequiredInputMissingException, InterruptedException {
 		Emitter emitter = Mockito.mock(Emitter.class);
 		StreamingMessageQueueConsumer queueConsumer = Mockito.mock(StreamingMessageQueueConsumer.class);
 		StreamingDataMessage message = new StreamingDataMessage("test", System.currentTimeMillis());
@@ -93,7 +93,32 @@ public class EmitterRuntimeEnvironmentTest {
 				
 		EmitterRuntimeEnvironment env = new EmitterRuntimeEnvironment(emitter, queueConsumer);
 		executorService.submit(env);
+		
+		Thread.sleep(100);
 
+		Assert.assertTrue("Must return true", env.isRunning());
+
+		Mockito.verify(queueConsumer, Mockito.atLeast(1)).next();
+		Mockito.verify(emitter, Mockito.atLeast(1)).onMessage(message);
+	}
+	
+	/**
+	 * Test case for {@link EmitterRuntimeEnvironment} being provided valid input 
+	 * to constructor and some valid message which lead to a processing error 
+	 * inside the emitter 
+	 */
+	@Test
+	public void testEmitterEnvironment_withValidInputButFailingEmitter() throws RequiredInputMissingException, InterruptedException {
+		Emitter emitter = Mockito.mock(Emitter.class);
+		StreamingMessageQueueConsumer queueConsumer = Mockito.mock(StreamingMessageQueueConsumer.class);
+		StreamingDataMessage message = new StreamingDataMessage("test", System.currentTimeMillis());
+		Mockito.when(queueConsumer.next()).thenReturn(message);
+		Mockito.when(emitter.onMessage(message)).thenThrow(new NullPointerException("error"));
+				
+		EmitterRuntimeEnvironment env = new EmitterRuntimeEnvironment(emitter, queueConsumer);
+		executorService.submit(env);
+
+		Thread.sleep(100);
 		Assert.assertTrue("Must return true", env.isRunning());
 
 		Mockito.verify(queueConsumer, Mockito.atLeast(1)).next();
