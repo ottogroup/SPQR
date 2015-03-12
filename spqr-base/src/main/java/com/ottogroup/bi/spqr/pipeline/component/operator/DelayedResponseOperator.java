@@ -19,13 +19,20 @@ import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
 
 
 /**
- * Receives an input {@link StreamingDataMessage message} but defers its results to be fetched later, eg. aggregate or group operator 
+ * Receives an input {@link StreamingDataMessage message} but defers its results to be fetched later, eg. aggregate or group operator. The
+ * configuration must reference a {@link DelayedResponseOperatorWaitStrategy} to be applied when executing this operator. The strategy must
+ * be referenced inside the operator settings using the key named by {@link DelayedResponseOperator#CFG_WAIT_STRATEGY_NAME}. Additional
+ * settings required for strategy initialization must be provided using the content of {@link DelayedResponseOperator#CFG_WAIT_STRATEGY_SETTINGS_PREFIX}
+ * as prefix followed by the options name and its value, eg. waitStrategy.cfg.testKey=testValue. 
  * @author mnxfst
  * @since Dec 14, 2014
  * TODO exporting delayed result may be triggered by internal timer/counter which is provided from the outside?!
  */
 public interface DelayedResponseOperator extends Operator {
 
+	public static final String CFG_WAIT_STRATEGY_NAME = "waitStrategy.name";
+	public static final String CFG_WAIT_STRATEGY_SETTINGS_PREFIX = "waitStrategy.cfg.";
+	
 	/**
 	 * Provides a new message to the operator
 	 * @param message

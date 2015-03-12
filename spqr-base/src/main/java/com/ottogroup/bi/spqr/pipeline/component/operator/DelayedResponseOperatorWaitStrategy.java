@@ -15,6 +15,8 @@
  */
 package com.ottogroup.bi.spqr.pipeline.component.operator;
 
+import java.util.Properties;
+
 import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
 
 /**
@@ -51,5 +53,11 @@ public interface DelayedResponseOperatorWaitStrategy extends Runnable {
 	 * Signals the strategy to shut itself down
 	 */
 	public void shutdown();
+	
+	/**
+	 * Initializes the wait strategy using the provided {@link Properties}
+	 * @param properties
+	 */
+	public void initialize(final Properties properties);
 	
 }

@@ -16,9 +16,7 @@
 package com.ottogroup.bi.spqr.pipeline.component;
 
 import java.io.Serializable;
-import java.util.HashSet;
 import java.util.Properties;
-import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
@@ -47,7 +45,7 @@ public class MicroPipelineComponentConfiguration implements Serializable {
 	private String version = null;
 	/** settings required for component configuration */
 	@JsonProperty(value="settings", required=true)
-	private Properties settings = null;
+	private Properties settings = new Properties();
 	/** identifier of queues to consume content from */
 	@JsonProperty(value="fromQueue", required=true)
 	private String fromQueue = null;
@@ -73,12 +71,7 @@ public class MicroPipelineComponentConfiguration implements Serializable {
 	public void setSettings(Properties settings) {
 		this.settings = settings;
 	}
-	public Set<String> getFromQueues() {
-		return fromQueues;
-	}
-	public void setFromQueues(Set<String> fromQueues) {
-		this.fromQueues = fromQueues;
-	}	
+	
 	public String getName() {
 		return name;
 	}
@@ -92,10 +85,16 @@ public class MicroPipelineComponentConfiguration implements Serializable {
 	public void setVersion(String version) {
 		this.version = version;
 	}
-	public Set<String> getToQueues() {
-		return toQueues;
+	public String getFromQueue() {
+		return fromQueue;
 	}
-	public void setToQueues(Set<String> toQueues) {
-		this.toQueues = toQueues;
+	public void setFromQueue(String fromQueue) {
+		this.fromQueue = fromQueue;
+	}
+	public String getToQueue() {
+		return toQueue;
+	}
+	public void setToQueue(String toQueue) {
+		this.toQueue = toQueue;
 	}
 }
