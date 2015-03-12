@@ -19,6 +19,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ExecutorService;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -69,10 +70,12 @@ public class MicroPipelineFactory {
 	/**
 	 * Instantiates the {@link MicroPipeline} according to the provided {@link MicroPipelineComponentConfiguration} 
 	 * @param cfg
+	 * @param executorService
 	 * @return
 	 * @throws RequiredInputMissingException
+	 * TODO validate micro pipeline for path from source to emitter
 	 */
-	public MicroPipeline instantiatePipeline(final MicroPipelineConfiguration cfg) throws RequiredInputMissingException, QueueInitializationFailedException, ComponentInitializationFailedException {
+	public MicroPipeline instantiatePipeline(final MicroPipelineConfiguration cfg, final ExecutorService executorService) throws RequiredInputMissingException, QueueInitializationFailedException, ComponentInitializationFailedException {
 		
 		///////////////////////////////////////////////////////////////////////////////////
 		// validate input
@@ -119,6 +122,8 @@ public class MicroPipelineFactory {
 		///////////////////////////////////////////////////////////////////////////////////
 		// (2) initialize components
 		final Map<String, MicroPipelineComponent> components = new HashMap<>();
+		boolean sourceComponentFound = false;
+		boolean emitterComponentFound = false;
 		for(final MicroPipelineComponentConfiguration componentCfg : cfg.getComponents()) {
 			String id = StringUtils.lowerCase(StringUtils.trim(componentCfg.getId()));
 			
@@ -144,6 +149,7 @@ public class MicroPipelineFactory {
 				switch(component.getType()) {
 					case SOURCE: {
 						microPipeline.addSource(id, new SourceRuntimeEnvironment((Source)component, toQueue.getProducer()));
+						sourceComponentFound = true;
 						break;
 					}
 					case DIRECT_RESPONSE_OPERATOR: {
@@ -153,11 +159,12 @@ public class MicroPipelineFactory {
 					}
 					case DELAYED_RESPONSE_OPERATOR: {						
 						microPipeline.addOperator(id, new DelayedResponseOperatorRuntimeEnvironment((DelayedResponseOperator)component, getResponseWaitStrategy(componentCfg), 
-								fromQueue.getConsumer(), toQueue.getProducer()));
+								fromQueue.getConsumer(), toQueue.getProducer(), executorService));
 						break;
 					}
 					case EMITTER: {
 						microPipeline.addEmitter(id, new EmitterRuntimeEnvironment((Emitter)component, fromQueue.getConsumer()));
+						emitterComponentFound = true;
 						break;
 					}
 				}
@@ -169,6 +176,42 @@ public class MicroPipelineFactory {
 				throw new ComponentInitializationFailedException("Failed to initialize component [id="+id+", class="+componentCfg.getName()+", version="+componentCfg.getVersion()+"]. Reason: " + e.getMessage(), e);
 			}
 		}
+		
+		if(!sourceComponentFound) {
+			microPipeline.shutdown();
+			throw new RequiredInputMissingException("Missing required source component");
+		}
+		
+		if(!emitterComponentFound) {
+			microPipeline.shutdown();
+			throw new RequiredInputMissingException("Missing required emitter component");
+		}
+		
+		///////////////////////////////////////////////////////////////////////////////////
+
+		///////////////////////////////////////////////////////////////////////////////////
+		// (3) start components --> ramp up their runtime environments 
+		for(String sourceId : microPipeline.getSources().keySet()) {
+			executorService.submit(microPipeline.getSources().get(sourceId));
+			if(logger.isDebugEnabled())
+				logger.debug("Started runtime environment for source [id="+sourceId+"]");
+		}
+		for(String directResponseOperatorId : microPipeline.getDirectResponseOperators().keySet()) {
+			executorService.submit(microPipeline.getDirectResponseOperators().get(directResponseOperatorId));
+			if(logger.isDebugEnabled())
+				logger.debug("Started runtime environment for direct response operator [id="+directResponseOperatorId+"]");
+		}
+		for(String directResponseOperatorId : microPipeline.getDirectResponseOperators().keySet()) {
+			executorService.submit(microPipeline.getDirectResponseOperators().get(directResponseOperatorId));
+			if(logger.isDebugEnabled())
+				logger.debug("Started runtime environment for direct response operator [id="+directResponseOperatorId+"]");
+		}
+		for(String emitterId : microPipeline.getEmitters().keySet()) {
+			executorService.submit(microPipeline.getEmitters().get(emitterId));
+			if(logger.isDebugEnabled())
+				logger.debug("Started runtime environment for emitter [id="+emitterId+"]");
+		}
+		//
 		///////////////////////////////////////////////////////////////////////////////////
 		
 		return microPipeline;

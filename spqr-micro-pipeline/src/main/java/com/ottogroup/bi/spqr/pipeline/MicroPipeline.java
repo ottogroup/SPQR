@@ -235,6 +235,10 @@ public class MicroPipeline {
 		return emitters;
 	}
 
+	public Map<String, DirectResponseOperatorRuntimeEnvironment> getDirectResponseOperators() {
+		return directResponseOperators;
+	}
+
 	public Map<String, StreamingMessageQueue> getQueues() {
 		return queues;
 	}

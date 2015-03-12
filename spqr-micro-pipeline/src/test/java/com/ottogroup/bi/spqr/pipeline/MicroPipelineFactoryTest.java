@@ -19,7 +19,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -46,9 +49,18 @@ import com.ottogroup.bi.spqr.repository.exception.UnknownComponentException;
  * Test case for {@link MicroPipelineFactory}
  * @author mnxfst
  * @since Mar 6, 2015
+ * TODO implement test for fully working micro pipeline configuration
  */
 public class MicroPipelineFactoryTest {
 
+	private final static ExecutorService executorService = Executors.newCachedThreadPool();
+	
+	@AfterClass
+	public static void shutdown() {
+		if(executorService != null)
+			executorService.shutdownNow();
+	}
+	
 	/**
 	 * Test case for {@link MicroPipelineFactory#instantiatePipeline(MicroPipelineConfiguration)} being provided
 	 * null as input which must lead to a {@link RequiredInputMissingException}
@@ -56,7 +68,7 @@ public class MicroPipelineFactoryTest {
 	@Test
 	public void testInstantiatePipeline_withNullInput() throws QueueInitializationFailedException, ComponentInitializationFailedException {
 		try {
-			new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).instantiatePipeline(null);
+			new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).instantiatePipeline(null, executorService);
 			Assert.fail("Missing required input");
 		} catch(RequiredInputMissingException e) {
 			// expected
@@ -70,7 +82,7 @@ public class MicroPipelineFactoryTest {
 	@Test
 	public void testInstantiatePipeline_withEmptyInput() throws QueueInitializationFailedException, ComponentInitializationFailedException {
 		try {
-			new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).instantiatePipeline(new MicroPipelineConfiguration());
+			new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).instantiatePipeline(new MicroPipelineConfiguration(), executorService);
 			Assert.fail("Missing required input");
 		} catch(RequiredInputMissingException e) {
 			// expected
@@ -92,7 +104,7 @@ public class MicroPipelineFactoryTest {
 			cfg.setId("");
 			cfg.getComponents().add(componentCfg);
 			cfg.getQueues().add(queueCfg);
-			new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).instantiatePipeline(cfg);
+			new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).instantiatePipeline(cfg, executorService);
 			Assert.fail("Missing required input");
 		} catch(RequiredInputMissingException e) {
 			// expected
@@ -112,7 +124,7 @@ public class MicroPipelineFactoryTest {
 			MicroPipelineConfiguration cfg = new MicroPipelineConfiguration();
 			cfg.setId("test");
 			cfg.getQueues().add(queueCfg);
-			new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).instantiatePipeline(cfg);
+			new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).instantiatePipeline(cfg, executorService);
 			Assert.fail("Missing required input");
 		} catch(RequiredInputMissingException e) {
 			// expected
@@ -132,7 +144,7 @@ public class MicroPipelineFactoryTest {
 			MicroPipelineConfiguration cfg = new MicroPipelineConfiguration();
 			cfg.setId("test");
 			cfg.getComponents().add(componentCfg);
-			new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).instantiatePipeline(cfg);
+			new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).instantiatePipeline(cfg, executorService);
 			Assert.fail("Missing required input");
 		} catch(RequiredInputMissingException e) {
 			// expected
@@ -164,7 +176,7 @@ public class MicroPipelineFactoryTest {
 			cfg.getComponents().add(componentCfg);
 			cfg.getQueues().add(validQueueCfg);
 			cfg.getQueues().add(invalidQueueCfg);
-			new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).instantiatePipeline(cfg);
+			new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).instantiatePipeline(cfg, executorService);
 			Assert.fail("Missing required input");
 		} catch(QueueInitializationFailedException e) {
 			// expected
@@ -211,7 +223,7 @@ public class MicroPipelineFactoryTest {
 		Mockito.when(repo.newInstance(component2Cfg.getId(), component2Cfg.getName(), component2Cfg.getVersion(), component2Cfg.getSettings())).thenReturn(mockComponent2);
 		
 		try {
-			new MicroPipelineFactory(repo).instantiatePipeline(pipelineCfg);
+			new MicroPipelineFactory(repo).instantiatePipeline(pipelineCfg, executorService);
 			Assert.fail("Missing required input");
 		} catch(ComponentInitializationFailedException e) {
 			// expected
@@ -250,7 +262,7 @@ public class MicroPipelineFactoryTest {
 		Mockito.when(repo.newInstance(component1Cfg.getId(), component1Cfg.getName(), component1Cfg.getVersion(), component1Cfg.getSettings())).thenReturn(mockComponent1);
 		
 		try {
-			new MicroPipelineFactory(repo).instantiatePipeline(pipelineCfg);
+			new MicroPipelineFactory(repo).instantiatePipeline(pipelineCfg, executorService);
 			Assert.fail("Missing required input");
 		} catch(ComponentInitializationFailedException e) {
 			// expected
@@ -289,7 +301,7 @@ public class MicroPipelineFactoryTest {
 		Mockito.when(repo.newInstance(component1Cfg.getId(), component1Cfg.getName(), component1Cfg.getVersion(), component1Cfg.getSettings())).thenReturn(mockComponent1);
 		
 		try {
-			new MicroPipelineFactory(repo).instantiatePipeline(pipelineCfg);
+			new MicroPipelineFactory(repo).instantiatePipeline(pipelineCfg, executorService);
 			Assert.fail("Missing required input");
 		} catch(ComponentInitializationFailedException e) {
 			// expected
