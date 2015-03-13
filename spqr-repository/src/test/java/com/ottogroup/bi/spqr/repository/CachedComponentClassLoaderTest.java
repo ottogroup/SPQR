@@ -109,6 +109,7 @@ public class CachedComponentClassLoaderTest {
 		Assert.assertNull(cl.findClass("java.lang.String"));
 	}
 	
+	
 
 
 }

@@ -8,12 +8,12 @@
 	</parent>
   
   	<!-- maven specifc artifact grouping and versioning information -->
-	<artifactId>spqr-base</artifactId>
+	<artifactId>spqr-node</artifactId>
   	<packaging>jar</packaging>
 
   	<!-- general project information, eg. name and description -->
-  	<name>spqr-base</name>
-  	<description>SPQR base provides commonly used components</description>
+  	<name>spqr-node</name>
+  	<description>SPQR processing node</description>
   	<url>https://github.com/ottogroup/SPQR.git</url>
   	<inceptionYear>2015</inceptionYear>
   	
@@ -50,6 +50,19 @@
   			<scope>compile</scope>
   		</dependency>
   		
+  		<!-- spqr libs -->
+  		<dependency>
+  			<groupId>com.ottogroup.bi.spqr</groupId>
+  			<artifactId>spqr-micro-pipeline</artifactId>
+  			<version>${project.version}</version>
+  		</dependency>
+  		
+  		<dependency>
+  			<groupId>com.ottogroup.bi.spqr</groupId>
+  			<artifactId>spqr-repository</artifactId>
+  			<version>${project.version}</version>
+  		</dependency>
+  		
   		<!-- apache commons -->
 		<dependency>
 			<groupId>org.apache.commons</groupId>
@@ -57,13 +70,13 @@
 			<version>3.3.2</version>
 	  		<scope>compile</scope>
   		</dependency>
-  	
-  		<!-- jackson libraries -->
-		<dependency>
-    		<groupId>com.fasterxml.jackson.core</groupId>
-  			<artifactId>jackson-databind</artifactId>
-  			<version>2.5.1</version>
-	  		<scope>compile</scope>
+  		  	
+    	<!-- dropwizard REST server -->
+    	<dependency>
+    		<groupId>io.dropwizard</groupId>
+    		<artifactId>dropwizard-core</artifactId>
+    		<version>0.8.0</version>
+    		<scope>compile</scope>
     	</dependency>
 
   	</dependencies>
