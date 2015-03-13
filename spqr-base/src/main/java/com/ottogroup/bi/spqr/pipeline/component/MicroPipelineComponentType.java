@@ -23,5 +23,5 @@ import java.io.Serializable;
  * @since Mar 6, 2015
  */
 public enum MicroPipelineComponentType implements Serializable {
-	SOURCE, OPERATOR, EMITTER	
+	SOURCE, DIRECT_RESPONSE_OPERATOR, DELAYED_RESPONSE_OPERATOR, EMITTER	
 }

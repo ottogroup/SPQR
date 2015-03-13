@@ -19,7 +19,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -28,8 +31,13 @@ import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
 import com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponent;
 import com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponentConfiguration;
 import com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponentType;
+import com.ottogroup.bi.spqr.pipeline.component.operator.DelayedResponseOperator;
+import com.ottogroup.bi.spqr.pipeline.component.operator.DelayedResponseOperatorWaitStrategy;
+import com.ottogroup.bi.spqr.pipeline.component.operator.DirectResponseOperator;
+import com.ottogroup.bi.spqr.pipeline.component.operator.MessageCountResponseWaitStrategy;
 import com.ottogroup.bi.spqr.pipeline.exception.ComponentInitializationFailedException;
 import com.ottogroup.bi.spqr.pipeline.exception.QueueInitializationFailedException;
+import com.ottogroup.bi.spqr.pipeline.exception.UnknownWaitStrategyException;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueue;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConfiguration;
 import com.ottogroup.bi.spqr.pipeline.queue.chronicle.DefaultStreamingMessageQueue;
@@ -41,9 +49,18 @@ import com.ottogroup.bi.spqr.repository.exception.UnknownComponentException;
  * Test case for {@link MicroPipelineFactory}
  * @author mnxfst
  * @since Mar 6, 2015
+ * TODO implement test for fully working micro pipeline configuration
  */
 public class MicroPipelineFactoryTest {
 
+	private final static ExecutorService executorService = Executors.newCachedThreadPool();
+	
+	@AfterClass
+	public static void shutdown() {
+		if(executorService != null)
+			executorService.shutdownNow();
+	}
+	
 	/**
 	 * Test case for {@link MicroPipelineFactory#instantiatePipeline(MicroPipelineConfiguration)} being provided
 	 * null as input which must lead to a {@link RequiredInputMissingException}
@@ -51,7 +68,7 @@ public class MicroPipelineFactoryTest {
 	@Test
 	public void testInstantiatePipeline_withNullInput() throws QueueInitializationFailedException, ComponentInitializationFailedException {
 		try {
-			new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).instantiatePipeline(null);
+			new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).instantiatePipeline(null, executorService);
 			Assert.fail("Missing required input");
 		} catch(RequiredInputMissingException e) {
 			// expected
@@ -65,7 +82,7 @@ public class MicroPipelineFactoryTest {
 	@Test
 	public void testInstantiatePipeline_withEmptyInput() throws QueueInitializationFailedException, ComponentInitializationFailedException {
 		try {
-			new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).instantiatePipeline(new MicroPipelineConfiguration());
+			new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).instantiatePipeline(new MicroPipelineConfiguration(), executorService);
 			Assert.fail("Missing required input");
 		} catch(RequiredInputMissingException e) {
 			// expected
@@ -87,7 +104,7 @@ public class MicroPipelineFactoryTest {
 			cfg.setId("");
 			cfg.getComponents().add(componentCfg);
 			cfg.getQueues().add(queueCfg);
-			new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).instantiatePipeline(cfg);
+			new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).instantiatePipeline(cfg, executorService);
 			Assert.fail("Missing required input");
 		} catch(RequiredInputMissingException e) {
 			// expected
@@ -107,7 +124,7 @@ public class MicroPipelineFactoryTest {
 			MicroPipelineConfiguration cfg = new MicroPipelineConfiguration();
 			cfg.setId("test");
 			cfg.getQueues().add(queueCfg);
-			new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).instantiatePipeline(cfg);
+			new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).instantiatePipeline(cfg, executorService);
 			Assert.fail("Missing required input");
 		} catch(RequiredInputMissingException e) {
 			// expected
@@ -127,7 +144,7 @@ public class MicroPipelineFactoryTest {
 			MicroPipelineConfiguration cfg = new MicroPipelineConfiguration();
 			cfg.setId("test");
 			cfg.getComponents().add(componentCfg);
-			new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).instantiatePipeline(cfg);
+			new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).instantiatePipeline(cfg, executorService);
 			Assert.fail("Missing required input");
 		} catch(RequiredInputMissingException e) {
 			// expected
@@ -159,7 +176,7 @@ public class MicroPipelineFactoryTest {
 			cfg.getComponents().add(componentCfg);
 			cfg.getQueues().add(validQueueCfg);
 			cfg.getQueues().add(invalidQueueCfg);
-			new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).instantiatePipeline(cfg);
+			new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).instantiatePipeline(cfg, executorService);
 			Assert.fail("Missing required input");
 		} catch(QueueInitializationFailedException e) {
 			// expected
@@ -182,7 +199,7 @@ public class MicroPipelineFactoryTest {
 		component1Cfg.setType(MicroPipelineComponentType.SOURCE);
 		component1Cfg.setName("testInitializeComponent_source_withReferenceToUnknownQueue");
 		component1Cfg.setVersion("0.0.1");
-		component1Cfg.getToQueues().add("queue-1");
+		component1Cfg.setToQueue("queue-1");
 		
 		MicroPipelineComponentConfiguration component2Cfg = new MicroPipelineComponentConfiguration();
 		component2Cfg.setId("test-id-2");			
@@ -190,7 +207,7 @@ public class MicroPipelineFactoryTest {
 		component2Cfg.setType(MicroPipelineComponentType.SOURCE);
 		component2Cfg.setName("testInitializeComponent_source_withReferenceToUnknownQueue-2");
 		component2Cfg.setVersion("0.0.1");
-		component2Cfg.getToQueues().add("queue-1");
+		component2Cfg.setToQueue("queue-1");
 		
 		MicroPipelineConfiguration pipelineCfg = new MicroPipelineConfiguration();
 		pipelineCfg.setId("test-id");
@@ -206,7 +223,7 @@ public class MicroPipelineFactoryTest {
 		Mockito.when(repo.newInstance(component2Cfg.getId(), component2Cfg.getName(), component2Cfg.getVersion(), component2Cfg.getSettings())).thenReturn(mockComponent2);
 		
 		try {
-			new MicroPipelineFactory(repo).instantiatePipeline(pipelineCfg);
+			new MicroPipelineFactory(repo).instantiatePipeline(pipelineCfg, executorService);
 			Assert.fail("Missing required input");
 		} catch(ComponentInitializationFailedException e) {
 			// expected
@@ -229,7 +246,7 @@ public class MicroPipelineFactoryTest {
 		component1Cfg.setType(MicroPipelineComponentType.SOURCE);
 		component1Cfg.setName("testInitializeComponent_source_withReferenceToUnknownQueue");
 		component1Cfg.setVersion("0.0.1");
-		component1Cfg.getToQueues().add("queue-1");
+		component1Cfg.setToQueue("queue-1");
 		
 		MicroPipelineConfiguration pipelineCfg = new MicroPipelineConfiguration();
 		pipelineCfg.setId("test-id");
@@ -245,7 +262,7 @@ public class MicroPipelineFactoryTest {
 		Mockito.when(repo.newInstance(component1Cfg.getId(), component1Cfg.getName(), component1Cfg.getVersion(), component1Cfg.getSettings())).thenReturn(mockComponent1);
 		
 		try {
-			new MicroPipelineFactory(repo).instantiatePipeline(pipelineCfg);
+			new MicroPipelineFactory(repo).instantiatePipeline(pipelineCfg, executorService);
 			Assert.fail("Missing required input");
 		} catch(ComponentInitializationFailedException e) {
 			// expected
@@ -269,7 +286,7 @@ public class MicroPipelineFactoryTest {
 		component1Cfg.setType(MicroPipelineComponentType.SOURCE);
 		component1Cfg.setName("testInitializeComponent_source_withReferenceToUnknownQueue");
 		component1Cfg.setVersion("0.0.1");
-		component1Cfg.getToQueues().add("queue-1");
+		component1Cfg.setToQueue("queue-1");
 		
 		MicroPipelineConfiguration pipelineCfg = new MicroPipelineConfiguration();
 		pipelineCfg.setId("test-id");
@@ -284,7 +301,7 @@ public class MicroPipelineFactoryTest {
 		Mockito.when(repo.newInstance(component1Cfg.getId(), component1Cfg.getName(), component1Cfg.getVersion(), component1Cfg.getSettings())).thenReturn(mockComponent1);
 		
 		try {
-			new MicroPipelineFactory(repo).instantiatePipeline(pipelineCfg);
+			new MicroPipelineFactory(repo).instantiatePipeline(pipelineCfg, executorService);
 			Assert.fail("Missing required input");
 		} catch(ComponentInitializationFailedException e) {
 			// expected
@@ -506,42 +523,16 @@ public class MicroPipelineFactoryTest {
 	
 	/**
 	 * Test case for {@link MicroPipelineFactory#initializeComponent(MicroPipelineComponentConfiguration)} being provided
-	 * a set of two queues to write to which must lead to a {@link RequiredInputMissingException}
-	 * @throws ComponentInitializationFailedException
-	 */
-	@SuppressWarnings("unchecked")
-	@Test
-	public void testInitializeComponent_source_with2ToQueues() throws ComponentInitializationFailedException {
-		Map<String, StreamingMessageQueue> queues = Mockito.mock(HashMap.class);
-		Mockito.when(queues.containsKey("queue-1")).thenReturn(true);
-		Mockito.when(queues.containsKey("queue-2")).thenReturn(true);
-
-		try {
-			MicroPipelineComponentConfiguration cfg = new MicroPipelineComponentConfiguration();
-			cfg.setId("test-id");			
-			cfg.setSettings(new Properties());
-			cfg.setType(MicroPipelineComponentType.SOURCE);
-			cfg.setName("test name");
-			cfg.setVersion("0.0.1");
-			cfg.getToQueues().add("queue-1");
-			cfg.getToQueues().add("queue-2");
-			new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).initializeComponent(cfg, Collections.<String, StreamingMessageQueue>emptyMap());
-			Assert.fail("Missing required input");
-		} catch(RequiredInputMissingException e) {
-			// expected
-		}
-		Mockito.verify(queues, Mockito.never()).containsKey("queue-1");
-		Mockito.verify(queues, Mockito.never()).containsKey("queue-2");
-	}
-	
-	/**
-	 * Test case for {@link MicroPipelineFactory#initializeComponent(MicroPipelineComponentConfiguration)} being provided
 	 * a reference towards a queue that does not exist which must lead to a {@link RequiredInputMissingException}
 	 * @throws ComponentInitializationFailedException
 	 */
 	@Test
 	public void testInitializeComponent_source_withReferenceToUnknownQueue() throws ComponentInitializationFailedException {
-		
+	
+		@SuppressWarnings("unchecked")
+		Map<String, StreamingMessageQueue> queues = Mockito.mock(HashMap.class);
+		Mockito.when(queues.containsKey("queue-1")).thenReturn(false);
+
 		try {
 			MicroPipelineComponentConfiguration cfg = new MicroPipelineComponentConfiguration();
 			cfg.setId("test-id");			
@@ -549,14 +540,16 @@ public class MicroPipelineFactoryTest {
 			cfg.setType(MicroPipelineComponentType.SOURCE);
 			cfg.setName("testInitializeComponent_source_withReferenceToUnknownQueue");
 			cfg.setVersion("0.0.1");
-			cfg.getToQueues().add("unknown-queue");
-			new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).initializeComponent(cfg, Collections.<String, StreamingMessageQueue>emptyMap());
+			cfg.setToQueue("queue-1");
+			new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).initializeComponent(cfg, queues);
 			Assert.fail("Missing required input");
 		} catch(RequiredInputMissingException e) {
 			// expected
 		}
+		Mockito.verify(queues).containsKey("queue-1");
+
 	}
-	
+		
 	/**
 	 * Test case for {@link MicroPipelineFactory#initializeComponent(MicroPipelineComponentConfiguration)} being provided
 	 * a valid configuration for a {@link MicroPipelineComponentType#SOURCE} component. When accessing the repository 
@@ -576,7 +569,7 @@ public class MicroPipelineFactoryTest {
 		cfg.setType(MicroPipelineComponentType.SOURCE);
 		cfg.setName("testInitializeComponent_source_withReferenceToUnknownQueue");
 		cfg.setVersion("0.0.1");
-		cfg.getToQueues().add("queue-1");
+		cfg.setToQueue("queue-1");
 		
 		ComponentRepository repo = Mockito.mock(ComponentRepository.class);
 		Mockito.when(repo.newInstance(cfg.getId(), cfg.getName(), cfg.getVersion(), cfg.getSettings())).thenThrow(new NullPointerException());
@@ -590,102 +583,458 @@ public class MicroPipelineFactoryTest {
 		Mockito.verify(queues).containsKey("queue-1");
 
 	}
-//
-//	//////////////////////////////////////////////////////////////////////////////////////////////////////////
-//	// @see MicroPipelineFactory#forceQueueShutdown
-//
-//	/**
-//	 * Test case for {@link MicroPipelineFactory#forceQueueShutdown(java.util.Collection)} being provided
-//	 * null as input which must have no effects 
-//	 */
-//	@Test
-//	public void testForceQueueShutdown_withNullInput() {
-//		new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).forceQueueShutdown(null);
-//	}
-//
-//	/**
-//	 * Test case for {@link MicroPipelineFactory#forceQueueShutdown(java.util.Collection)} being provided
-//	 * an empty set as input which must have no effects 
-//	 */
-//	@Test
-//	public void testForceQueueShutdown_withEmptyInput() {
-//		new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).forceQueueShutdown(Collections.<StreamingMessageQueue>emptySet());
-//	}
-//
-//	/**
-//	 * Test case for {@link MicroPipelineFactory#forceQueueShutdown(java.util.Collection)} being provided
-//	 * a list having two elements where the first throws a {@link NullPointerException}. That behavior must have
-//	 * no impact on method execution - the second queue must be shut down as well.
-//	 */
-//	@Test
-//	public void testForceQueueShutdown_withQueueThrowingNPE() {
-//		
-//		StreamingMessageQueue normalQueue = Mockito.mock(StreamingMessageQueue.class);
-//		StreamingMessageQueue npeQueue = Mockito.mock(StreamingMessageQueue.class);
-//		
-//		Mockito.when(npeQueue.getId()).thenReturn("testForceQueueShutdown_withQueueThrowingNPE-NPE_QUEUE");
-//		Mockito.when(npeQueue.shutdown()).thenThrow(new NullPointerException());
-//		
-//		Mockito.when(normalQueue.getId()).thenReturn("testForceQueueShutdown_withQueueThrowingNPE-NORMAL_QUEUE");
-//		Mockito.when(normalQueue.shutdown()).thenReturn(true);
-//		
-//		List<StreamingMessageQueue> queues = new ArrayList<>();
-//		queues.add(npeQueue);
-//		queues.add(normalQueue);
-//		
-//		new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).forceQueueShutdown(queues);
-//		
-//		Mockito.verify(normalQueue).shutdown();
-//		Mockito.verify(npeQueue).shutdown();
-//		Mockito.verify(npeQueue, Mockito.times(1)).getId();
-//	}
-//	
-//	//////////////////////////////////////////////////////////////////////////////////////////////////////////
-//	// @see MicroPipelineFactory#forceComponentShutdown
-//
-//	/**
-//	 * Test case for {@link MicroPipelineFactory#forceComponentShutdown(java.util.Collection)} being provided
-//	 * null as input which must have no effects 
-//	 */
-//	@Test
-//	public void testForceComponentShutdown_withNullInput() {
-//		new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).forceComponentShutdown(null);
-//	}
-//
-//	/**
-//	 * Test case for {@link MicroPipelineFactory#forceComponentShutdown(java.util.Collection)} being provided
-//	 * an empty set as input which must have no effects 
-//	 */
-//	@Test
-//	public void testForceComponentShutdown_withEmptyInput() {
-//		new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).forceComponentShutdown(Collections.<MicroPipelineComponent>emptySet());
-//	}
-//
-//	/**
-//	 * Test case for {@link MicroPipelineFactory#forceComponentShutdown(java.util.Collection)} being provided
-//	 * a list having two elements where the first throws a {@link NullPointerException}. That behavior must have
-//	 * no impact on method execution - the second component must be shut down as well.
-//	 */
-//	@Test
-//	public void testForceComponentShutdown_withComponentThrowingNPE() {
-//		
-//		MicroPipelineComponent normalComponent = Mockito.mock(MicroPipelineComponent.class);
-//		MicroPipelineComponent npeComponent = Mockito.mock(MicroPipelineComponent.class);
-//		
-//		Mockito.when(npeComponent.getId()).thenReturn("testForceComponentShutdown_withComponentThrowingNPE-NPE_COMPONENT");
-//		Mockito.when(npeComponent.shutdown()).thenThrow(new NullPointerException());
-//		
-//		Mockito.when(normalComponent.getId()).thenReturn("testForceComponentShutdown_withComponentThrowingNPE-NORMAL_COMPONENT");
-//		Mockito.when(normalComponent.shutdown()).thenReturn(true);
-//		
-//		List<MicroPipelineComponent> components = new ArrayList<>();
-//		components.add(npeComponent);
-//		components.add(normalComponent);
-//		
-//		new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).forceComponentShutdown(components);
-//		
-//		Mockito.verify(normalComponent).shutdown();
-//		Mockito.verify(npeComponent).shutdown();
-//		Mockito.verify(npeComponent, Mockito.times(1)).getId();
-//	}
+	
+	// DIRECT_RESPONSE_OPERATOR
+
+	/**
+	 * Test case for {@link MicroPipelineFactory#initializeComponent(MicroPipelineComponentConfiguration)} being provided
+	 * an empty input to queues to write to which must lead to a {@link RequiredInputMissingException}
+	 * @throws ComponentInitializationFailedException
+	 */
+	@Test
+	public void testInitializeComponent_direct_response_operator_withEmptyToQueuesSettings() throws ComponentInitializationFailedException {
+		try {
+			MicroPipelineComponentConfiguration cfg = new MicroPipelineComponentConfiguration();
+			cfg.setId("test-id");			
+			cfg.setSettings(new Properties());
+			cfg.setType(MicroPipelineComponentType.DIRECT_RESPONSE_OPERATOR);
+			cfg.setName("test name");
+			cfg.setVersion("0.0.1");
+			cfg.setToQueue("");
+			new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).initializeComponent(cfg, Collections.<String, StreamingMessageQueue>emptyMap());
+			Assert.fail("Missing required input");
+		} catch(RequiredInputMissingException e) {
+			// expected
+		}
+	}
+	
+	/**
+	 * Test case for {@link MicroPipelineFactory#initializeComponent(MicroPipelineComponentConfiguration)} being provided
+	 * a reference towards a queue that does not exist which must lead to a {@link RequiredInputMissingException}
+	 * @throws ComponentInitializationFailedException
+	 */
+	@Test
+	public void testInitializeComponent_direct_response_operator_withReferenceToUnknownToQueue() throws ComponentInitializationFailedException {
+	
+		@SuppressWarnings("unchecked")
+		Map<String, StreamingMessageQueue> queues = Mockito.mock(HashMap.class);
+		Mockito.when(queues.containsKey("unknown-queue")).thenReturn(false);
+		Mockito.when(queues.containsKey("queue-1")).thenReturn(true);
+
+		try {
+			MicroPipelineComponentConfiguration cfg = new MicroPipelineComponentConfiguration();
+			cfg.setId("test-id");			
+			cfg.setSettings(new Properties());
+			cfg.setType(MicroPipelineComponentType.DIRECT_RESPONSE_OPERATOR);
+			cfg.setName("testInitializeComponent_source_withReferenceToUnknownQueue");
+			cfg.setVersion("0.0.1");
+			cfg.setToQueue("unknown-queue");
+			cfg.setFromQueue("queue-1");
+			new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).initializeComponent(cfg, queues);
+			Assert.fail("Missing required input");
+		} catch(RequiredInputMissingException e) {			
+			// expected
+		}
+		
+		Mockito.verify(queues).containsKey("unknown-queue");
+		Mockito.verify(queues, Mockito.never()).containsKey("queue-1");
+	}
+
+	/**
+	 * Test case for {@link MicroPipelineFactory#initializeComponent(MicroPipelineComponentConfiguration)} being provided
+	 * an empty input from queues to write to which must lead to a {@link RequiredInputMissingException}
+	 * @throws ComponentInitializationFailedException
+	 */
+	@Test
+	public void testInitializeComponent_direct_response_operator_withEmptyFromQueuesSettings() throws ComponentInitializationFailedException {
+
+		@SuppressWarnings("unchecked")
+		Map<String, StreamingMessageQueue> queues = Mockito.mock(HashMap.class);
+		Mockito.when(queues.containsKey("unknown-queue")).thenReturn(false);
+		Mockito.when(queues.containsKey("queue-1")).thenReturn(true);
+
+		try {
+			MicroPipelineComponentConfiguration cfg = new MicroPipelineComponentConfiguration();
+			cfg.setId("test-id");			
+			cfg.setSettings(new Properties());
+			cfg.setType(MicroPipelineComponentType.DIRECT_RESPONSE_OPERATOR);
+			cfg.setName("test name");
+			cfg.setVersion("0.0.1");
+			cfg.setToQueue("queue-1");
+			cfg.setFromQueue("");
+			new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).initializeComponent(cfg, queues);
+			Assert.fail("Missing required input");
+		} catch(RequiredInputMissingException e) {
+			// expected
+		}
+
+		Mockito.verify(queues).containsKey("queue-1");
+		Mockito.verify(queues, Mockito.never()).containsKey("unknown-queue");
+	}
+	
+	/**
+	 * Test case for {@link MicroPipelineFactory#initializeComponent(MicroPipelineComponentConfiguration)} being provided
+	 * an unknown input from queues to write to which must lead to a {@link RequiredInputMissingException}
+	 * @throws ComponentInitializationFailedException
+	 */
+	@Test
+	public void testInitializeComponent_direct_response_operator_withUnknownFromQueuesSettings() throws ComponentInitializationFailedException {
+
+		@SuppressWarnings("unchecked")
+		Map<String, StreamingMessageQueue> queues = Mockito.mock(HashMap.class);
+		Mockito.when(queues.containsKey("unknown-queue")).thenReturn(false);
+		Mockito.when(queues.containsKey("queue-1")).thenReturn(true);
+
+		try {
+			MicroPipelineComponentConfiguration cfg = new MicroPipelineComponentConfiguration();
+			cfg.setId("test-id");			
+			cfg.setSettings(new Properties());
+			cfg.setType(MicroPipelineComponentType.DIRECT_RESPONSE_OPERATOR);
+			cfg.setName("test name");
+			cfg.setVersion("0.0.1");
+			cfg.setToQueue("queue-1");
+			cfg.setFromQueue("unknown-queue");
+			new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).initializeComponent(cfg, queues);
+			Assert.fail("Missing required input");
+		} catch(RequiredInputMissingException e) {
+			// expected
+		}
+
+		Mockito.verify(queues).containsKey("queue-1");
+		Mockito.verify(queues).containsKey("unknown-queue");
+	}
+	
+	/**
+	 * Test case for {@link MicroPipelineFactory#initializeComponent(MicroPipelineComponentConfiguration)} being provided
+	 * valid input 
+	 */
+	@Test
+	public void testInitializeComponent_direct_response_operator_withValidSettings() throws ComponentInitializationFailedException, 
+		RequiredInputMissingException, UnknownComponentException, ComponentInstantiationFailedException {
+
+		DirectResponseOperator directResponseOperator = Mockito.mock(DirectResponseOperator.class);
+		Mockito.when(directResponseOperator.getId()).thenReturn("test-id");
+		
+		ComponentRepository repo = Mockito.mock(ComponentRepository.class);
+		Mockito.when(repo.newInstance("test-id", "test name", "0.0.1", new Properties())).thenReturn(directResponseOperator);
+		@SuppressWarnings("unchecked")
+		Map<String, StreamingMessageQueue> queues = Mockito.mock(HashMap.class);
+		Mockito.when(queues.containsKey("queue-1")).thenReturn(true);
+		Mockito.when(queues.containsKey("queue-2")).thenReturn(true);
+
+		MicroPipelineComponentConfiguration cfg = new MicroPipelineComponentConfiguration();
+		cfg.setId("test-id");			
+		cfg.setSettings(new Properties());
+		cfg.setType(MicroPipelineComponentType.DIRECT_RESPONSE_OPERATOR);
+		cfg.setName("test name");
+		cfg.setVersion("0.0.1");
+		cfg.setToQueue("queue-1");
+		cfg.setFromQueue("queue-2");
+		MicroPipelineComponent operator = new MicroPipelineFactory(repo).initializeComponent(cfg, queues);
+		Assert.assertNotNull("The operator must not be null", operator);;
+		Assert.assertEquals("Values must be equal", "test-id", operator.getId());
+		
+		Mockito.verify(queues).containsKey("queue-1");
+		Mockito.verify(queues, Mockito.never()).containsKey("unknown-queue");
+	}
+	
+	// DELAYED_RESPONSE_OPERATOR
+	
+
+	/**
+	 * Test case for {@link MicroPipelineFactory#initializeComponent(MicroPipelineComponentConfiguration)} being provided
+	 * an empty input to queues to write to which must lead to a {@link RequiredInputMissingException}
+	 * @throws ComponentInitializationFailedException
+	 */
+	@Test
+	public void testInitializeComponent_delayed_response_operator_withEmptyToQueuesSettings() throws ComponentInitializationFailedException {
+
+		@SuppressWarnings("unchecked")
+		Map<String, StreamingMessageQueue> queues = Mockito.mock(HashMap.class);
+		Mockito.when(queues.containsKey("queue-1")).thenReturn(true);
+		Mockito.when(queues.containsKey("queue-2")).thenReturn(true);
+
+		try {
+			MicroPipelineComponentConfiguration cfg = new MicroPipelineComponentConfiguration();
+			cfg.setId("test-id");			
+			cfg.setSettings(new Properties());
+			cfg.setType(MicroPipelineComponentType.DELAYED_RESPONSE_OPERATOR);
+			cfg.setName("test name");
+			cfg.setVersion("0.0.1");
+			cfg.setToQueue("");
+			cfg.setFromQueue("queue-2");
+			cfg.getSettings().put(DelayedResponseOperator.CFG_WAIT_STRATEGY_NAME, "test-strategy");
+			new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).initializeComponent(cfg, Collections.<String, StreamingMessageQueue>emptyMap());
+			Assert.fail("Missing required input");
+		} catch(RequiredInputMissingException e) {
+			// expected
+		}
+		
+		Mockito.verify(queues, Mockito.never()).containsKey("queue-1");
+		Mockito.verify(queues, Mockito.never()).containsKey("queue-2");
+	}
+	
+	/**
+	 * Test case for {@link MicroPipelineFactory#initializeComponent(MicroPipelineComponentConfiguration)} being provided
+	 * a reference towards a queue that does not exist which must lead to a {@link RequiredInputMissingException}
+	 * @throws ComponentInitializationFailedException
+	 */
+	@Test
+	public void testInitializeComponent_delayed_response_operator_withReferenceToUnknownToQueue() throws ComponentInitializationFailedException {
+	
+		@SuppressWarnings("unchecked")
+		Map<String, StreamingMessageQueue> queues = Mockito.mock(HashMap.class);
+		Mockito.when(queues.containsKey("unknown-queue")).thenReturn(false);
+		Mockito.when(queues.containsKey("queue-1")).thenReturn(true);
+
+		try {
+			MicroPipelineComponentConfiguration cfg = new MicroPipelineComponentConfiguration();
+			cfg.setId("test-id");			
+			cfg.setSettings(new Properties());
+			cfg.setType(MicroPipelineComponentType.DELAYED_RESPONSE_OPERATOR);
+			cfg.setName("testInitializeComponent_source_withReferenceToUnknownQueue");
+			cfg.setVersion("0.0.1");
+			cfg.setToQueue("unknown-queue");
+			cfg.setFromQueue("queue-1");
+			cfg.getSettings().put(DelayedResponseOperator.CFG_WAIT_STRATEGY_NAME, "test-strategy");
+			new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).initializeComponent(cfg, queues);
+			Assert.fail("Missing required input");
+		} catch(RequiredInputMissingException e) {			
+			// expected
+		}
+		
+		Mockito.verify(queues).containsKey("unknown-queue");
+		Mockito.verify(queues, Mockito.never()).containsKey("queue-1");
+	}
+
+	/**
+	 * Test case for {@link MicroPipelineFactory#initializeComponent(MicroPipelineComponentConfiguration)} being provided
+	 * an empty input from queues to write to which must lead to a {@link RequiredInputMissingException}
+	 * @throws ComponentInitializationFailedException
+	 */
+	@Test
+	public void testInitializeComponent_delayed_response_operator_withEmptyFromQueuesSettings() throws ComponentInitializationFailedException {
+
+		@SuppressWarnings("unchecked")
+		Map<String, StreamingMessageQueue> queues = Mockito.mock(HashMap.class);
+		Mockito.when(queues.containsKey("unknown-queue")).thenReturn(false);
+		Mockito.when(queues.containsKey("queue-1")).thenReturn(true);
+
+		try {
+			MicroPipelineComponentConfiguration cfg = new MicroPipelineComponentConfiguration();
+			cfg.setId("test-id");			
+			cfg.setSettings(new Properties());
+			cfg.setType(MicroPipelineComponentType.DIRECT_RESPONSE_OPERATOR);
+			cfg.setName("test name");
+			cfg.setVersion("0.0.1");
+			cfg.setToQueue("queue-1");
+			cfg.setFromQueue("");
+			cfg.getSettings().put(DelayedResponseOperator.CFG_WAIT_STRATEGY_NAME, "test-strategy");
+			new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).initializeComponent(cfg, queues);
+			Assert.fail("Missing required input");
+		} catch(RequiredInputMissingException e) {
+			// expected
+		}
+
+		Mockito.verify(queues).containsKey("queue-1");
+		Mockito.verify(queues, Mockito.never()).containsKey("unknown-queue");
+	}
+	
+	/**
+	 * Test case for {@link MicroPipelineFactory#initializeComponent(MicroPipelineComponentConfiguration)} being provided
+	 * an unknown input from queues to write to which must lead to a {@link RequiredInputMissingException}
+	 * @throws ComponentInitializationFailedException
+	 */
+	@Test
+	public void testInitializeComponent_delayed_response_operator_withUnknownFromQueuesSettings() throws ComponentInitializationFailedException {
+
+		@SuppressWarnings("unchecked")
+		Map<String, StreamingMessageQueue> queues = Mockito.mock(HashMap.class);
+		Mockito.when(queues.containsKey("unknown-queue")).thenReturn(false);
+		Mockito.when(queues.containsKey("queue-1")).thenReturn(true);
+
+		try {
+			MicroPipelineComponentConfiguration cfg = new MicroPipelineComponentConfiguration();
+			cfg.setId("test-id");			
+			cfg.setSettings(new Properties());
+			cfg.setType(MicroPipelineComponentType.DIRECT_RESPONSE_OPERATOR);
+			cfg.setName("test name");
+			cfg.setVersion("0.0.1");
+			cfg.setToQueue("queue-1");
+			cfg.setFromQueue("unknown-queue");
+			cfg.getSettings().put(DelayedResponseOperator.CFG_WAIT_STRATEGY_NAME, "test-strategy");
+			new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).initializeComponent(cfg, queues);
+			Assert.fail("Missing required input");
+		} catch(RequiredInputMissingException e) {
+			// expected
+		}
+
+		Mockito.verify(queues).containsKey("queue-1");
+		Mockito.verify(queues).containsKey("unknown-queue");
+	}
+	
+	
+	/**
+	 * Test case for {@link MicroPipelineFactory#initializeComponent(MicroPipelineComponentConfiguration)} being provided
+	 * an empty input to wait strategy settings which must lead to a {@link RequiredInputMissingException}
+	 * @throws ComponentInitializationFailedException
+	 */
+	@Test
+	public void testInitializeComponent_direct_response_operator_withEmptyResponseWaitStrategy() throws ComponentInitializationFailedException {
+
+		@SuppressWarnings("unchecked")
+		Map<String, StreamingMessageQueue> queues = Mockito.mock(HashMap.class);
+		Mockito.when(queues.containsKey("queue-2")).thenReturn(true);
+		Mockito.when(queues.containsKey("queue-1")).thenReturn(true);
+
+		try {
+			MicroPipelineComponentConfiguration cfg = new MicroPipelineComponentConfiguration();
+			cfg.setId("test-id");			
+			cfg.setSettings(new Properties());
+			cfg.setType(MicroPipelineComponentType.DELAYED_RESPONSE_OPERATOR);
+			cfg.setName("test name");
+			cfg.setVersion("0.0.1");
+			cfg.setToQueue("queue-1");
+			cfg.setFromQueue("queue-2");
+			new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).initializeComponent(cfg, queues);
+			Assert.fail("Missing required input");
+		} catch(RequiredInputMissingException e) {
+			// expected
+		}
+
+		Mockito.verify(queues).containsKey("queue-1");
+		Mockito.verify(queues).containsKey("queue-2");
+	}
+	
+	// EMITTER
+	
+
+	/**
+	 * Test case for {@link MicroPipelineFactory#initializeComponent(MicroPipelineComponentConfiguration)} being provided
+	 * an empty input to queues to write to which must lead to a {@link RequiredInputMissingException}
+	 * @throws ComponentInitializationFailedException
+	 */
+	@Test
+	public void testInitializeComponent_emitter_withEmptyFromQueuesSettings() throws ComponentInitializationFailedException {
+		try {
+			MicroPipelineComponentConfiguration cfg = new MicroPipelineComponentConfiguration();
+			cfg.setId("test-id");			
+			cfg.setSettings(new Properties());
+			cfg.setType(MicroPipelineComponentType.EMITTER);
+			cfg.setName("test name");
+			cfg.setVersion("0.0.1");
+			cfg.setFromQueue("");
+			new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).initializeComponent(cfg, Collections.<String, StreamingMessageQueue>emptyMap());
+			Assert.fail("Missing required input");
+		} catch(RequiredInputMissingException e) {
+			// expected
+		}
+	}
+	
+	/**
+	 * Test case for {@link MicroPipelineFactory#initializeComponent(MicroPipelineComponentConfiguration)} being provided
+	 * a reference towards a queue that does not exist which must lead to a {@link RequiredInputMissingException}
+	 * @throws ComponentInitializationFailedException
+	 */
+	@Test
+	public void testInitializeComponent_emitter_withReferenceToUnknownFromQueue() throws ComponentInitializationFailedException {
+	
+		@SuppressWarnings("unchecked")
+		Map<String, StreamingMessageQueue> queues = Mockito.mock(HashMap.class);
+		Mockito.when(queues.containsKey("queue-1")).thenReturn(false);
+
+		try {
+			MicroPipelineComponentConfiguration cfg = new MicroPipelineComponentConfiguration();
+			cfg.setId("test-id");			
+			cfg.setSettings(new Properties());
+			cfg.setType(MicroPipelineComponentType.EMITTER);
+			cfg.setName("testInitializeComponent_source_withReferenceToUnknownQueue");
+			cfg.setVersion("0.0.1");
+			cfg.setFromQueue("queue-1");
+			new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).initializeComponent(cfg, queues);
+			Assert.fail("Missing required input");
+		} catch(RequiredInputMissingException e) {
+			// expected
+		}
+		Mockito.verify(queues).containsKey("queue-1");
+	}
+		
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// @see MicroPipelineFactory#getResponseWaitStrategy
+	
+	/**
+	 * Test case for {@link MicroPipelineFactory#getResponseWaitStrategy(MicroPipelineComponentConfiguration)} being provided
+	 * null as input which must lead to {@link RequiredInputMissingException}
+	 */
+	@Test
+	public void testGetResponseWaitStrategy_withNullInput() throws UnknownWaitStrategyException {
+		try {
+			new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).getResponseWaitStrategy(null);
+			Assert.fail("Invalid input");
+		} catch(RequiredInputMissingException e) {
+			// expected
+		}
+	}
+	
+	/**
+	 * Test case for {@link MicroPipelineFactory#getResponseWaitStrategy(MicroPipelineComponentConfiguration)} being provided
+	 * a configuration that misses the settings which must lead to {@link RequiredInputMissingException}
+	 */
+	@Test
+	public void testGetResponseWaitStrategy_withEmptySettings() throws UnknownWaitStrategyException {
+		MicroPipelineComponentConfiguration cfg = new MicroPipelineComponentConfiguration();
+		cfg.setSettings(null);
+		try {
+			new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).getResponseWaitStrategy(cfg);
+			Assert.fail("Invalid input");
+		} catch(RequiredInputMissingException e) {
+			// expected
+		}
+	}
+	
+	/**
+	 * Test case for {@link MicroPipelineFactory#getResponseWaitStrategy(MicroPipelineComponentConfiguration)} being provided
+	 * a configuration that misses the strategy name inside the settings must lead to {@link RequiredInputMissingException}
+	 */
+	@Test
+	public void testGetResponseWaitStrategy_withEmptyStrategyName() throws UnknownWaitStrategyException{
+		try {
+			new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).getResponseWaitStrategy(new MicroPipelineComponentConfiguration());
+			Assert.fail("Invalid input");
+		} catch(RequiredInputMissingException e) {
+			// expected
+		}
+	}
+	
+	/**
+	 * Test case for {@link MicroPipelineFactory#getResponseWaitStrategy(MicroPipelineComponentConfiguration)} being provided
+	 * a configuration that names an unknown strategy  
+	 */
+	@Test
+	public void testGetResponseWaitStrategy_withInvalidStrategyName() throws RequiredInputMissingException {
+		MicroPipelineComponentConfiguration cfg = new MicroPipelineComponentConfiguration();
+		cfg.getSettings().put(DelayedResponseOperator.CFG_WAIT_STRATEGY_NAME, "test-strategy");
+		try {
+			new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).getResponseWaitStrategy(cfg);
+			Assert.fail("Unknown wait strategy");
+		} catch(UnknownWaitStrategyException e) {
+			// expected
+		}
+	}
+	
+	/**
+	 * Test case for {@link MicroPipelineFactory#getResponseWaitStrategy(MicroPipelineComponentConfiguration)} being provided
+	 * a configuration that names a strategy and provides settings to it 
+	 */
+	@Test
+	public void testGetResponseWaitStrategy_withValidStrategyAndSettings() throws RequiredInputMissingException, UnknownWaitStrategyException {
+		MicroPipelineComponentConfiguration cfg = new MicroPipelineComponentConfiguration();
+		cfg.getSettings().put(DelayedResponseOperator.CFG_WAIT_STRATEGY_NAME, MessageCountResponseWaitStrategy.WAIT_STRATEGY_NAME);
+		cfg.getSettings().put(DelayedResponseOperator.CFG_WAIT_STRATEGY_SETTINGS_PREFIX + "key-2", "value-2");
+		cfg.getSettings().put(DelayedResponseOperator.CFG_WAIT_STRATEGY_SETTINGS_PREFIX + "key-1", "value-1");
+		DelayedResponseOperatorWaitStrategy strategy = new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).getResponseWaitStrategy(cfg);
+		Assert.assertNotNull("The strategy must not be null", strategy);
+		Assert.assertEquals("Types msut be equal", MessageCountResponseWaitStrategy.class, strategy.getClass());
+	}
+	
 }

@@ -15,9 +15,11 @@
  */
 package com.ottogroup.bi.spqr.pipeline;
 
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ExecutorService;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -26,10 +28,19 @@ import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
 import com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponent;
 import com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponentConfiguration;
 import com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponentType;
+import com.ottogroup.bi.spqr.pipeline.component.emitter.Emitter;
+import com.ottogroup.bi.spqr.pipeline.component.emitter.EmitterRuntimeEnvironment;
+import com.ottogroup.bi.spqr.pipeline.component.operator.DelayedResponseOperator;
+import com.ottogroup.bi.spqr.pipeline.component.operator.DelayedResponseOperatorRuntimeEnvironment;
+import com.ottogroup.bi.spqr.pipeline.component.operator.DelayedResponseOperatorWaitStrategy;
+import com.ottogroup.bi.spqr.pipeline.component.operator.DirectResponseOperator;
+import com.ottogroup.bi.spqr.pipeline.component.operator.DirectResponseOperatorRuntimeEnvironment;
+import com.ottogroup.bi.spqr.pipeline.component.operator.MessageCountResponseWaitStrategy;
 import com.ottogroup.bi.spqr.pipeline.component.source.Source;
 import com.ottogroup.bi.spqr.pipeline.component.source.SourceRuntimeEnvironment;
 import com.ottogroup.bi.spqr.pipeline.exception.ComponentInitializationFailedException;
 import com.ottogroup.bi.spqr.pipeline.exception.QueueInitializationFailedException;
+import com.ottogroup.bi.spqr.pipeline.exception.UnknownWaitStrategyException;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueue;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConfiguration;
 import com.ottogroup.bi.spqr.pipeline.queue.chronicle.DefaultStreamingMessageQueue;
@@ -59,10 +70,12 @@ public class MicroPipelineFactory {
 	/**
 	 * Instantiates the {@link MicroPipeline} according to the provided {@link MicroPipelineComponentConfiguration} 
 	 * @param cfg
+	 * @param executorService
 	 * @return
 	 * @throws RequiredInputMissingException
+	 * TODO validate micro pipeline for path from source to emitter
 	 */
-	public MicroPipeline instantiatePipeline(final MicroPipelineConfiguration cfg) throws RequiredInputMissingException, QueueInitializationFailedException, ComponentInitializationFailedException {
+	public MicroPipeline instantiatePipeline(final MicroPipelineConfiguration cfg, final ExecutorService executorService) throws RequiredInputMissingException, QueueInitializationFailedException, ComponentInitializationFailedException {
 		
 		///////////////////////////////////////////////////////////////////////////////////
 		// validate input
@@ -109,6 +122,8 @@ public class MicroPipelineFactory {
 		///////////////////////////////////////////////////////////////////////////////////
 		// (2) initialize components
 		final Map<String, MicroPipelineComponent> components = new HashMap<>();
+		boolean sourceComponentFound = false;
+		boolean emitterComponentFound = false;
 		for(final MicroPipelineComponentConfiguration componentCfg : cfg.getComponents()) {
 			String id = StringUtils.lowerCase(StringUtils.trim(componentCfg.getId()));
 			
@@ -128,16 +143,28 @@ public class MicroPipelineFactory {
 					throw new ComponentInitializationFailedException("Failed to initialize component [id="+id+", class="+componentCfg.getName()+", version="+componentCfg.getVersion()+"]. Reason: type missing");
 				}
 				
+				final StreamingMessageQueue fromQueue = microPipeline.getQueue(componentCfg.getFromQueue());
+				final StreamingMessageQueue toQueue = microPipeline.getQueue(componentCfg.getToQueue());
+				
 				switch(component.getType()) {
 					case SOURCE: {
-						// fetch the (one and only) output queue from micro pipeline and attach its producer
-						microPipeline.addSource(id, new SourceRuntimeEnvironment((Source)component, microPipeline.getQueue(componentCfg.getToQueues().iterator().next()).getProducer()));
+						microPipeline.addSource(id, new SourceRuntimeEnvironment((Source)component, toQueue.getProducer()));
+						sourceComponentFound = true;
 						break;
 					}
-					case OPERATOR: {
+					case DIRECT_RESPONSE_OPERATOR: {
+						microPipeline.addOperator(id, new DirectResponseOperatorRuntimeEnvironment((DirectResponseOperator)component, 
+								fromQueue.getConsumer(), toQueue.getProducer()));
+						break;
+					}
+					case DELAYED_RESPONSE_OPERATOR: {						
+						microPipeline.addOperator(id, new DelayedResponseOperatorRuntimeEnvironment((DelayedResponseOperator)component, getResponseWaitStrategy(componentCfg), 
+								fromQueue.getConsumer(), toQueue.getProducer(), executorService));
 						break;
 					}
 					case EMITTER: {
+						microPipeline.addEmitter(id, new EmitterRuntimeEnvironment((Emitter)component, fromQueue.getConsumer()));
+						emitterComponentFound = true;
 						break;
 					}
 				}
@@ -149,6 +176,42 @@ public class MicroPipelineFactory {
 				throw new ComponentInitializationFailedException("Failed to initialize component [id="+id+", class="+componentCfg.getName()+", version="+componentCfg.getVersion()+"]. Reason: " + e.getMessage(), e);
 			}
 		}
+		
+		if(!sourceComponentFound) {
+			microPipeline.shutdown();
+			throw new RequiredInputMissingException("Missing required source component");
+		}
+		
+		if(!emitterComponentFound) {
+			microPipeline.shutdown();
+			throw new RequiredInputMissingException("Missing required emitter component");
+		}
+		
+		///////////////////////////////////////////////////////////////////////////////////
+
+		///////////////////////////////////////////////////////////////////////////////////
+		// (3) start components --> ramp up their runtime environments 
+		for(String sourceId : microPipeline.getSources().keySet()) {
+			executorService.submit(microPipeline.getSources().get(sourceId));
+			if(logger.isDebugEnabled())
+				logger.debug("Started runtime environment for source [id="+sourceId+"]");
+		}
+		for(String directResponseOperatorId : microPipeline.getDirectResponseOperators().keySet()) {
+			executorService.submit(microPipeline.getDirectResponseOperators().get(directResponseOperatorId));
+			if(logger.isDebugEnabled())
+				logger.debug("Started runtime environment for direct response operator [id="+directResponseOperatorId+"]");
+		}
+		for(String directResponseOperatorId : microPipeline.getDirectResponseOperators().keySet()) {
+			executorService.submit(microPipeline.getDirectResponseOperators().get(directResponseOperatorId));
+			if(logger.isDebugEnabled())
+				logger.debug("Started runtime environment for direct response operator [id="+directResponseOperatorId+"]");
+		}
+		for(String emitterId : microPipeline.getEmitters().keySet()) {
+			executorService.submit(microPipeline.getEmitters().get(emitterId));
+			if(logger.isDebugEnabled())
+				logger.debug("Started runtime environment for emitter [id="+emitterId+"]");
+		}
+		//
 		///////////////////////////////////////////////////////////////////////////////////
 		
 		return microPipeline;
@@ -216,46 +279,51 @@ public class MicroPipelineFactory {
 		////////////////////////////////////////////////////////////////////////////////////
 		// validate settings for components of type: SOURCE
 		if(componentConfiguration.getType() == MicroPipelineComponentType.SOURCE) {
-			
-			// TODO only ONE output queue is accepted
-			
-			if(componentConfiguration.getToQueues() == null || componentConfiguration.getToQueues().isEmpty())
+
+			if(StringUtils.isBlank(componentConfiguration.getToQueue()))
 				throw new RequiredInputMissingException("Missing required queues to write content to");
-			if(componentConfiguration.getToQueues().size() > 1)
-				throw new RequiredInputMissingException("Source components are permitted to write content to only one queue");
-			for(String toQueueId : componentConfiguration.getToQueues()) {
-				if(!queues.containsKey(StringUtils.lowerCase(StringUtils.trim(toQueueId))))
-					throw new RequiredInputMissingException("Unknown destination queue '"+toQueueId+"' referenced");
-			}
+			if(!queues.containsKey(StringUtils.lowerCase(StringUtils.trim(componentConfiguration.getToQueue()))))
+				throw new RequiredInputMissingException("Unknown destination queue '"+componentConfiguration.getToQueue()+"'");
 		 
 		////////////////////////////////////////////////////////////////////////////////////
-		// validate settings for components of type: OPERATOR
-		} else if(componentConfiguration.getType() == MicroPipelineComponentType.OPERATOR) {
+		// validate settings for components of type: DIRECT_RESPONSE_OPERATOR
+		} else if(componentConfiguration.getType() == MicroPipelineComponentType.DIRECT_RESPONSE_OPERATOR) {
 
-			if(componentConfiguration.getToQueues() == null || componentConfiguration.getToQueues().isEmpty())
+			if(StringUtils.isBlank(componentConfiguration.getToQueue()))
 				throw new RequiredInputMissingException("Missing required queues to write content to");
-			for(String toQueueId : componentConfiguration.getToQueues()) {
-				if(!queues.containsKey(StringUtils.lowerCase(StringUtils.trim(toQueueId))))
-					throw new RequiredInputMissingException("Unknown destination queue '"+toQueueId+"' referenced");
-			}
+			if(!queues.containsKey(StringUtils.lowerCase(StringUtils.trim(componentConfiguration.getToQueue()))))
+				throw new RequiredInputMissingException("Unknown destination queue '"+componentConfiguration.getToQueue()+"'");
 			
-			if(componentConfiguration.getFromQueues() == null || componentConfiguration.getFromQueues().isEmpty())
+			if(StringUtils.isBlank(componentConfiguration.getFromQueue()))
 				throw new RequiredInputMissingException("Missing required queues to retrieve content from");
-			for(String fromQueueId : componentConfiguration.getFromQueues()) {
-				if(!queues.containsKey(StringUtils.lowerCase(StringUtils.trim(fromQueueId))))
-					throw new RequiredInputMissingException("Unknown source queue '"+fromQueueId+"' referenced");
-			}
+			if(!queues.containsKey(StringUtils.lowerCase(StringUtils.trim(componentConfiguration.getFromQueue()))))
+				throw new RequiredInputMissingException("Unknown source queue '"+componentConfiguration.getFromQueue()+"'");
+
+		////////////////////////////////////////////////////////////////////////////////////
+		// validate settings for components of type: DELAYED_RESPONSE_OPERATOR
+		} else if(componentConfiguration.getType() == MicroPipelineComponentType.DELAYED_RESPONSE_OPERATOR) {
+
+			if(StringUtils.isBlank(componentConfiguration.getToQueue()))
+				throw new RequiredInputMissingException("Missing required queues to write content to");
+			if(!queues.containsKey(StringUtils.lowerCase(StringUtils.trim(componentConfiguration.getToQueue()))))
+				throw new RequiredInputMissingException("Unknown destination queue '"+componentConfiguration.getToQueue()+"'");
 			
+			if(StringUtils.isBlank(componentConfiguration.getFromQueue()))
+				throw new RequiredInputMissingException("Missing required queues to retrieve content from");
+			if(!queues.containsKey(StringUtils.lowerCase(StringUtils.trim(componentConfiguration.getFromQueue()))))
+				throw new RequiredInputMissingException("Unknown source queue '"+componentConfiguration.getFromQueue()+"'");
+
+			if(StringUtils.isBlank(componentConfiguration.getSettings().getProperty(DelayedResponseOperator.CFG_WAIT_STRATEGY_NAME)))
+				throw new RequiredInputMissingException("Missing required settings for wait strategy applied to delayed response operator");
+
 		////////////////////////////////////////////////////////////////////////////////////
 		// validate settings for components of type: EMITTER
 		} else if(componentConfiguration.getType() == MicroPipelineComponentType.EMITTER) {
 
-			if(componentConfiguration.getFromQueues() == null || componentConfiguration.getFromQueues().isEmpty())
+			if(StringUtils.isBlank(componentConfiguration.getFromQueue()))
 				throw new RequiredInputMissingException("Missing required queues to retrieve content from");
-			for(String fromQueueId : componentConfiguration.getFromQueues()) {
-				if(!queues.containsKey(StringUtils.lowerCase(StringUtils.trim(fromQueueId))))
-					throw new RequiredInputMissingException("Unknown source queue '"+fromQueueId+"' referenced");
-			}
+			if(!queues.containsKey(StringUtils.lowerCase(StringUtils.trim(componentConfiguration.getFromQueue()))))
+				throw new RequiredInputMissingException("Unknown source queue '"+componentConfiguration.getFromQueue()+"'");
 		}
 		//
 		////////////////////////////////////////////////////////////////////////////////////
@@ -272,46 +340,51 @@ public class MicroPipelineFactory {
 
 	}
 
-//	/**
-//	 * Step through {@link Collection} of {@link StreamingMessageQueue} instances and attempts to 
-//	 * shut them down. Any exceptions thrown when calling {@link StreamingMessageQueue#shutdown()} 
-//	 * are just logged.
-//	 * @param queues
-//	 * @deprecated moved to {@link MicroPipeline#shutdown()}
-//	 */
-//	protected void forceQueueShutdown(final Collection<StreamingMessageQueue> queues) {
-//		if(queues != null && !queues.isEmpty()) {
-//			for(StreamingMessageQueue queue : queues) {
-//				try {
-//					queue.shutdown();					
-//					if(logger.isDebugEnabled())
-//						logger.debug("forced queue shutdown [id="+queue.getId()+"]");
-//				} catch(Exception e) {
-//					logger.error("Forced queue shutdown failed [id="+queue.getId()+"]. Reason: " + e.getMessage());
-//				}
-//			}
-//		}
-//	}
-//	
-//	/**
-//	 * Step through {@link Collection] of {@link MicroPipelineComponent} instances and attempts to
-//	 * shut them down. Any exceptions thrown when calling {@link MicroPipelineComponent#shutdown()}
-//	 * are just logged.
-//	 * @param components
-//	 * @deprecated moved to {@link MicroPipeline#shutdown()}
-//	 */
-//	protected void forceComponentShutdown(final Collection<MicroPipelineComponent> components) {
-//		if(components != null && !components.isEmpty()) {
-//			for(MicroPipelineComponent component : components) {
-//				try {
-//					component.shutdown();
-//					
-//					if(logger.isDebugEnabled())
-//						logger.debug("forced component shutdown [id="+component.getId()+"]");
-//				} catch(Exception e) {
-//					logger.error("Forced component shutdown failed [id="+component.getId()+"]. Reason: " + e.getMessage());
-//				}
-//			}
-//		}
-//	}
+	/**
+	 * Instantiates, initializes and returns the {@link DelayedResponseOperatorWaitStrategy} configured for the {@link DelayedResponseOperator}
+	 * whose {@link MicroPipelineComponentConfiguration configuration} is provided when calling this method. 
+	 * @param delayedResponseOperatorCfg
+	 * @return
+	 */
+	protected DelayedResponseOperatorWaitStrategy getResponseWaitStrategy(final MicroPipelineComponentConfiguration delayedResponseOperatorCfg) throws RequiredInputMissingException, UnknownWaitStrategyException {
+
+		/////////////////////////////////////////////////////////////////////////////////////
+		// validate input
+		if(delayedResponseOperatorCfg == null)
+			throw new RequiredInputMissingException("Missing required delayed response operator configuration");
+		if(delayedResponseOperatorCfg.getSettings() == null)
+			throw new RequiredInputMissingException("Missing required delayed response operator settings");
+		String strategyName = StringUtils.lowerCase(StringUtils.trim(delayedResponseOperatorCfg.getSettings().getProperty(DelayedResponseOperator.CFG_WAIT_STRATEGY_NAME)));
+		if(StringUtils.isBlank(strategyName)) 
+			throw new RequiredInputMissingException("Missing required strategy name expected as part of operator settings ('"+DelayedResponseOperator.CFG_WAIT_STRATEGY_NAME+"')");
+		//
+		/////////////////////////////////////////////////////////////////////////////////////
+		
+		if(logger.isDebugEnabled())
+			logger.debug("Settings provided for strategy '"+strategyName+"'");
+		Properties strategyProperties = new Properties();		
+		for(Enumeration<Object> keyEnumerator =  delayedResponseOperatorCfg.getSettings().keys(); keyEnumerator.hasMoreElements();) {
+			String key = (String)keyEnumerator.nextElement();
+			if(StringUtils.startsWith(key, DelayedResponseOperator.CFG_WAIT_STRATEGY_SETTINGS_PREFIX)) {
+				String waitStrategyCfgKey = StringUtils.substring(key, StringUtils.lastIndexOf(key, ".") + 1);
+				if(StringUtils.isNoneBlank(waitStrategyCfgKey)) {
+					String waitStrategyCfgValue = delayedResponseOperatorCfg.getSettings().getProperty(key);
+					strategyProperties.put(waitStrategyCfgKey, waitStrategyCfgValue);
+					
+					if(logger.isDebugEnabled())
+						logger.debug("\t" + waitStrategyCfgKey + ": " + waitStrategyCfgValue);
+					
+				}
+			}			
+		}
+		
+		if(StringUtils.equalsIgnoreCase(strategyName, MessageCountResponseWaitStrategy.WAIT_STRATEGY_NAME)) {
+			MessageCountResponseWaitStrategy strategy = new MessageCountResponseWaitStrategy();
+			strategy.initialize(strategyProperties);
+			return strategy;
+		}
+		
+		throw new UnknownWaitStrategyException("Unknown wait strategy '"+strategyName+"'");
+		
+	}
 }

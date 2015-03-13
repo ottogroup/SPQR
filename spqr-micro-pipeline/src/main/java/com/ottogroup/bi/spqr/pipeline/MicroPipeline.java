@@ -22,6 +22,7 @@ import org.apache.log4j.Logger;
 
 import com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponent;
 import com.ottogroup.bi.spqr.pipeline.component.emitter.EmitterRuntimeEnvironment;
+import com.ottogroup.bi.spqr.pipeline.component.operator.DelayedResponseOperatorRuntimeEnvironment;
 import com.ottogroup.bi.spqr.pipeline.component.operator.DirectResponseOperatorRuntimeEnvironment;
 import com.ottogroup.bi.spqr.pipeline.component.source.SourceRuntimeEnvironment;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueue;
@@ -40,8 +41,10 @@ public class MicroPipeline {
 	private final String id;
 	/** references to source runtime environments */
 	private final Map<String, SourceRuntimeEnvironment> sources = new HashMap<>();
-	/** references to operator runtime environments */
-	private final Map<String, DirectResponseOperatorRuntimeEnvironment> operators = new HashMap<>();
+	/** references to direct response operator runtime environments */
+	private final Map<String, DirectResponseOperatorRuntimeEnvironment> directResponseOperators = new HashMap<>();
+	/** references to delayed response operator runtime environments */
+	private final Map<String, DelayedResponseOperatorRuntimeEnvironment> delayedResponseOperators = new HashMap<>();
 	/** references to emitter runtime environments */
 	private final Map<String, EmitterRuntimeEnvironment> emitters = new HashMap<>();
 	/** references to queues interconnecting the components */
@@ -74,9 +77,21 @@ public class MicroPipeline {
 	 * TODO test
 	 */
 	public void addOperator(final String id, final DirectResponseOperatorRuntimeEnvironment operatorRuntimeEnvironment) {
-		this.operators.put(id, operatorRuntimeEnvironment);
+		this.directResponseOperators.put(id, operatorRuntimeEnvironment);
 		if(logger.isDebugEnabled())
-			logger.debug("Operator [id="+id+"] successfully attached to pipeline [id="+this.id+"]");
+			logger.debug("Direct response operator [id="+id+"] successfully attached to pipeline [id="+this.id+"]");
+	}
+	
+	/**
+	 * Adds a new {@link DelayedResponseOperatorRuntimeEnvironment}
+	 * @param id
+	 * @param operatorRuntimeEnvironment
+	 * TODO test
+	 */
+	public void addOperator(final String id, final DelayedResponseOperatorRuntimeEnvironment operatorRuntimeEnvironment) {
+		this.delayedResponseOperators.put(id, operatorRuntimeEnvironment);
+		if(logger.isDebugEnabled())
+			logger.debug("Delayed response operator [id="+id+"] successfully attached to pipeline [id="+this.id+"]");
 	}
 	
 	/**
@@ -130,7 +145,7 @@ public class MicroPipeline {
 	 * TODO test
 	 */
 	public boolean hasComponent(final String id) {
-		return (this.sources.containsKey(id) || this.operators.containsKey(id) || this.emitters.containsKey(id));
+		return (this.sources.containsKey(id) || this.directResponseOperators.containsKey(id) || this.delayedResponseOperators.containsKey(id) || this.emitters.containsKey(id));
 	}
 
 	/**
@@ -152,14 +167,24 @@ public class MicroPipeline {
 				logger.error("Failed to shut down source runtime environment [id="+srcId+"]. Reason: " + e.getMessage());
 			}
 		}
-		for(final String operatorId : this.operators.keySet()) {
-			DirectResponseOperatorRuntimeEnvironment operatorEnv = this.operators.get(operatorId);
+		for(final String operatorId : this.directResponseOperators.keySet()) {
+			DirectResponseOperatorRuntimeEnvironment operatorEnv = this.directResponseOperators.get(operatorId);
 			try {
 				operatorEnv.shutdown();
 				if(logger.isDebugEnabled())
-					logger.debug("Operator runtime environment shut down [id="+operatorId+"]");
+					logger.debug("Direct response operator runtime environment shut down [id="+operatorId+"]");
 			} catch(Exception e) {
-				logger.error("Failed to shut down operator runtime environment [id="+operatorId+"]. Reason: " + e.getMessage());
+				logger.error("Failed to shut down direct response operator runtime environment [id="+operatorId+"]. Reason: " + e.getMessage());
+			}
+		}
+		for(final String operatorId : this.delayedResponseOperators.keySet()) {
+			DelayedResponseOperatorRuntimeEnvironment operatorEnv = this.delayedResponseOperators.get(operatorId);
+			try {
+				operatorEnv.shutdown();
+				if(logger.isDebugEnabled())
+					logger.debug("Delayed response operator runtime environment shut down [id="+operatorId+"]");
+			} catch(Exception e) {
+				logger.error("Failed to shut down delayed response operator runtime environment [id="+operatorId+"]. Reason: " + e.getMessage());
 			}
 		}
 		for(final String emitterId : this.emitters.keySet()) {
@@ -202,12 +227,16 @@ public class MicroPipeline {
 		return sources;
 	}
 
-	public Map<String, DirectResponseOperatorRuntimeEnvironment> getOperators() {
-		return operators;
+	public Map<String, DelayedResponseOperatorRuntimeEnvironment> getDelayedResponseOperators() {
+		return delayedResponseOperators;
 	}
 
 	public Map<String, EmitterRuntimeEnvironment> getEmitters() {
 		return emitters;
+	}
+
+	public Map<String, DirectResponseOperatorRuntimeEnvironment> getDirectResponseOperators() {
+		return directResponseOperators;
 	}
 
 	public Map<String, StreamingMessageQueue> getQueues() {
