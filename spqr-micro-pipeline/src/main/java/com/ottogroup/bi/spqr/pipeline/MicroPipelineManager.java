@@ -26,6 +26,7 @@ import org.apache.log4j.Logger;
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
 import com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponent;
 import com.ottogroup.bi.spqr.pipeline.exception.ComponentInitializationFailedException;
+import com.ottogroup.bi.spqr.pipeline.exception.NonUniqueIdentifierException;
 import com.ottogroup.bi.spqr.pipeline.exception.PipelineInstantiationFailedException;
 import com.ottogroup.bi.spqr.pipeline.exception.QueueInitializationFailedException;
 import com.ottogroup.bi.spqr.repository.ComponentRepository;
@@ -103,7 +104,7 @@ public class MicroPipelineManager {
 	 * @throws PipelineInstantiationFailedException
 	 */
 	public String executePipeline(final MicroPipelineConfiguration configuration) throws RequiredInputMissingException, 
-		QueueInitializationFailedException, ComponentInitializationFailedException, PipelineInstantiationFailedException {
+		QueueInitializationFailedException, ComponentInitializationFailedException, PipelineInstantiationFailedException, NonUniqueIdentifierException {
 		
 		///////////////////////////////////////////////////////////
 		// validate input
@@ -113,6 +114,11 @@ public class MicroPipelineManager {
 		///////////////////////////////////////////////////////////
 		
 		String id = StringUtils.lowerCase(StringUtils.trim(configuration.getId()));
+		if(this.pipelines.containsKey(id))
+			throw new NonUniqueIdentifierException("A pipeline already exists for id '"+id+"'");
+		
+		
+		
 		MicroPipeline pipeline = this.microPipelineFactory.instantiatePipeline(configuration, this.executorService);		
 		if(pipeline != null) 
 			this.pipelines.put(id, pipeline);

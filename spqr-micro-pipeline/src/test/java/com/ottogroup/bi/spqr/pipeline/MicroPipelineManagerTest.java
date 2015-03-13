@@ -26,6 +26,7 @@ import org.mockito.Mockito;
 
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
 import com.ottogroup.bi.spqr.pipeline.exception.ComponentInitializationFailedException;
+import com.ottogroup.bi.spqr.pipeline.exception.NonUniqueIdentifierException;
 import com.ottogroup.bi.spqr.pipeline.exception.PipelineInstantiationFailedException;
 import com.ottogroup.bi.spqr.pipeline.exception.QueueInitializationFailedException;
 import com.ottogroup.bi.spqr.repository.ComponentRepository;
@@ -65,7 +66,7 @@ public class MicroPipelineManagerTest {
 	 * input which must lead to a  {@link RequiredInputMissingException}
 	 */
 	@Test
-	public void testExecutePipeline_withNullInput() throws RequiredInputMissingException, QueueInitializationFailedException, ComponentInitializationFailedException, PipelineInstantiationFailedException {		
+	public void testExecutePipeline_withNullInput() throws RequiredInputMissingException, QueueInitializationFailedException, ComponentInitializationFailedException, PipelineInstantiationFailedException, NonUniqueIdentifierException {		
 		MicroPipelineFactory factory = Mockito.mock(MicroPipelineFactory.class);
 		MicroPipelineManager manager = new MicroPipelineManager(factory, executorService);
 		try {
@@ -122,6 +123,36 @@ public class MicroPipelineManagerTest {
 		}		
 		
 		Mockito.verify(factory).instantiatePipeline(cfg, executorService);
+	}
+
+	/**
+	 * Test case for {@link MicroPipelineManager#executePipeline(MicroPipelineConfiguration)} being provided a
+	 * valid configuration twice which leads to a {@link NonUniqueIdentifierException}
+	 */
+	@Test
+	public void testExecutePipeline_withValidConfigurationTwice() throws Exception {
+		MicroPipelineConfiguration cfg = new MicroPipelineConfiguration();
+		cfg.setId("testExecutePipeline_withValidConfiguration");
+		
+		MicroPipeline pipeline = Mockito.mock(MicroPipeline.class);
+		Mockito.when(pipeline.getId()).thenReturn(cfg.getId());
+		
+		MicroPipelineFactory factory = Mockito.mock(MicroPipelineFactory.class);
+		Mockito.when(factory.instantiatePipeline(cfg, executorService)).thenReturn(pipeline);
+		
+		MicroPipelineManager manager = new MicroPipelineManager(factory, executorService);
+		
+		Assert.assertEquals("Values must be equal", StringUtils.lowerCase(StringUtils.trim(cfg.getId())), manager.executePipeline(cfg));
+		Assert.assertEquals("Values must be equal", 1, manager.getNumOfRegisteredPipelines());
+		
+		Mockito.verify(factory).instantiatePipeline(cfg, executorService);		
+		
+		try {
+			manager.executePipeline(cfg);
+			Assert.fail("A pipeline for that identifier already exists");
+		} catch(NonUniqueIdentifierException e) {
+			// expected
+		}
 	}
 	
 	/**

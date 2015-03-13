@@ -35,6 +35,9 @@ public class SPQRNodeServerConfiguration extends Configuration {
 	/** folder used for storing temporary queue data */
 	@JsonProperty(value="temporaryQueueFolder", required=true)
 	private String temporaryQueueFolder = null;
+	/** number of threads assigned to internal executor service, default: 0 -- cached thread pool will be used */
+	@JsonProperty(value="numOfThreads", required=true)
+	private int numOfThreads = 0;
 	
 	public String getLog4jConfiguration() {
 		return log4jConfiguration;
@@ -53,6 +56,12 @@ public class SPQRNodeServerConfiguration extends Configuration {
 	}
 	public void setTemporaryQueueFolder(String temporaryQueueFolder) {
 		this.temporaryQueueFolder = temporaryQueueFolder;
+	}
+	public int getNumOfThreads() {
+		return numOfThreads;
+	}
+	public void setNumOfThreads(int numOfThreads) {
+		this.numOfThreads = numOfThreads;
 	}
 		
 }
