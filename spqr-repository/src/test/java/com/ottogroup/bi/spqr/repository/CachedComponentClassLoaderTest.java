@@ -108,8 +108,13 @@ public class CachedComponentClassLoaderTest {
 		CachedComponentClassLoader cl = new CachedComponentClassLoader(CachedComponentClassLoader.class.getClassLoader());
 		Assert.assertNull(cl.findClass("java.lang.String"));
 	}
-	
-	
+//	
+//	@Test
+//	public void testInitialize_withValidPath() throws IOException, RequiredInputMissingException {
+//		CachedComponentClassLoader cl = new CachedComponentClassLoader(CachedComponentClassLoader.class.getClassLoader());
+//		cl.initialize("/opt/transport/streaming/spqr-0.1.0/spqr-node/repo/spqr-kafka");
+//	}
+//	
 
 
 }

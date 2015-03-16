@@ -22,6 +22,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -34,6 +36,7 @@ import org.apache.log4j.Logger;
 import com.ottogroup.bi.spqr.exception.ComponentInitializationFailedException;
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
 import com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponent;
+import com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponentType;
 import com.ottogroup.bi.spqr.pipeline.component.annotation.SPQRComponent;
 import com.ottogroup.bi.spqr.repository.exception.ComponentInstantiationFailedException;
 import com.ottogroup.bi.spqr.repository.exception.UnknownComponentException;
@@ -51,6 +54,11 @@ public class CachedComponentClassLoader extends ClassLoader {
 
 	private static final Logger logger = Logger.getLogger(CachedComponentClassLoader.class);
 
+	private static final String ANNOTATION_TYPE_METHOD = "type";
+	private static final String ANNOTATION_NAME_METHOD = "name";
+	private static final String ANNOTATION_VERSION_METHOD = "version";
+	private static final String ANNOTATION_DESCRIPTION_METHOD = "description";
+	
 	/** resources */
 	private Map<String, byte[]> resources = new HashMap<String, byte[]>();
 	/** class file byte code */
@@ -59,7 +67,7 @@ public class CachedComponentClassLoader extends ClassLoader {
 	private Map<String, Class<?>> cachedClasses = new HashMap<>();
 	/** managed pipeline components */
 	private Map<String, ComponentDescriptor> managedComponents = new HashMap<>();
-
+	
 	/**
 	 * Initializes the class using the provided input
 	 * @param parentClassLoader
@@ -213,16 +221,51 @@ public class CachedComponentClassLoader extends ClassLoader {
 			
 			try {
 				Class<?> c = loadClass(cjf);
-				SPQRComponent pc = c.getAnnotation(SPQRComponent.class);
-				if(pc != null) {
-					this.managedComponents.put(getManagedComponentKey(pc.name(), pc.version()), new ComponentDescriptor(c.getName(), pc.type(), pc.name(), pc.version(), pc.description()));				        	
-					logger.info("pipeline component found [type="+pc.type()+", name="+pc.name()+", version="+pc.version()+"]");;
+				Annotation spqrComponentAnnotation = getSPQRComponentAnnotation(c);
+				if(spqrComponentAnnotation != null) {
+					
+					Method spqrAnnotationTypeMethod = spqrComponentAnnotation.getClass().getMethod(ANNOTATION_TYPE_METHOD, (Class[])null);
+					Method spqrAnnotationNameMethod = spqrComponentAnnotation.getClass().getMethod(ANNOTATION_NAME_METHOD, (Class[])null);
+					Method spqrAnnotationVersionMethod = spqrComponentAnnotation.getClass().getMethod(ANNOTATION_VERSION_METHOD, (Class[])null);
+					Method spqrAnnotationDescriptionMethod = spqrComponentAnnotation.getClass().getMethod(ANNOTATION_DESCRIPTION_METHOD, (Class[])null);
+
+					@SuppressWarnings("unchecked")
+					Enum<MicroPipelineComponentType> o = (Enum<MicroPipelineComponentType>)spqrAnnotationTypeMethod.invoke(spqrComponentAnnotation, (Object[])null);
+					final MicroPipelineComponentType componentType = Enum.valueOf(MicroPipelineComponentType.class, o.name());
+					final String componentName = (String)spqrAnnotationNameMethod.invoke(spqrComponentAnnotation, (Object[])null);
+					final String componentVersion = (String)spqrAnnotationVersionMethod.invoke(spqrComponentAnnotation, (Object[])null);
+					final String componentDescription = (String)spqrAnnotationDescriptionMethod.invoke(spqrComponentAnnotation, (Object[])null);
+
+					this.managedComponents.put(getManagedComponentKey(componentName, componentVersion), new ComponentDescriptor(c.getName(), componentType, componentName, componentVersion, componentDescription));
+					logger.info("pipeline component found [type="+componentType+", name="+componentName+", version="+componentVersion+"]");;
 				}
 			} catch(Throwable e) {
-				//logger.info("Failed to load class '"+cjf+"'. Error: " + e.getMessage());
+				e.printStackTrace();
+				logger.error("Failed to load class '"+cjf+"'. Error: " + e.getMessage());
 			}
 		}
 	}
+	
+	/**
+	 * Steps through {@link Annotation} list, searches for {@link SPQRComponent} 
+	 * annotation and returns true if any is found
+	 * @param clazz
+	 * @return
+	 */
+	protected Annotation getSPQRComponentAnnotation(final Class<?> clazz) {
+		Annotation[] annotations = clazz.getAnnotations();
+		if(annotations != null && annotations.length > 0) {
+			for(Annotation annotation : annotations) {
+				@SuppressWarnings("unchecked")
+				Class<Annotation> type = (Class<Annotation>) annotation.annotationType();
+				if(StringUtils.equals(type.getName(), SPQRComponent.class.getName())) {
+					return annotation;
+				}
+			}
+		}
+		return null;
+	}
+	
 	
 	/**
 	 * Looks up the reference {@link DataComponent}, instantiates it and passes over the provided {@link Properties} 
