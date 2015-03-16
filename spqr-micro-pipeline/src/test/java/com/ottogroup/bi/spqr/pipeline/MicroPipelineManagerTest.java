@@ -24,11 +24,11 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import com.ottogroup.bi.spqr.exception.ComponentInitializationFailedException;
+import com.ottogroup.bi.spqr.exception.NonUniqueIdentifierException;
+import com.ottogroup.bi.spqr.exception.PipelineInstantiationFailedException;
+import com.ottogroup.bi.spqr.exception.QueueInitializationFailedException;
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
-import com.ottogroup.bi.spqr.pipeline.exception.ComponentInitializationFailedException;
-import com.ottogroup.bi.spqr.pipeline.exception.NonUniqueIdentifierException;
-import com.ottogroup.bi.spqr.pipeline.exception.PipelineInstantiationFailedException;
-import com.ottogroup.bi.spqr.pipeline.exception.QueueInitializationFailedException;
 import com.ottogroup.bi.spqr.repository.ComponentRepository;
 
 /**

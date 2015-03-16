@@ -20,39 +20,45 @@ import java.io.Serializable;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Message sent in response to pipeline instantiation request issued towards a spqr node
+ * Message sent in response to pipeline shutdown request issued towards a spqr node
  * @author mnxfst
- * @since Mar 13, 2015
+ * @since Mar 16, 2015
  */
-public class MicroPipelineInstantiationResponse implements Serializable {
+public class MicroPipelineShutdownResponse implements Serializable {
 
-	private static final long serialVersionUID = -4416878440036933504L;
+	private static final long serialVersionUID = 212062638728588678L;
 
-	public enum MicroPipelineInstantationState implements Serializable {		
-		OK, CONFIGURATION_MISSING, NON_UNIQUE_PIPELINE_ID, QUEUE_INITIALIZATION_FAILED, COMPONENT_INITIALIZATION_FAILED, PIPELINE_INITIALIZATION_FAILED, TECHNICAL_ERROR	
+	public enum MicroPipelineShutdownState implements Serializable {
+		OK, PIPELINE_ID_MISSING, TECHNICAL_ERROR
 	}
 	
 	@JsonProperty(value="state", required=true)
-	private MicroPipelineInstantationState state = MicroPipelineInstantationState.OK;
+	private MicroPipelineShutdownState state = MicroPipelineShutdownState.OK;
 	@JsonProperty(value="msg", required=true)
 	private String message = null;
 	@JsonProperty(value="pid", required=true)
 	private String pipelineId = null;
 	
-	public MicroPipelineInstantiationResponse() {		
+	public MicroPipelineShutdownResponse() {		
 	}
 	
-	public MicroPipelineInstantiationResponse(final String pipelineId, final MicroPipelineInstantationState state, final String message) {
+	/**
+	 * Initializes the response using the provided input
+	 * @param pipelineId
+	 * @param state
+	 * @param msg
+	 */
+	public MicroPipelineShutdownResponse(final String pipelineId, final MicroPipelineShutdownState state, final String msg) {
 		this.pipelineId = pipelineId;
 		this.state = state;
-		this.message = message;
+		this.message = msg;
 	}
 
-	public MicroPipelineInstantationState getState() {
+	public MicroPipelineShutdownState getState() {
 		return state;
 	}
 
-	public void setState(MicroPipelineInstantationState state) {
+	public void setState(MicroPipelineShutdownState state) {
 		this.state = state;
 	}
 
@@ -72,5 +78,5 @@ public class MicroPipelineInstantiationResponse implements Serializable {
 		this.pipelineId = pipelineId;
 	}
 	
-		
+	
 }

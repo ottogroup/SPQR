@@ -13,31 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.ottogroup.bi.spqr.pipeline.exception;
+package com.ottogroup.bi.spqr.exception;
 
-import com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponent;
 
 /**
- * Thrown in case the initialization of a {@link MicroPipelineComponent} failed
+ * Thrown in case the instantiation of a {@link MicroPipeline} failed for any reason
  * @author mnxfst
- * @since Mar 6, 2015
+ * @since Mar 13, 2015
  */
-public class ComponentInitializationFailedException extends Exception {
+public class PipelineInstantiationFailedException extends Exception {
 
-	private static final long serialVersionUID = -7893237496464557534L;
+	private static final long serialVersionUID = -2785833660966006782L;
 
-	public ComponentInitializationFailedException() {		
+	public PipelineInstantiationFailedException() {		
 	}
 
-	public ComponentInitializationFailedException(String message) {
+	public PipelineInstantiationFailedException(String message) {
 		super(message);
 	}
 
-	public ComponentInitializationFailedException(Throwable cause) {
+	public PipelineInstantiationFailedException(Throwable cause) {
 		super(cause);
 	}
 
-	public ComponentInitializationFailedException(String message, Throwable cause) {
+	public PipelineInstantiationFailedException(String message, Throwable cause) {
 		super(message, cause);
 	}
 }

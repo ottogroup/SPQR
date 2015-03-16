@@ -24,6 +24,8 @@ import java.util.concurrent.ExecutorService;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
+import com.ottogroup.bi.spqr.exception.ComponentInitializationFailedException;
+import com.ottogroup.bi.spqr.exception.QueueInitializationFailedException;
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
 import com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponent;
 import com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponentConfiguration;
@@ -38,8 +40,6 @@ import com.ottogroup.bi.spqr.pipeline.component.operator.DirectResponseOperatorR
 import com.ottogroup.bi.spqr.pipeline.component.operator.MessageCountResponseWaitStrategy;
 import com.ottogroup.bi.spqr.pipeline.component.source.Source;
 import com.ottogroup.bi.spqr.pipeline.component.source.SourceRuntimeEnvironment;
-import com.ottogroup.bi.spqr.pipeline.exception.ComponentInitializationFailedException;
-import com.ottogroup.bi.spqr.pipeline.exception.QueueInitializationFailedException;
 import com.ottogroup.bi.spqr.pipeline.exception.UnknownWaitStrategyException;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueue;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConfiguration;

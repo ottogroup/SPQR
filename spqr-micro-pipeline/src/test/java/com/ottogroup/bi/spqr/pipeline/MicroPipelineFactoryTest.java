@@ -27,6 +27,8 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import com.ottogroup.bi.spqr.exception.ComponentInitializationFailedException;
+import com.ottogroup.bi.spqr.exception.QueueInitializationFailedException;
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
 import com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponent;
 import com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponentConfiguration;
@@ -35,8 +37,6 @@ import com.ottogroup.bi.spqr.pipeline.component.operator.DelayedResponseOperator
 import com.ottogroup.bi.spqr.pipeline.component.operator.DelayedResponseOperatorWaitStrategy;
 import com.ottogroup.bi.spqr.pipeline.component.operator.DirectResponseOperator;
 import com.ottogroup.bi.spqr.pipeline.component.operator.MessageCountResponseWaitStrategy;
-import com.ottogroup.bi.spqr.pipeline.exception.ComponentInitializationFailedException;
-import com.ottogroup.bi.spqr.pipeline.exception.QueueInitializationFailedException;
 import com.ottogroup.bi.spqr.pipeline.exception.UnknownWaitStrategyException;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueue;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConfiguration;

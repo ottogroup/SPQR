@@ -13,31 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.ottogroup.bi.spqr.pipeline.exception;
-
-import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueue;
+package com.ottogroup.bi.spqr.exception;
 
 /**
- * Thrown in case the initialization of a {@link StreamingMessageQueue} failed
  * @author mnxfst
- * @since Mar 6, 2015
+ * @since Mar 13, 2015
  */
-public class QueueInitializationFailedException extends Exception {
+public class NonUniqueIdentifierException extends Exception {
 
-	private static final long serialVersionUID = 7131295681971026459L;
+	private static final long serialVersionUID = 1683810160081066568L;
 
-	public QueueInitializationFailedException() {		
+	public NonUniqueIdentifierException() {		
 	}
 
-	public QueueInitializationFailedException(String message) {
+	public NonUniqueIdentifierException(String message) {
 		super(message);
 	}
 
-	public QueueInitializationFailedException(Throwable cause) {
+	public NonUniqueIdentifierException(Throwable cause) {
 		super(cause);
 	}
 
-	public QueueInitializationFailedException(String message, Throwable cause) {
+	public NonUniqueIdentifierException(String message, Throwable cause) {
 		super(message, cause);
 	}
+
 }

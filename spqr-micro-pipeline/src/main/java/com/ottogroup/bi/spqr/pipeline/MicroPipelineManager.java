@@ -23,12 +23,12 @@ import java.util.concurrent.Executors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
+import com.ottogroup.bi.spqr.exception.ComponentInitializationFailedException;
+import com.ottogroup.bi.spqr.exception.NonUniqueIdentifierException;
+import com.ottogroup.bi.spqr.exception.PipelineInstantiationFailedException;
+import com.ottogroup.bi.spqr.exception.QueueInitializationFailedException;
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
 import com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponent;
-import com.ottogroup.bi.spqr.pipeline.exception.ComponentInitializationFailedException;
-import com.ottogroup.bi.spqr.pipeline.exception.NonUniqueIdentifierException;
-import com.ottogroup.bi.spqr.pipeline.exception.PipelineInstantiationFailedException;
-import com.ottogroup.bi.spqr.pipeline.exception.QueueInitializationFailedException;
 import com.ottogroup.bi.spqr.repository.ComponentRepository;
 
 /**
@@ -135,7 +135,7 @@ public class MicroPipelineManager {
 	 * Shuts down the referenced pipeline
 	 * @param pipelineId
 	 */
-	public void shutdownPipeline(final String pipelineId) {
+	public String shutdownPipeline(final String pipelineId) {
 		
 		String id = StringUtils.lowerCase(StringUtils.trim(pipelineId));
 		MicroPipeline pipeline = this.pipelines.get(id);
@@ -146,6 +146,8 @@ public class MicroPipelineManager {
 			if(logger.isDebugEnabled())
 				logger.debug("pipeline shutdown[id="+pipelineId+"]");			
 		}
+		
+		return pipelineId;
 	}
 	
 	/**
