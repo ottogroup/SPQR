@@ -1,0 +1,129 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>com.ottogroup.bi.spqr</groupId>
+		<artifactId>spqr-parent</artifactId>
+		<version>0.1.0</version>
+	</parent>
+	
+  	<!-- maven specifc artifact grouping and versioning information -->
+	<artifactId>spqr-kafka</artifactId>
+  	<packaging>jar</packaging>
+
+  	<!-- general project information, eg. name and description -->
+  	<name>spqr-repository</name>
+  	<description>SPQR kafka adaptor (consumer and producer)</description>
+  	<url>https://github.com/ottogroup/SPQR.git</url>
+  	<inceptionYear>2014</inceptionYear>
+  	
+	<licenses>
+	  <license>
+	    <name>Apache License, Version 2.0</name>
+	    <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+	    <distribution>repo</distribution>
+	  </license>
+	</licenses>
+	
+	<properties>
+		<kafka.version>0.8.1.1</kafka.version>
+	</properties>
+	
+  	
+  	<dependencies>
+		<!-- junit -->
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.11</version>
+			<scope>test</scope>
+		</dependency>
+		
+		<!-- mockito -->
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-all</artifactId>
+			<version>1.10.8</version>
+			<scope>test</scope>
+		</dependency>
+		
+		<!-- spqr base -->
+		<dependency>
+			<groupId>com.ottogroup.bi.spqr</groupId>
+			<artifactId>spqr-base</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+
+		<!-- kafka dependencies -->
+		<dependency>
+			<groupId>org.apache.kafka</groupId>
+			<artifactId>kafka_2.10</artifactId>
+			<version>${kafka.version}</version>
+			<exclusions>
+        		<exclusion>
+            		<groupId>com.sun.jdmk</groupId>
+            		<artifactId>jmxtools</artifactId>
+        		</exclusion>
+	        	<exclusion>
+	            	<groupId>com.sun.jmx</groupId>
+	            	<artifactId>jmxri</artifactId>
+	        	</exclusion>
+	        	<exclusion>
+		            <groupId>javax.jms</groupId>
+	    	        <artifactId>jms</artifactId>
+		        </exclusion>
+				<exclusion>
+        			<groupId>org.slf4j</groupId>
+        			<artifactId>slf4j-api</artifactId>
+     			</exclusion>     						        
+    		</exclusions>
+		</dependency>
+  	
+  	</dependencies>
+  	
+  	<build>
+  		<plugins>
+  		
+			<!-- copy output library to lib folder -->
+			<plugin>
+        		<groupId>org.apache.maven.plugins</groupId>
+        		<artifactId>maven-jar-plugin</artifactId>
+        		<version>2.3.1</version>
+        		<configuration>
+          			<outputDirectory>${project.build.directory}/lib</outputDirectory>
+        		</configuration>
+      		</plugin>
+  		
+			<!-- copies all dependencies to library folder below target directory -->
+  			<plugin>
+	            <artifactId>maven-dependency-plugin</artifactId>
+	            <executions>
+	              <execution>
+	                <phase>package</phase>
+	                <goals>
+	                  <goal>copy-dependencies</goal>
+	                </goals>
+	                <configuration>
+	                	<excludeScope>provided</excludeScope>
+	                	<excludeGroupIds>junit, org.mockito, log4j, slf4j</excludeGroupIds>
+	                  <outputDirectory>${project.build.directory}/lib</outputDirectory>
+	                </configuration>
+	              </execution>
+	            </executions>
+          	</plugin>
+
+  			<!-- ensure to use java version 1.7 during compilation process -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>2.3.2</version>
+				<configuration>
+					<source>1.7</source>
+					<target>1.7</target>
+					<encoding>UTF-8</encoding>
+				</configuration>
+			</plugin>
+  		</plugins>
+  	</build>
+  </project>

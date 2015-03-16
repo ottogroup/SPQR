@@ -17,6 +17,8 @@ package com.ottogroup.bi.spqr.pipeline.component;
 
 import java.util.Properties;
 
+import com.ottogroup.bi.spqr.exception.ComponentInitializationFailedException;
+import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
 import com.ottogroup.bi.spqr.pipeline.component.emitter.Emitter;
 import com.ottogroup.bi.spqr.pipeline.component.operator.Operator;
 import com.ottogroup.bi.spqr.pipeline.component.source.Source;
@@ -44,8 +46,10 @@ public interface MicroPipelineComponent {
 	/**
 	 * Initializes the component before it gets executed
 	 * @param properties
+	 * @throws RequiredInputMissingException input missing required to initialize the component
+	 * @throws ComponentInitializationFailedException failed to initialize the component
 	 */
-	public void initialize(final Properties properties);
+	public void initialize(final Properties properties) throws RequiredInputMissingException, ComponentInitializationFailedException;
 	
 	/**
 	 * Tells the component to shut itself down

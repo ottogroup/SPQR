@@ -23,6 +23,7 @@ import javax.ws.rs.Produces;
 
 import org.apache.commons.lang3.StringUtils;
 
+import com.codahale.metrics.annotation.Timed;
 import com.ottogroup.bi.spqr.exception.ComponentInitializationFailedException;
 import com.ottogroup.bi.spqr.exception.NonUniqueIdentifierException;
 import com.ottogroup.bi.spqr.exception.PipelineInstantiationFailedException;
@@ -70,6 +71,7 @@ public class MicroPipelineResource {
 	 * @return
 	 */
 	@Produces(value = "application/json")
+	@Timed(name = "pipeline-instantiation")
 	@POST
 	@Path("{pipelineId}")
 	public MicroPipelineInstantiationResponse instantiatePipeline(@PathParam("pipelineId") final String pipelineId, final MicroPipelineConfiguration configuration) {		
@@ -107,6 +109,7 @@ public class MicroPipelineResource {
 	 * @return
 	 */
 	@Produces(value = "application/json")
+	@Timed(name = "pipeline-shutdown")
 	@DELETE
 	@Path("{pipelineId}")
 	public MicroPipelineShutdownResponse shutdown(@PathParam("pipelineId") final String pipelineId) {

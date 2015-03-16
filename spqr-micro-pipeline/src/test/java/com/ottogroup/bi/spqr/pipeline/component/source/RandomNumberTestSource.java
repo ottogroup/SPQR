@@ -21,6 +21,8 @@ import java.util.Random;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
+import com.ottogroup.bi.spqr.exception.ComponentInitializationFailedException;
+import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
 import com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponentType;
 import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
 
@@ -44,7 +46,7 @@ public class RandomNumberTestSource implements Source {
 	/**
 	 * @see com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponent#initialize(java.util.Properties)
 	 */
-	public void initialize(Properties properties) {
+	public void initialize(Properties properties) throws RequiredInputMissingException, ComponentInitializationFailedException {
 		this.maxNumGenerated = Integer.parseInt(StringUtils.trim(properties.getProperty(CFG_MAX_NUM_GENERATED)));
 		try {
 			this.seed = Long.parseLong(StringUtils.trim(properties.getProperty(CFG_SEED)));

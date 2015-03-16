@@ -26,6 +26,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import com.ottogroup.bi.spqr.exception.ComponentInitializationFailedException;
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConsumer;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueProducer;
@@ -72,7 +73,7 @@ public class SourceRuntimeEnvironmentTest {
 	 * Test case for {@link SourceRuntimeEnvironment#run()} with a fully functional {@link Source} implementation
 	 */
 	@Test
-	public void testRun_withFullyFunctionalSource() throws RequiredInputMissingException, IOException, InterruptedException {
+	public void testRun_withFullyFunctionalSource() throws RequiredInputMissingException, IOException, InterruptedException, ComponentInitializationFailedException {
 		
 		final int numGenerated = 10000;
 		final CountDownLatch latch = new CountDownLatch(numGenerated);

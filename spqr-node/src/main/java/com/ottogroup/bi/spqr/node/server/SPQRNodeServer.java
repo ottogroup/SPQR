@@ -31,6 +31,7 @@ import org.apache.log4j.PropertyConfigurator;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
+import com.ottogroup.bi.spqr.node.resource.pipeline.MicroPipelineResource;
 import com.ottogroup.bi.spqr.pipeline.MicroPipeline;
 import com.ottogroup.bi.spqr.pipeline.MicroPipelineManager;
 import com.ottogroup.bi.spqr.repository.ComponentDescriptor;
@@ -55,6 +56,8 @@ public class SPQRNodeServer extends Application<SPQRNodeServerConfiguration> {
 		
 		this.microPipelineManager = new MicroPipelineManager(loadAndDeployApplicationRepository(configuration.getComponentRepositoryFolder()), configuration.getNumOfThreads());
 		
+		// register exposed resources
+		environment.jersey().register(new MicroPipelineResource(this.microPipelineManager));		
 	}
 	
 	/**

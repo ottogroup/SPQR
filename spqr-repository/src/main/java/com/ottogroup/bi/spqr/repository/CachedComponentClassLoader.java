@@ -31,6 +31,7 @@ import java.util.jar.JarInputStream;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
+import com.ottogroup.bi.spqr.exception.ComponentInitializationFailedException;
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
 import com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponent;
 import com.ottogroup.bi.spqr.pipeline.component.annotation.SPQRComponent;
@@ -272,7 +273,9 @@ public class CachedComponentClassLoader extends ClassLoader {
 			throw new ComponentInstantiationFailedException("Failed to instantiate component [name="+name+", version="+version+", reason="+e.getMessage());
 		} catch (ClassNotFoundException e) {
 			throw new ComponentInstantiationFailedException("Failed to instantiate component [name="+name+", version="+version+", reason="+e.getMessage());
-		}
+		} catch (ComponentInitializationFailedException e) {
+			throw new ComponentInstantiationFailedException("Failed to instantiate component [name="+name+", version="+version+", reason="+e.getMessage());
+		} 
 	}
 
 	/**
