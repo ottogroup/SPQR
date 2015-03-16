@@ -38,6 +38,13 @@ public class StreamingMessageQueueConfiguration implements Serializable {
 	@JsonProperty(value="queueSettings", required=true)
 	private Properties properties = null;
 	
+	public StreamingMessageQueueConfiguration() {		
+	}
+	
+	public StreamingMessageQueueConfiguration(final String id) {
+		this.id = id;
+	}
+	
 	public String getId() {
 		return id;
 	}

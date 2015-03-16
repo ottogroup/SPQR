@@ -9,11 +9,11 @@
 	</parent>
 	
   	<!-- maven specifc artifact grouping and versioning information -->
-	<artifactId>spqr-kafka</artifactId>
+	<artifactId>spqr-webtrends</artifactId>
   	<packaging>jar</packaging>
 
   	<!-- general project information, eg. name and description -->
-  	<name>spqr-kafka</name>
+  	<name>spqr-webtrends</name>
   	<description>SPQR kafka adaptor (consumer and producer)</description>
   	<url>https://github.com/ottogroup/SPQR.git</url>
   	<inceptionYear>2014</inceptionYear>
@@ -27,7 +27,8 @@
 	</licenses>
 	
 	<properties>
-		<kafka.version>0.8.1.1</kafka.version>
+		<websocket.api.version>1.0</websocket.api.version>
+		<websocket.client.version>9.0.7.v20131107</websocket.client.version>
 	</properties>
 	
   	
@@ -55,37 +56,37 @@
 			<version>${project.version}</version>
 		</dependency>
 
-		<!-- kafka dependencies -->
+		<!-- apache commons -->
 		<dependency>
-			<groupId>org.apache.kafka</groupId>
-			<artifactId>kafka_2.10</artifactId>
-			<version>${kafka.version}</version>
-			<exclusions>
-        		<exclusion>
-            		<groupId>com.sun.jdmk</groupId>
-            		<artifactId>jmxtools</artifactId>
-        		</exclusion>
-	        	<exclusion>
-	            	<groupId>com.sun.jmx</groupId>
-	            	<artifactId>jmxri</artifactId>
-	        	</exclusion>
-	        	<exclusion>
-		            <groupId>javax.jms</groupId>
-	    	        <artifactId>jms</artifactId>
-		        </exclusion>
-				<exclusion>
-        			<groupId>org.slf4j</groupId>
-        			<artifactId>slf4j-api</artifactId>
-     			</exclusion>     						        
-    		</exclusions>
+			<groupId>commons-codec</groupId>
+			<artifactId>commons-codec</artifactId>
+			<version>1.9</version>
+		</dependency>
+
+		<!-- websocket api and client -->		
+		<dependency>
+        	<groupId>javax.websocket</groupId>
+            <artifactId>javax.websocket-api</artifactId>
+            <version>${websocket.api.version}</version>
+		</dependency>
+                
+		<dependency>
+        	<groupId>org.eclipse.jetty.websocket</groupId>
+            <artifactId>websocket-client</artifactId>
+            <version>${websocket.client.version}</version>
+		</dependency>  	
+		
+		<dependency>
+			<groupId>javax.servlet</groupId>
+			<artifactId>javax.servlet-api</artifactId>
+			<version>3.1.0</version>
 		</dependency>
 		
 		<dependency>
-			<groupId>org.osgi</groupId>
-			<artifactId>org.osgi.core</artifactId>
-			<version>4.3.0</version>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>1.7.10</version>
 		</dependency>
-  	
   	</dependencies>
   	
   	<build>

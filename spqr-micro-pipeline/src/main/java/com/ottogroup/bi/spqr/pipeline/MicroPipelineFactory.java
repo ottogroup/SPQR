@@ -171,7 +171,7 @@ public class MicroPipelineFactory {
 				
 				components.put(id, component);
 			} catch(Exception e) {
-				logger.error("component initialization failed [id="+id+", class="+componentCfg.getName()+", version="+componentCfg.getVersion()+"]. Forcing shutdown of all queues and components.");
+				logger.error("component initialization failed [id="+id+", class="+componentCfg.getName()+", version="+componentCfg.getVersion()+"]. Forcing shutdown of all queues and components. Reason: " + e.getMessage());
 				microPipeline.shutdown();
 				throw new ComponentInitializationFailedException("Failed to initialize component [id="+id+", class="+componentCfg.getName()+", version="+componentCfg.getVersion()+"]. Reason: " + e.getMessage(), e);
 			}
