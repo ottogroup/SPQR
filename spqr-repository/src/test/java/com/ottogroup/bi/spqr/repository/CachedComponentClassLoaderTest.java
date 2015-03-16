@@ -15,8 +15,13 @@
  */
 package com.ottogroup.bi.spqr.repository;
 
+import java.io.IOException;
+import java.util.Properties;
+
 import org.junit.Assert;
 import org.junit.Test;
+
+import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
 
 /**
  * Test case for {@link CachedComponentClassLoader}
@@ -108,14 +113,15 @@ public class CachedComponentClassLoaderTest {
 		CachedComponentClassLoader cl = new CachedComponentClassLoader(CachedComponentClassLoader.class.getClassLoader());
 		Assert.assertNull(cl.findClass("java.lang.String"));
 	}
-//	
-//	@Test
-//	public void testInitialize_withValidPath() throws IOException, RequiredInputMissingException {
-//		CachedComponentClassLoader cl = new CachedComponentClassLoader(CachedComponentClassLoader.class.getClassLoader());
-//		cl.initialize("/opt/transport/streaming/spqr-0.1.0/spqr-node/repo/spqr-kafka");
-//		cl.initialize("/opt/transport/streaming/spqr-0.1.0/spqr-node/repo/spqr-webtrends");
-//	}
-//	
+	
+	@Test
+	public void testInitialize_withValidPath() throws Exception {
+		CachedComponentClassLoader cl = new CachedComponentClassLoader(CachedComponentClassLoader.class.getClassLoader());
+		cl.initialize("/opt/transport/streaming/spqr-0.1.0/spqr-node/repo/spqr-kafka");
+		cl.initialize("/opt/transport/streaming/spqr-0.1.0/spqr-node/repo/spqr-webtrends");
+		cl.newInstance("wt", "webtrendsSource", "0.0.1", new Properties());
+	}
+	
 
 
 }

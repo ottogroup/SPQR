@@ -38,6 +38,7 @@ import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
 import com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponent;
 import com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponentType;
 import com.ottogroup.bi.spqr.pipeline.component.annotation.SPQRComponent;
+import com.ottogroup.bi.spqr.pipeline.component.source.Source;
 import com.ottogroup.bi.spqr.repository.exception.ComponentInstantiationFailedException;
 import com.ottogroup.bi.spqr.repository.exception.UnknownComponentException;
 
