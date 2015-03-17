@@ -36,12 +36,14 @@ public class RandomNumberTestSource implements Source {
 	private static final Logger logger = Logger.getLogger(RandomNumberTestSource.class);
 	public static final String CFG_MAX_NUM_GENERATED = "maxNumGenerated";
 	public static final String CFG_SEED = "seed";
+	public static final String CFG_CONTENT = "content";
 	
 	private String id = null;
 	private int maxNumGenerated = 0;
 	private long seed = 0;
 	private boolean running = false;
 	private IncomingMessageCallback callback;
+	private String content = null;
 	
 	/**
 	 * @see com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponent#initialize(java.util.Properties)
@@ -53,6 +55,8 @@ public class RandomNumberTestSource implements Source {
 		} catch(Exception e) {
 			//
 		}
+		this.content = properties.getProperty(CFG_CONTENT);
+				
 		this.running = true;
 	}
 
@@ -72,7 +76,7 @@ public class RandomNumberTestSource implements Source {
 		long s1 = System.currentTimeMillis();
 		while(running && maxNumGenerated != 0) {
 			count ++;
-			this.callback.onMessage(new StreamingDataMessage(""+rnd.nextInt(), System.currentTimeMillis())); // string conversion takes too long!
+			this.callback.onMessage(new StreamingDataMessage(this.content, System.currentTimeMillis())); // string conversion takes too long!
 			
 			maxNumGenerated--;
 			
