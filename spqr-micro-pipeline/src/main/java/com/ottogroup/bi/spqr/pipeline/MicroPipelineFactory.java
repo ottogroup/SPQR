@@ -38,6 +38,7 @@ import com.ottogroup.bi.spqr.pipeline.component.operator.DelayedResponseOperator
 import com.ottogroup.bi.spqr.pipeline.component.operator.DirectResponseOperator;
 import com.ottogroup.bi.spqr.pipeline.component.operator.DirectResponseOperatorRuntimeEnvironment;
 import com.ottogroup.bi.spqr.pipeline.component.operator.MessageCountResponseWaitStrategy;
+import com.ottogroup.bi.spqr.pipeline.component.operator.TimerBasedResponseWaitStrategy;
 import com.ottogroup.bi.spqr.pipeline.component.source.Source;
 import com.ottogroup.bi.spqr.pipeline.component.source.SourceRuntimeEnvironment;
 import com.ottogroup.bi.spqr.pipeline.exception.UnknownWaitStrategyException;
@@ -200,10 +201,10 @@ public class MicroPipelineFactory {
 			if(logger.isDebugEnabled())
 				logger.debug("Started runtime environment for direct response operator [id="+directResponseOperatorId+"]");
 		}
-		for(String directResponseOperatorId : microPipeline.getDirectResponseOperators().keySet()) {
-			executorService.submit(microPipeline.getDirectResponseOperators().get(directResponseOperatorId));
+		for(String delayedResponseOperatorId : microPipeline.getDelayedResponseOperators().keySet()) {
+			executorService.submit(microPipeline.getDelayedResponseOperators().get(delayedResponseOperatorId));
 			if(logger.isDebugEnabled())
-				logger.debug("Started runtime environment for direct response operator [id="+directResponseOperatorId+"]");
+				logger.debug("Started runtime environment for delayed response operator [id="+delayedResponseOperatorId+"]");
 		}
 		for(String emitterId : microPipeline.getEmitters().keySet()) {
 			executorService.submit(microPipeline.getEmitters().get(emitterId));
@@ -379,6 +380,10 @@ public class MicroPipelineFactory {
 		
 		if(StringUtils.equalsIgnoreCase(strategyName, MessageCountResponseWaitStrategy.WAIT_STRATEGY_NAME)) {
 			MessageCountResponseWaitStrategy strategy = new MessageCountResponseWaitStrategy();
+			strategy.initialize(strategyProperties);
+			return strategy;
+		} else if(StringUtils.equalsIgnoreCase(strategyName, TimerBasedResponseWaitStrategy.WAIT_STRATEGY_NAME)) {
+			TimerBasedResponseWaitStrategy strategy = new TimerBasedResponseWaitStrategy();
 			strategy.initialize(strategyProperties);
 			return strategy;
 		}

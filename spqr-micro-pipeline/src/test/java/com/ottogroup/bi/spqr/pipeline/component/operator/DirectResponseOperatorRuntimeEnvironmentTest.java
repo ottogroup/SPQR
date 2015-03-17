@@ -101,7 +101,7 @@ public class DirectResponseOperatorRuntimeEnvironmentTest {
 	 */
 	@Test
 	public void testConstructor_withMessagesToProcessAndFailingOperator() throws RequiredInputMissingException, InterruptedException {
-		StreamingDataMessage inputMessage = new StreamingDataMessage("test", System.currentTimeMillis());
+		StreamingDataMessage inputMessage = new StreamingDataMessage("test".getBytes(), System.currentTimeMillis());
 		DirectResponseOperator operator = Mockito.mock(DirectResponseOperator.class);
 		Mockito.when(operator.onMessage(inputMessage)).thenThrow(new RuntimeException("Failed to process message"));
 		StreamingMessageQueueConsumer queueConsumer = Mockito.mock(StreamingMessageQueueConsumer.class);
@@ -110,7 +110,7 @@ public class DirectResponseOperatorRuntimeEnvironmentTest {
 		
 		DirectResponseOperatorRuntimeEnvironment env = new DirectResponseOperatorRuntimeEnvironment(operator, queueConsumer, queueProducer);
 		executorService.submit(env);
-		Thread.sleep(50);
+		Thread.sleep(100);
 		
 		Mockito.verify(operator, Mockito.atLeast(1)).onMessage(inputMessage);
 		Mockito.verify(queueProducer, Mockito.never()).insert(inputMessage);
@@ -124,7 +124,7 @@ public class DirectResponseOperatorRuntimeEnvironmentTest {
 	 */
 	@Test
 	public void testConstructor_withMessagesToProcess() throws RequiredInputMissingException, InterruptedException {
-		StreamingDataMessage inputMessage = new StreamingDataMessage("test", System.currentTimeMillis());
+		StreamingDataMessage inputMessage = new StreamingDataMessage("test".getBytes(), System.currentTimeMillis());
 		DirectResponseOperator operator = Mockito.mock(DirectResponseOperator.class);
 		Mockito.when(operator.onMessage(inputMessage)).thenReturn(new StreamingDataMessage[]{inputMessage});
 		StreamingMessageQueueConsumer queueConsumer = Mockito.mock(StreamingMessageQueueConsumer.class);
@@ -147,7 +147,7 @@ public class DirectResponseOperatorRuntimeEnvironmentTest {
 	@Test
 	public void testShutdown_withValidSetup() throws RequiredInputMissingException {
 
-		StreamingDataMessage inputMessage = new StreamingDataMessage("test", System.currentTimeMillis());
+		StreamingDataMessage inputMessage = new StreamingDataMessage("test".getBytes(), System.currentTimeMillis());
 		DirectResponseOperator operator = Mockito.mock(DirectResponseOperator.class);
 		Mockito.when(operator.onMessage(inputMessage)).thenReturn(new StreamingDataMessage[]{inputMessage});
 		StreamingMessageQueueConsumer queueConsumer = Mockito.mock(StreamingMessageQueueConsumer.class);

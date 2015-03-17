@@ -17,6 +17,8 @@ package com.ottogroup.bi.spqr.pipeline.component.operator;
 
 import java.util.Properties;
 
+import org.apache.log4j.Logger;
+
 import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
 
 /**
@@ -27,7 +29,9 @@ import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
  */
 public class TimerBasedResponseWaitStrategy implements DelayedResponseOperatorWaitStrategy {
 	
-	public static final String WAIT_STRATEGY_NAME = "messageCount";
+	private static final Logger logger = Logger.getLogger(TimerBasedResponseWaitStrategy.class);
+	
+	public static final String WAIT_STRATEGY_NAME = "timerBased";
 	public static final int DEFAULT_MAX_DURATION = 1000;
 	public static final String CFG_MAX_DURATION = "maxDuration";
 
@@ -44,12 +48,17 @@ public class TimerBasedResponseWaitStrategy implements DelayedResponseOperatorWa
 	 */
 	public void initialize(Properties properties) {
 		try {
-			this.maxDuration = Long.parseLong(properties.getProperty(DelayedResponseOperator.CFG_WAIT_STRATEGY_SETTINGS_PREFIX + CFG_MAX_DURATION));
+			this.maxDuration = Long.parseLong(properties.getProperty(CFG_MAX_DURATION));
 			if(this.maxDuration < 1)
 				this.maxDuration = DEFAULT_MAX_DURATION;
 		} catch(Exception e) {
+			if(logger.isDebugEnabled())
+				logger.debug("Failed to parse setting '"+CFG_MAX_DURATION+". Reason: " + e.getMessage());
 			this.maxDuration = DEFAULT_MAX_DURATION;
-		}		
+		}
+		
+		if(logger.isDebugEnabled())
+			logger.debug("timer based wait strategy initialzed [duration="+maxDuration+"]");
 	}
 
 	/**

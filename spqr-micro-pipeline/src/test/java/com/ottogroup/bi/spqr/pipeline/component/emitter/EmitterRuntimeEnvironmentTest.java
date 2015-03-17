@@ -88,7 +88,7 @@ public class EmitterRuntimeEnvironmentTest {
 	public void testEmitterEnvironment_withValidInput() throws RequiredInputMissingException, InterruptedException {
 		Emitter emitter = Mockito.mock(Emitter.class);
 		StreamingMessageQueueConsumer queueConsumer = Mockito.mock(StreamingMessageQueueConsumer.class);
-		StreamingDataMessage message = new StreamingDataMessage("test", System.currentTimeMillis());
+		StreamingDataMessage message = new StreamingDataMessage("test".getBytes(), System.currentTimeMillis());
 		Mockito.when(queueConsumer.next()).thenReturn(message);
 				
 		EmitterRuntimeEnvironment env = new EmitterRuntimeEnvironment(emitter, queueConsumer);
@@ -111,13 +111,12 @@ public class EmitterRuntimeEnvironmentTest {
 	public void testEmitterEnvironment_withValidInputButFailingEmitter() throws RequiredInputMissingException, InterruptedException {
 		Emitter emitter = Mockito.mock(Emitter.class);
 		StreamingMessageQueueConsumer queueConsumer = Mockito.mock(StreamingMessageQueueConsumer.class);
-		StreamingDataMessage message = new StreamingDataMessage("test", System.currentTimeMillis());
+		StreamingDataMessage message = new StreamingDataMessage("test".getBytes(), System.currentTimeMillis());
 		Mockito.when(queueConsumer.next()).thenReturn(message);
 		Mockito.when(emitter.onMessage(message)).thenThrow(new NullPointerException("error"));
 				
 		EmitterRuntimeEnvironment env = new EmitterRuntimeEnvironment(emitter, queueConsumer);
 		executorService.submit(env);
-
 		Thread.sleep(100);
 		Assert.assertTrue("Must return true", env.isRunning());
 

@@ -397,7 +397,7 @@ public class TwitterStreamSourceTest {
 		consumer.getStreamMessageQueue().offer("noJsonContent");
 		Assert.assertEquals("Values must be equal", 2, consumer.getStreamMessageQueue().size());
 		executor.submit(consumer);
-		Thread.sleep(100);
+		Thread.sleep(200);
 		consumer.shutdown();
 		Assert.assertTrue("Value must be true", consumer.getStreamMessageQueue().isEmpty());
 		Assert.assertEquals("Values must be equal", 2, consumer.getMessageCount());

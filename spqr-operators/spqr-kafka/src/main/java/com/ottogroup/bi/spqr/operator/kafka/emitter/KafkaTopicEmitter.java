@@ -154,8 +154,8 @@ public class KafkaTopicEmitter implements Emitter {
 	 * @see com.ottogroup.bi.spqr.pipeline.component.emitter.Emitter#onMessage(com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage)
 	 */
 	public boolean onMessage(StreamingDataMessage message) {
-		if(message != null && StringUtils.isNotBlank(message.getBody())) {
-			this.kafkaProducer.send(new KeyedMessage<byte[], byte[]>(this.topicId, message.getBody().getBytes(charset)));
+		if(message != null && message.getBody() != null && message.getBody().length > 0) {
+			this.kafkaProducer.send(new KeyedMessage<byte[], byte[]>(this.topicId, message.getBody()));
 			this.messageCounter++;
 		}
 		return true;

@@ -93,7 +93,7 @@ public class EmitterRuntimeEnvironment implements Runnable {
 		try {
 			this.emitter.shutdown();
 		} catch(Exception e) {
-			logger.error("Failed to shut down delayed response operator. Error: " + e.getMessage());
+			logger.error("Failed to shut down emitter. Error: " + e.getMessage());
 		}
 	}
 

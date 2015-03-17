@@ -45,8 +45,9 @@ public class DefaultStreamingMessageQueueProducer implements
 		
 		if(message != null) {
 			queueProducer.startExcerpt();
-			queueProducer.writeUTF(message.getBody());
 			queueProducer.writeLong(message.getTimestamp());
+			queueProducer.writeInt(message.getBody().length);
+			queueProducer.write(message.getBody());
 			queueProducer.finish();
 			return true;
 		}

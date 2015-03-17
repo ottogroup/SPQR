@@ -219,7 +219,7 @@ public class KafkaTopicEmitterTest {
 		emitter.setProducer(producer);
 		emitter.initialize(defaultProperties);
 		
-		emitter.onMessage(new StreamingDataMessage("", System.currentTimeMillis()));
+		emitter.onMessage(new StreamingDataMessage("".getBytes(), System.currentTimeMillis()));
 		Assert.assertEquals("Values must be equal", 0, emitter.getTotalNumOfMessages());
 		Mockito.verify(producer, Mockito.never()).send(new KeyedMessage<byte[], byte[]>(
 				this.defaultProperties.getProperty(KafkaTopicEmitter.CFG_OPT_TOPIC_ID), "".getBytes("UTF-8")));
@@ -240,7 +240,7 @@ public class KafkaTopicEmitterTest {
 		emitter.setProducer(producer);
 		emitter.initialize(defaultProperties);
 		
-		StreamingDataMessage message = new StreamingDataMessage("testOnMessage_withValidMessage", System.currentTimeMillis());
+		StreamingDataMessage message = new StreamingDataMessage("testOnMessage_withValidMessage".getBytes(), System.currentTimeMillis());
 		emitter.onMessage(message);
 		Assert.assertEquals("Values must be equal", 1, emitter.getTotalNumOfMessages());
 	}

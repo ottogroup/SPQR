@@ -43,7 +43,7 @@ public class RandomNumberTestSource implements Source {
 	private long seed = 0;
 	private boolean running = false;
 	private IncomingMessageCallback callback;
-	private String content = null;
+	private byte[] content = null;
 	
 	/**
 	 * @see com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponent#initialize(java.util.Properties)
@@ -55,7 +55,7 @@ public class RandomNumberTestSource implements Source {
 		} catch(Exception e) {
 			//
 		}
-		this.content = properties.getProperty(CFG_CONTENT);
+		this.content = (properties.containsKey(CFG_CONTENT) ? properties.getProperty(CFG_CONTENT).getBytes() : new byte[0]);
 				
 		this.running = true;
 	}

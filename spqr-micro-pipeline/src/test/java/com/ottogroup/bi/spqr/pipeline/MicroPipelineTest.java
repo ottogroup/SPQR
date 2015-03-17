@@ -58,9 +58,13 @@ public class MicroPipelineTest {
 	@Test
 	public void test_performance1() throws Exception {
 	
+		if(true)
+			return;
+		
 		MicroPipelineConfiguration cfg = new ObjectMapper().readValue(new File("/home/mnxfst/projects/spqr/twitter-to-kafka.json"), MicroPipelineConfiguration.class);
-		final int numGeneratedMessages = 2000000;
-		final String msg = new ObjectMapper().writeValueAsString(cfg);
+		final int numGeneratedMessages = 10000000;
+		final String msg = "";new ObjectMapper().writeValueAsString(cfg);
+		
 		System.out.println(msg);
 		final CountDownLatch latch = new CountDownLatch(numGeneratedMessages);
 
@@ -111,7 +115,15 @@ public class MicroPipelineTest {
 		
 		System.out.println(numGeneratedMessages + " messages transferred in " + duration + "ms");
 		
-		
+		/*
+		 * 2015-03-17 14:06:24 INFO  RandomNumberTestSource:84 - 2000000 numbers generated in: 5528ms
+Received 2000000 messages. Min: 5ms, Max: 5000ms
+2000000 messages transferred in 10527ms
+
+---
+2000000 messages transferred in 928ms
+Received 2000000 messages. Min: 0ms, Max: 18ms
+		 */
 	}
 	
 	/*
