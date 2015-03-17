@@ -5,7 +5,7 @@
   	<!-- maven specifc artifact grouping and versioning information -->
   	<groupId>com.ottogroup.bi.spqr</groupId>
 	<artifactId>spqr-build</artifactId>
-  	<version>0.1.0</version>
+  	<version>0.2.0</version>
   	<packaging>pom</packaging>
 
 	<!-- application owner -->
@@ -60,8 +60,12 @@
   	<modules>
 		<module>../spqr-parent</module>
 		<module>../spqr-base</module>
+		<module>../spqr-repository</module>
+		<module>../spqr-micro-pipeline</module>
 		<module>../spqr-node</module>
 		<module>../spqr-operators/spqr-kafka</module>
+		<module>../spqr-operators/spqr-twitter</module>
 		<module>../spqr-operators/spqr-webtrends</module>
-	</modules>
+		<module>../spqr-operators/spqr-json</module>
+  	</modules>
 </project>

@@ -32,7 +32,7 @@ public class StreamingDataMessage implements Serializable {
 	
 	/** message body a.k.a its content */
 	@JsonProperty ( value = "body", required = true )
-	private String body = null;
+	private byte[] body = null;
 	
 	/** time the message entered the system */
 	@JsonProperty ( value = "timestamp", required = true )
@@ -49,16 +49,16 @@ public class StreamingDataMessage implements Serializable {
 	 * @param body
 	 * @param timestamp
 	 */
-	public StreamingDataMessage(final String body, final long timestamp) {
+	public StreamingDataMessage(final byte[] body, final long timestamp) {
 		this.body = body;
 		this.timestamp = timestamp;
 	}
 
-	public String getBody() {
+	public byte[] getBody() {
 		return body;
 	}
 
-	public void setBody(String body) {
+	public void setBody(byte[] body) {
 		this.body = body;
 	}
 

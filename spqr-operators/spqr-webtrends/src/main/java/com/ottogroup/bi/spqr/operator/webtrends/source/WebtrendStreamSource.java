@@ -190,7 +190,7 @@ public class WebtrendStreamSource implements Source {
 			try {
 				String msg = streamMessageQueue.poll(100, TimeUnit.MILLISECONDS);
 				if(msg != null) {
-					this.incomingMessageCallback.onMessage(new StreamingDataMessage(msg, System.currentTimeMillis()));
+					this.incomingMessageCallback.onMessage(new StreamingDataMessage(msg.getBytes(), System.currentTimeMillis()));
 					this.messageCount++;
 				}
 				

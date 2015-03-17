@@ -133,11 +133,12 @@ public class DefaultStreamingMessageQueueTest {
 
 		long timestamp = System.currentTimeMillis();
 		String text = "This is a simple test message";
+		byte[] content = text.getBytes(); 
 
-		inbox.getProducer().insert(new StreamingDataMessage(text, timestamp));
+		inbox.getProducer().insert(new StreamingDataMessage(content, timestamp));
 		StreamingDataMessage msg = inbox.getConsumer().next();
-		
-		Assert.assertEquals("Values must be equal", text, msg.getBody());
+
+		Assert.assertEquals("Values must be equal", new String(content), new String(msg.getBody()));
 		Assert.assertEquals("Values must be equal", timestamp, msg.getTimestamp());		
 	}
 	
@@ -167,7 +168,7 @@ public class DefaultStreamingMessageQueueTest {
 		Future<Integer> producerDurationFuture = svc.submit(new Callable<Integer>() {
 			
 			public Integer call() {
-				StreamingDataMessage object = new StreamingDataMessage("Test message", System.currentTimeMillis());
+				StreamingDataMessage object = new StreamingDataMessage("Test message".getBytes(), System.currentTimeMillis());
 				long s1 = System.nanoTime();
 				for(int i = 0; i < numberOfMessagesPerfTest; i++) {
 					producer.insert(object);

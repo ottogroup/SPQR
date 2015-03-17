@@ -37,6 +37,7 @@ public class CountDownLatchTestEmitter implements Emitter {
 	private long awaitMessages = 0;
 	private int max = 0;
 	private int min = Integer.MAX_VALUE;
+	private int avg = 0;	
 	
 	/**
 	 * @see com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponent#initialize(java.util.Properties)
@@ -63,6 +64,8 @@ public class CountDownLatchTestEmitter implements Emitter {
 	 * @see com.ottogroup.bi.spqr.pipeline.component.emitter.Emitter#onMessage(com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage)
 	 */
 	public boolean onMessage(StreamingDataMessage message) {
+		
+		try {
 		this.latch.countDown();
 		this.messageCount++;
 		
@@ -71,9 +74,13 @@ public class CountDownLatchTestEmitter implements Emitter {
 			min = duration;
 		if(max < duration)
 			max = duration;
+		avg = avg + duration;
 		if(messageCount >= awaitMessages)
-			System.out.println("Received " + messageCount + " messages. Min: " + min + "ms, Max: " + max + "ms");
-		
+			System.out.println("Received " + messageCount + " messages. Min: " + min + "ms, Max: " + max + "ms, Avg: " + (double)(avg / messageCount)+ "ms");
+		} catch(Exception e) {
+			e.printStackTrace();
+			throw e;
+		}
 		return true;
 	}
 

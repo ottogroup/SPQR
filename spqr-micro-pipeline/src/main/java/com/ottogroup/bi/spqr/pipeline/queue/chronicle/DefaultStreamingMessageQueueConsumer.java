@@ -44,8 +44,10 @@ public class DefaultStreamingMessageQueueConsumer implements StreamingMessageQue
 		
 		// check if a new message is available and read it from chronicle if possible
 		if(queueReader.nextIndex()) {
-			String body = queueReader.readUTF();
 			long timestamp = queueReader.readLong();
+			int bytes = queueReader.readInt();
+			byte[] body = new byte[bytes];
+			queueReader.read(body);
 			queueReader.finish();
 			return new StreamingDataMessage(body, timestamp);
 		}

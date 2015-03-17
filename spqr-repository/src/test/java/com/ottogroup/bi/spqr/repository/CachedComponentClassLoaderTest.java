@@ -114,13 +114,13 @@ public class CachedComponentClassLoaderTest {
 		Assert.assertNull(cl.findClass("java.lang.String"));
 	}
 	
-	@Test
-	public void testInitialize_withValidPath() throws Exception {
-		CachedComponentClassLoader cl = new CachedComponentClassLoader(CachedComponentClassLoader.class.getClassLoader());
-		cl.initialize("/opt/transport/streaming/spqr-0.1.0/spqr-node/repo/spqr-kafka");
-		cl.initialize("/opt/transport/streaming/spqr-0.1.0/spqr-node/repo/spqr-webtrends");
-		cl.newInstance("wt", "webtrendsSource", "0.0.1", new Properties());
-	}
+////	@Test
+//	public void testInitialize_withValidPath() throws Exception {
+//		CachedComponentClassLoader cl = new CachedComponentClassLoader(CachedComponentClassLoader.class.getClassLoader());
+//		cl.initialize("/opt/transport/streaming/spqr-0.1.0/spqr-node/repo/spqr-kafka");
+//		cl.initialize("/opt/transport/streaming/spqr-0.1.0/spqr-node/repo/spqr-webtrends");
+//		cl.newInstance("wt", "webtrendsSource", "0.0.1", new Properties());
+//	}
 	
 
 

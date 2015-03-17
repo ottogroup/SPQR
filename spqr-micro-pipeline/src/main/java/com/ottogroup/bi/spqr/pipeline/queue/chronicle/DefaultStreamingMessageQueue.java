@@ -53,7 +53,7 @@ public class DefaultStreamingMessageQueue implements StreamingMessageQueue {
 	/** delete the chronicle files on start and shutdown */
 	private boolean deleteOnExit = true;
 	/** chronicle instance - required for creating and accessing appender & tailer */
-	private Chronicle chronicle = null;
+	private Chronicle chronicle = null;	
 	/** provides read access to chronicle */
 	private DefaultStreamingMessageQueueConsumer queueConsumer = null;
 	/** provides write access to chronicle */

@@ -218,7 +218,7 @@ public class TwitterStreamSource implements Source {
 				String msg = streamMessageQueue.poll(100, TimeUnit.MILLISECONDS);
 				if(msg != null) {
 					logger.info("message: " + msg);
-					this.incomingMessageCallback.onMessage(new StreamingDataMessage(msg, System.currentTimeMillis()));
+					this.incomingMessageCallback.onMessage(new StreamingDataMessage(msg.getBytes(), System.currentTimeMillis()));
 					this.messageCount++;
 				}
 				

@@ -120,8 +120,8 @@ public class DelayedResponseOperatorRuntimeEnvironmentTest {
 		StreamingMessageQueueConsumer queueConsumer = Mockito.mock(StreamingMessageQueueConsumer.class);
 		StreamingMessageQueueProducer queueProducer = Mockito.mock(StreamingMessageQueueProducer.class);
 		
-		StreamingDataMessage message = new StreamingDataMessage("test-message", System.currentTimeMillis());		
-		StreamingDataMessage response = new StreamingDataMessage("response-test-message", System.currentTimeMillis());
+		StreamingDataMessage message = new StreamingDataMessage("test-message".getBytes(), System.currentTimeMillis());		
+		StreamingDataMessage response = new StreamingDataMessage("response-test-message".getBytes(), System.currentTimeMillis());
 		Mockito.when(queueConsumer.next()).thenReturn(message);
 		Mockito.when(delayedResponseOperator.getResult()).thenReturn(new StreamingDataMessage[]{response});
 		Mockito.when(delayedResponseOperator.getId()).thenReturn("test-id");
