@@ -54,6 +54,7 @@
 			<groupId>com.ottogroup.bi.spqr</groupId>
 			<artifactId>spqr-base</artifactId>
 			<version>${project.version}</version>
+			<scope>provided</scope>
 		</dependency>
 
 		<!-- apache commons -->

@@ -1,0 +1,67 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+	<modelVersion>4.0.0</modelVersion>
+  
+  	<!-- maven specifc artifact grouping and versioning information -->
+  	<groupId>com.ottogroup.bi.spqr</groupId>
+	<artifactId>spqr-build</artifactId>
+  	<version>0.1.0</version>
+  	<packaging>pom</packaging>
+
+	<!-- application owner -->
+	<organization>
+		<name>Otto (GmbH &amp; Co KG)</name>
+		<url>http://www.ottogroup.com</url>
+	</organization>
+
+  	<!-- general project information, eg. name and description -->
+  	<name>spqr-build</name>
+  	<description>SPQR build project</description>
+  	<url>https://github.com/ottogroup/spqr.git</url>
+  	<inceptionYear>2014</inceptionYear>  	
+  	
+  	<licenses>
+	  <license>
+	    <name>Apache License, Version 2.0</name>
+	    <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+	    <distribution>repo</distribution>
+	  </license>
+	</licenses>
+
+	<!-- involved developers -->
+	<developers>
+		<developer>
+			<id>mnxfst</id>
+			<email>christian.kreutzfeldt@ottogroup.com</email>
+			<name>Christian Kreutzfeldt</name>
+			<organization>Otto (GmbH &amp; Co KG)</organization>
+			<organizationUrl>http://www.ottogroup.com</organizationUrl>
+			<roles>
+				<role>Project Lead</role>
+				<role>Architect</role>
+				<role>Developer</role>
+			</roles>
+			<url>http://twitter.com/mnxfst</url>
+			<timezone>+1</timezone>
+		</developer>
+		<developer>
+			<id>gwesterm</id>
+			<email>gerdutz.westermann@ottogroup.com</email>
+			<organization>Otto (GmbH &amp; Co KG)</organization>
+			<organizationUrl>http://www.ottogroup.com</organizationUrl>
+			<roles>
+				<role>Developer</role>
+				<role>Advisor</role>				
+			</roles>
+			<timezone>+1</timezone>
+		</developer>
+  	</developers>
+
+  	<modules>
+		<module>../spqr-parent</module>
+		<module>../spqr-base</module>
+		<module>../spqr-node</module>
+		<module>../spqr-operators/spqr-kafka</module>
+		<module>../spqr-operators/spqr-webtrends</module>
+	</modules>
+</project>

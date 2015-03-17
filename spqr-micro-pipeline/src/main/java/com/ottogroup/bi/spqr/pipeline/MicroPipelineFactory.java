@@ -99,7 +99,6 @@ public class MicroPipelineFactory {
 		MicroPipeline microPipeline = new MicroPipeline(StringUtils.lowerCase(StringUtils.trim(cfg.getId())));
 		for(final StreamingMessageQueueConfiguration queueConfig : cfg.getQueues()) {
 			String id = StringUtils.lowerCase(StringUtils.trim(queueConfig.getId()));
-			
 			// a queue for that identifier already exists: kill the pipeline and tell the caller about it
 			if(microPipeline.hasQueue(id)) {
 				logger.error("queue initialization failed [id="+id+"]. Forcing shutdown of all queues.");
@@ -143,8 +142,8 @@ public class MicroPipelineFactory {
 					throw new ComponentInitializationFailedException("Failed to initialize component [id="+id+", class="+componentCfg.getName()+", version="+componentCfg.getVersion()+"]. Reason: type missing");
 				}
 				
-				final StreamingMessageQueue fromQueue = microPipeline.getQueue(componentCfg.getFromQueue());
-				final StreamingMessageQueue toQueue = microPipeline.getQueue(componentCfg.getToQueue());
+				final StreamingMessageQueue fromQueue = microPipeline.getQueue(StringUtils.lowerCase(StringUtils.trim(componentCfg.getFromQueue())));
+				final StreamingMessageQueue toQueue = microPipeline.getQueue(StringUtils.lowerCase(StringUtils.trim(componentCfg.getToQueue())));
 				
 				switch(component.getType()) {
 					case SOURCE: {
@@ -171,7 +170,7 @@ public class MicroPipelineFactory {
 				
 				components.put(id, component);
 			} catch(Exception e) {
-				logger.error("component initialization failed [id="+id+", class="+componentCfg.getName()+", version="+componentCfg.getVersion()+"]. Forcing shutdown of all queues and components. Reason: " + e.getMessage());
+				logger.error("component initialization failed [id="+id+", class="+componentCfg.getName()+", version="+componentCfg.getVersion()+"]. Forcing shutdown of all queues and components. Reason: " + e.getMessage(), e);
 				microPipeline.shutdown();
 				throw new ComponentInitializationFailedException("Failed to initialize component [id="+id+", class="+componentCfg.getName()+", version="+componentCfg.getVersion()+"]. Reason: " + e.getMessage(), e);
 			}
@@ -333,7 +332,7 @@ public class MicroPipelineFactory {
 		try {
 			return this.componentRepository.newInstance(componentConfiguration.getId(), componentConfiguration.getName(), componentConfiguration.getVersion(), componentConfiguration.getSettings());
 		} catch(Exception e) {
-			throw new ComponentInitializationFailedException("Failed to initialize component '"+componentConfiguration.getId()+"'. Error: " + e.getMessage());
+			throw new ComponentInitializationFailedException("Failed to initialize component '"+componentConfiguration.getId()+"'. Error: " + e.getMessage(), e);
 		}
 		//
 		////////////////////////////////////////////////////////////////////////////////////

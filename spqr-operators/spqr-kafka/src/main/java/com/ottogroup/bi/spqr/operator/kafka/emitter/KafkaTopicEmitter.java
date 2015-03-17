@@ -128,8 +128,8 @@ public class KafkaTopicEmitter implements Emitter {
 			Properties props = new Properties();		
 			props.put(CFG_ZK_CONNECT, zookeeperConnect);
 			props.put(CFG_BROKER_LIST, brokerList);
-			props.put(CFG_REQUEST_REQUIRED_ACKS, messageAcking);
-			props.put(CFG_CLIENT_ID, clientId);
+			props.put(CFG_REQUEST_REQUIRED_ACKS, (messageAcking ? "1" : "0"));
+			props.put(CFG_CLIENT_ID, clientId);			
 			this.kafkaProducer = new Producer<>(new ProducerConfig(props));
 		}
 	}
