@@ -215,6 +215,7 @@ public class TwitterStreamSourceTest {
 		props.put(TwitterStreamSource.CFG_TWITTER_TWEET_SEARCH_TERMS, "");
 		TwitterStreamSource source = new TwitterStreamSource();
 		source.setId("test-id");
+		source.setTwitterClient(Mockito.mock(BasicClient.class));
 		source.initialize(props);
 	}
 
@@ -244,7 +245,7 @@ public class TwitterStreamSourceTest {
 		props.put(TwitterStreamSource.CFG_TWITTER_TWEET_SEARCH_TERMS, searchTerms);
 		TwitterStreamSource consumer = new TwitterStreamSource();
 		consumer.setId(componentId);
-
+		consumer.setTwitterClient(Mockito.mock(BasicClient.class));
 		consumer.initialize(props);
 		
 		Assert.assertEquals("Values must be equal", componentId, consumer.getId());
