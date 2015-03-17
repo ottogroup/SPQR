@@ -44,7 +44,7 @@ public class DefaultStreamingMessageQueueProducer implements
 	public boolean insert(StreamingDataMessage message) {
 		
 		if(message != null) {
-			queueProducer.startExcerpt(264);
+			queueProducer.startExcerpt();
 			queueProducer.writeUTF(message.getBody());
 			queueProducer.writeLong(message.getTimestamp());
 			queueProducer.finish();

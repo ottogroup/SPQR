@@ -15,6 +15,7 @@
  */
 package com.ottogroup.bi.spqr.pipeline;
 
+import java.io.File;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -24,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 import org.junit.AfterClass;
 import org.junit.Test;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ottogroup.bi.spqr.pipeline.component.emitter.CountDownLatchTestEmitter;
 import com.ottogroup.bi.spqr.pipeline.component.emitter.Emitter;
 import com.ottogroup.bi.spqr.pipeline.component.emitter.EmitterRuntimeEnvironment;
@@ -56,8 +58,10 @@ public class MicroPipelineTest {
 	@Test
 	public void test_performance1() throws Exception {
 	
-		final int numGeneratedMessages = 10000000;
-		final String msg = "test";
+		MicroPipelineConfiguration cfg = new ObjectMapper().readValue(new File("/home/mnxfst/projects/spqr/twitter-to-kafka.json"), MicroPipelineConfiguration.class);
+		final int numGeneratedMessages = 2000000;
+		final String msg = new ObjectMapper().writeValueAsString(cfg);
+		System.out.println(msg);
 		final CountDownLatch latch = new CountDownLatch(numGeneratedMessages);
 
 		///////////////////////////////////////////////////////////////////////

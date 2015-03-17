@@ -36,6 +36,7 @@ import com.twitter.hbc.ClientBuilder;
 import com.twitter.hbc.core.Constants;
 import com.twitter.hbc.core.endpoint.Location;
 import com.twitter.hbc.core.endpoint.StatusesFilterEndpoint;
+import com.twitter.hbc.core.event.Event;
 import com.twitter.hbc.core.processor.StringDelimitedProcessor;
 import com.twitter.hbc.httpclient.BasicClient;
 import com.twitter.hbc.httpclient.auth.Authentication;
@@ -92,6 +93,7 @@ public class TwitterStreamSource implements Source {
 	private final List<Location> locations = new ArrayList<>();
 	/** internal message queue used for buffering before data is being handed over to publisher */
 	private final BlockingQueue<String> streamMessageQueue = new LinkedBlockingQueue<String>(100000);
+	private final BlockingQueue<Event> eventMessageQueue = new LinkedBlockingQueue<Event>(100000);
 	/** indicates whether the source is still running */
 	private boolean running = false;
 	/** counts the number of messages processed so far */
@@ -185,7 +187,7 @@ public class TwitterStreamSource implements Source {
 		if(this.twitterClient == null) {
 			this.twitterClient = new ClientBuilder().name(id)
 					.hosts(Constants.STREAM_HOST).endpoint(filterEndpoint).authentication(auth)
-					.processor(new StringDelimitedProcessor(streamMessageQueue)).build();
+					.processor(new StringDelimitedProcessor(streamMessageQueue)).eventMessageQueue(eventMessageQueue).build();
 					this.twitterClient.connect();
 		}
 		//
@@ -219,6 +221,12 @@ public class TwitterStreamSource implements Source {
 					this.incomingMessageCallback.onMessage(new StreamingDataMessage(msg, System.currentTimeMillis()));
 					this.messageCount++;
 				}
+				
+				Event e = eventMessageQueue.poll(100, TimeUnit.MILLISECONDS);
+				if(e != null) {
+					logger.info(e.getEventType() + ": " + e.getMessage());
+				}
+					
 			} catch (InterruptedException e) {
 			}
 				

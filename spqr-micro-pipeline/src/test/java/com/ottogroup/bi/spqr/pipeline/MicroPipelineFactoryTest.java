@@ -15,6 +15,7 @@
  */
 package com.ottogroup.bi.spqr.pipeline;
 
+import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -27,6 +28,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ottogroup.bi.spqr.exception.ComponentInitializationFailedException;
 import com.ottogroup.bi.spqr.exception.QueueInitializationFailedException;
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
@@ -1035,6 +1037,20 @@ public class MicroPipelineFactoryTest {
 		DelayedResponseOperatorWaitStrategy strategy = new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).getResponseWaitStrategy(cfg);
 		Assert.assertNotNull("The strategy must not be null", strategy);
 		Assert.assertEquals("Types must be equal", MessageCountResponseWaitStrategy.class, strategy.getClass());
+	}
+	
+	@Test
+	public void test() throws Exception {
+		ComponentRepository repo = new ComponentRepository();
+		repo.addComponentFolder("/opt/transport/streaming/spqr-0.1.0/spqr-node/repo/spqr-twitter");
+		repo.addComponentFolder("/opt/transport/streaming/spqr-0.1.0/spqr-node/repo/spqr-kafka");
+		MicroPipelineFactory factory = new MicroPipelineFactory(repo);
+		
+		MicroPipelineConfiguration cfg = new ObjectMapper().readValue(new File("/home/mnxfst/projects/spqr/twitter-to-kafka.json"), MicroPipelineConfiguration.class);
+		
+		factory.instantiatePipeline(cfg, executorService);
+		
+		System.in.read();
 	}
 	
 }
