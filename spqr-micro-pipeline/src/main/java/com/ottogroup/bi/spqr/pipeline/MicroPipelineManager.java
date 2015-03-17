@@ -158,4 +158,19 @@ public class MicroPipelineManager {
 		return this.pipelines.size();
 	}
 	
+	/**
+	 * Shuts down the manager by stopping all running {@link MicroPipeline} instances
+	 */
+	public void shutdown() {
+		for(final String pipelineId : this.pipelines.keySet()) {
+			final MicroPipeline pipeline = this.pipelines.get(pipelineId);
+			try {
+				pipeline.shutdown();			
+				logger.info("pipeline shutdown[id="+pipelineId+"]");
+			} catch(Exception e) {
+				logger.error("failed to shutdown pipeline [id="+pipelineId+"]. Reason: " + e.getMessage(), e);
+			}
+		}
+	}
+	
 }

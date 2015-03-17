@@ -15,7 +15,6 @@
  */
 package com.ottogroup.bi.spqr.pipeline;
 
-import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -28,7 +27,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ottogroup.bi.spqr.exception.ComponentInitializationFailedException;
 import com.ottogroup.bi.spqr.exception.QueueInitializationFailedException;
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
@@ -1036,7 +1034,7 @@ public class MicroPipelineFactoryTest {
 		cfg.getSettings().put(DelayedResponseOperator.CFG_WAIT_STRATEGY_SETTINGS_PREFIX + "key-1", "value-1");
 		DelayedResponseOperatorWaitStrategy strategy = new MicroPipelineFactory(Mockito.mock(ComponentRepository.class)).getResponseWaitStrategy(cfg);
 		Assert.assertNotNull("The strategy must not be null", strategy);
-		Assert.assertEquals("Types msut be equal", MessageCountResponseWaitStrategy.class, strategy.getClass());
+		Assert.assertEquals("Types must be equal", MessageCountResponseWaitStrategy.class, strategy.getClass());
 	}
 	
 }

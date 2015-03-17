@@ -57,7 +57,9 @@ public class SPQRNodeServer extends Application<SPQRNodeServerConfiguration> {
 		this.microPipelineManager = new MicroPipelineManager(loadAndDeployApplicationRepository(configuration.getComponentRepositoryFolder()), configuration.getNumOfThreads());
 		
 		// register exposed resources
-		environment.jersey().register(new MicroPipelineResource(this.microPipelineManager));		
+		environment.jersey().register(new MicroPipelineResource(this.microPipelineManager));
+		
+		Runtime.getRuntime().addShutdownHook(new SPQRNodeShutdownHandler(this.microPipelineManager));
 	}
 	
 	/**
