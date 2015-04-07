@@ -20,6 +20,7 @@ cp * /opt/transport/spqr/spqr-node/etc/
 cd ../../..
 
 cd target/lib
+rm log4j-over-slf4j-*.jar
 cp * /opt/transport/spqr/spqr-node/lib
 cd ../..
 
