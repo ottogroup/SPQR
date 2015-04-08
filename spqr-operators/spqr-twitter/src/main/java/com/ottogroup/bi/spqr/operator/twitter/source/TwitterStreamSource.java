@@ -183,7 +183,7 @@ public class TwitterStreamSource implements Source {
 			filterEndpoint.followings(profiles);
 		if(!isLocationsEmpty)
 			filterEndpoint.locations(locations);
-
+		
 		if(this.twitterClient == null) {
 			this.twitterClient = new ClientBuilder().name(id)
 					.hosts(Constants.STREAM_HOST).endpoint(filterEndpoint).authentication(auth)

@@ -15,12 +15,10 @@
  */
 package com.ottogroup.bi.spqr.pipeline.component.source;
 
-import java.awt.Component;
-
 import com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponent;
 
 /**
- * To be implemented by all {@link Component components} that receive data
+ * To be implemented by all {@link MicroPipelineComponent components} that receive data
  * from any source and provide it to the {@link Pipeline}
  * @author mnxfst
  * @since Dec 15, 2014
