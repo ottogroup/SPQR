@@ -16,7 +16,6 @@
 package com.ottogroup.bi.spqr.operator.json.aggregator;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -31,6 +30,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ottogroup.bi.spqr.exception.ComponentInitializationFailedException;
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
+import com.ottogroup.bi.spqr.operator.json.JsonContentType;
 import com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponentType;
 import com.ottogroup.bi.spqr.pipeline.component.annotation.SPQRComponent;
 import com.ottogroup.bi.spqr.pipeline.component.operator.DelayedResponseOperator;
@@ -59,15 +59,6 @@ public class JsonContentAggregator implements DelayedResponseOperator {
 	public static final String CFG_FIELD_PREFIX = "field.";
 	//
 	////////////////////////////////////////////////////////////////////////
-
-	/**
-	 * Allowed values types: STRING or NUMERICAL
-	 * @author mnxfst
-	 * @since Nov 30, 2014
-	 */
-	enum ValueType implements Serializable {
-		STRING, NUMERICAL, UNKNOWN 
-	}
 
 	/** component identifier assigned by caller */
 	private String id = null;
@@ -112,7 +103,7 @@ public class JsonContentAggregator implements DelayedResponseOperator {
 			String path = properties.getProperty(CFG_FIELD_PREFIX + i + ".path");
 			String valueType = properties.getProperty(CFG_FIELD_PREFIX + i + ".type");
 			
-			this.fields.add(new JsonContentAggregatorFieldSetting(name, path.split("\\."), StringUtils.equalsIgnoreCase("STRING", valueType) ? ValueType.STRING : ValueType.NUMERICAL));
+			this.fields.add(new JsonContentAggregatorFieldSetting(name, path.split("\\."), StringUtils.equalsIgnoreCase("STRING", valueType) ? JsonContentType.STRING : JsonContentType.NUMERICAL));
 		}
 		/////////////////////////////////////////////////////////////////////////////////////
 		
@@ -159,7 +150,7 @@ public class JsonContentAggregator implements DelayedResponseOperator {
 			// numerical field values must be summed, min and max computed AND counted 
 			
 			// string values may be counted only
-			if(fieldSettings.getValueType() == ValueType.STRING) {
+			if(fieldSettings.getValueType() == JsonContentType.STRING) {
 
 				try {
 					// read value into string representation and add it to raw data dump
@@ -175,7 +166,7 @@ public class JsonContentAggregator implements DelayedResponseOperator {
 					}
 				} catch(Exception e) {
 				}
-			} else if(fieldSettings.getValueType() == ValueType.NUMERICAL) {			
+			} else if(fieldSettings.getValueType() == JsonContentType.NUMERICAL) {			
 				
 				try {
 					// read value into numerical representation and add it to raw data map

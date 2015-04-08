@@ -18,26 +18,20 @@ package com.ottogroup.bi.spqr.operator.json.aggregator;
 
 import java.io.Serializable;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonRootName;
-import com.ottogroup.bi.spqr.operator.json.aggregator.JsonContentAggregator.ValueType;
+import com.ottogroup.bi.spqr.operator.json.JsonContentType;
 
 /**
  * Stores all relevant information required for aggregating json content field data
  * @author mnxfst
  * @since Nov 12, 2014
  */
-@JsonRootName ( value = "eciLiveFieldSettings" )
 public class JsonContentAggregatorFieldSetting implements Serializable {
 
 	private static final long serialVersionUID = 6129451872974489460L;
 
-	@JsonProperty ( value = "field", required = true )
 	private String field = null;
-	@JsonProperty ( value = "path", required = true )
 	private String[] path = null;
-	@JsonProperty ( value = "valueType", required = true )
-	private ValueType valueType = ValueType.UNKNOWN;
+	private JsonContentType valueType = JsonContentType.UNKNOWN;
 	
 	/**
 	 * Default constructor
@@ -51,7 +45,7 @@ public class JsonContentAggregatorFieldSetting implements Serializable {
 	 * @param path
 	 * @param valueType
 	 */
-	public JsonContentAggregatorFieldSetting(final String field, final String[] path, final ValueType valueType) {
+	public JsonContentAggregatorFieldSetting(final String field, final String[] path, final JsonContentType valueType) {
 		this.field = field;
 		this.path = path;
 		this.valueType = valueType;
@@ -73,11 +67,11 @@ public class JsonContentAggregatorFieldSetting implements Serializable {
 		this.path = path;
 	}
 
-	public ValueType getValueType() {
+	public JsonContentType getValueType() {
 		return valueType;
 	}
 
-	public void setValueType(ValueType valueType) {
+	public void setValueType(JsonContentType valueType) {
 		this.valueType = valueType;
 	}
 	
