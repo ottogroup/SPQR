@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.ottogroup.bi.spqr.operator.json.aggregator;
+package com.ottogroup.bi.spqr.operator.json.filter;
 
 import java.util.Properties;
 
