@@ -249,7 +249,7 @@ public class JsonContentAggregator implements DelayedResponseOperator {
 	 * @see com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponent#shutdown()
 	 */
 	public boolean shutdown() {
-		return false;
+		return true;
 	}
 
 	/**
