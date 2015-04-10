@@ -8,12 +8,12 @@
 	</parent>
   
   	<!-- maven specifc artifact grouping and versioning information -->
-	<artifactId>spqr-node</artifactId>
+	<artifactId>spqr-resman</artifactId>
   	<packaging>jar</packaging>
 
   	<!-- general project information, eg. name and description -->
-  	<name>spqr-node</name>
-  	<description>SPQR processing node</description>
+  	<name>spqr-resman</name>
+  	<description>SPQR resource manager</description>
   	<url>https://github.com/ottogroup/SPQR.git</url>
   	<inceptionYear>2015</inceptionYear>
   	
@@ -50,17 +50,17 @@
   			<scope>compile</scope>
   		</dependency>
   		
-  		<!-- spqr libs -->
+  		<!-- spqr libs -->  		
   		<dependency>
   			<groupId>com.ottogroup.bi.spqr</groupId>
-  			<artifactId>spqr-micro-pipeline</artifactId>
+  			<artifactId>spqr-repository</artifactId>
   			<version>${project.version}</version>
   			<scope>compile</scope>
   		</dependency>
   		
   		<dependency>
   			<groupId>com.ottogroup.bi.spqr</groupId>
-  			<artifactId>spqr-repository</artifactId>
+  			<artifactId>spqr-base</artifactId>
   			<version>${project.version}</version>
   			<scope>compile</scope>
   		</dependency>
@@ -86,8 +86,7 @@
   	<build>
   			
 		<plugins>
-		
-      		<!-- copy output library to lib folder -->
+			<!-- copy output library to lib folder -->
 			<plugin>
         		<groupId>org.apache.maven.plugins</groupId>
         		<artifactId>maven-jar-plugin</artifactId>
@@ -96,7 +95,7 @@
           			<outputDirectory>${project.build.directory}/lib</outputDirectory>
         		</configuration>
       		</plugin>
-  		
+      	
 			<!-- copies all dependencies to library folder below target directory -->
   			<plugin>
 	            <artifactId>maven-dependency-plugin</artifactId>
