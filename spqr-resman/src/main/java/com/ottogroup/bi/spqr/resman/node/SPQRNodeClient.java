@@ -35,12 +35,13 @@ import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
 
-
 /**
  * Communication client used for accessing remote processing nodes for issuing pipeline instantiations
  * or requesting statistics  
  * @author mnxfst
  * @since Apr 13, 2015
+ * TODO implement method for retrieving "alive" state from node
+ * TODO implement method for retrieving statistics from node
  */
 public class SPQRNodeClient {
 	
