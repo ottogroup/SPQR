@@ -25,10 +25,10 @@ import com.ottogroup.bi.spqr.exception.NonUniqueIdentifierException;
 import com.ottogroup.bi.spqr.exception.PipelineInstantiationFailedException;
 import com.ottogroup.bi.spqr.exception.QueueInitializationFailedException;
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
-import com.ottogroup.bi.spqr.node.resource.pipeline.MicroPipelineInstantiationResponse.MicroPipelineInstantationState;
 import com.ottogroup.bi.spqr.node.resource.pipeline.MicroPipelineShutdownResponse.MicroPipelineShutdownState;
 import com.ottogroup.bi.spqr.pipeline.MicroPipelineConfiguration;
 import com.ottogroup.bi.spqr.pipeline.MicroPipelineManager;
+import com.ottogroup.bi.spqr.pipeline.MicroPipelineValidationResult;
 
 /**
  * Test case for {@link MicroPipelineResource}
@@ -53,7 +53,7 @@ public class MicroPipelineResourceTest {
 	
 	/**
 	 * Test case for {@link MicroPipelineResource#instantiatePipeline(String, com.ottogroup.bi.spqr.pipeline.MicroPipelineConfiguration)} being
-	 * provided an empty pipeline id which must lead to {@link MicroPipelineInstantiationResponse} showing {@link MicroPipelineInstantationState#CONFIGURATION_MISSING}
+	 * provided an empty pipeline id which must lead to {@link MicroPipelineInstantiationResponse} showing {@link MicroPipelineValidationResult#MISSING_CONFIGURATION}
 	 * as state
 	 */
 	@Test	
@@ -64,7 +64,7 @@ public class MicroPipelineResourceTest {
 		
 		MicroPipelineInstantiationResponse response = new MicroPipelineResource(microPipelineManager).instantiatePipeline(null, cfg);
 		Assert.assertNotNull("The response must not be null", response);
-		Assert.assertEquals("Values must be equal", MicroPipelineInstantationState.CONFIGURATION_MISSING, response.getState());
+		Assert.assertEquals("Values must be equal", MicroPipelineValidationResult.MISSING_CONFIGURATION, response.getState());
 		Assert.assertEquals("Values must be equal", MicroPipelineResource.ERROR_MSG_PIPELINE_ID_MISSING, response.getMessage());
 		Assert.assertTrue("Id must be empty", StringUtils.isBlank(response.getPipelineId()));		
 		
@@ -73,7 +73,7 @@ public class MicroPipelineResourceTest {
 	
 	/**
 	 * Test case for {@link MicroPipelineResource#instantiatePipeline(String, com.ottogroup.bi.spqr.pipeline.MicroPipelineConfiguration)} being
-	 * provided an empty pipeline configuration which must lead to {@link MicroPipelineInstantiationResponse} showing {@link MicroPipelineInstantationState#CONFIGURATION_MISSING}
+	 * provided an empty pipeline configuration which must lead to {@link MicroPipelineInstantiationResponse} showing {@link MicroPipelineValidationResult#MISSING_CONFIGURATION}
 	 * as state
 	 */
 	@Test	
@@ -83,7 +83,7 @@ public class MicroPipelineResourceTest {
 		
 		MicroPipelineInstantiationResponse response = new MicroPipelineResource(microPipelineManager).instantiatePipeline("testInstantiatePipeline_withNullConfiguration", null);
 		Assert.assertNotNull("The response must not be null", response);
-		Assert.assertEquals("Values must be equal", MicroPipelineInstantationState.CONFIGURATION_MISSING, response.getState());
+		Assert.assertEquals("Values must be equal", MicroPipelineValidationResult.MISSING_CONFIGURATION, response.getState());
 		Assert.assertEquals("Values must be equal", MicroPipelineResource.ERROR_MSG_PIPELINE_CONFIGURATION_MISSING, response.getMessage());
 		Assert.assertEquals("Values must be equal", "testInstantiatePipeline_withNullConfiguration", response.getPipelineId());
 	}
@@ -91,7 +91,7 @@ public class MicroPipelineResourceTest {
 	/**
 	 * Test case for {@link MicroPipelineResource#instantiatePipeline(String, com.ottogroup.bi.spqr.pipeline.MicroPipelineConfiguration)} being
 	 * provided a pipeline id which is not equal to id in pipeline configuration which must lead to {@link MicroPipelineInstantiationResponse} 
-	 * showing {@link MicroPipelineInstantationState#PIPELINE_INITIALIZATION_FAILED} as state
+	 * showing {@link MicroPipelineValidationResult#PIPELINE_INITIALIZATION_FAILED} as state
 	 */
 	@Test	
 	public void testInstantiatePipeline_withPipelineIdDifferingFromConfigurationId() throws Exception {
@@ -101,7 +101,7 @@ public class MicroPipelineResourceTest {
 		
 		MicroPipelineInstantiationResponse response = new MicroPipelineResource(microPipelineManager).instantiatePipeline("testInstantiatePipeline_withPipelineIdDifferingFromConfigurationId", cfg);
 		Assert.assertNotNull("The response must not be null", response);
-		Assert.assertEquals("Values must be equal", MicroPipelineInstantationState.PIPELINE_INITIALIZATION_FAILED, response.getState());
+		Assert.assertEquals("Values must be equal", MicroPipelineValidationResult.PIPELINE_INITIALIZATION_FAILED, response.getState());
 		Assert.assertEquals("Values must be equal", MicroPipelineResource.ERROR_MSG_PIPELINE_IDS_DIFFER, response.getMessage());
 		Assert.assertEquals("Values must be equal", "testInstantiatePipeline_withPipelineIdDifferingFromConfigurationId", response.getPipelineId());
 		
@@ -112,7 +112,7 @@ public class MicroPipelineResourceTest {
 	/**
 	 * Test case for {@link MicroPipelineResource#instantiatePipeline(String, com.ottogroup.bi.spqr.pipeline.MicroPipelineConfiguration)} being
 	 * provided a pipeline configuration missing a required setting which must lead to {@link MicroPipelineInstantiationResponse} 
-	 * showing {@link MicroPipelineInstantationState#CONFIGURATION_MISSING} as state
+	 * showing {@link MicroPipelineValidationResult#MISSING_CONFIGURATION} as state
 	 */
 	@Test	
 	public void testInstantiatePipeline_withPipelineConfigurationMissingSetting() throws Exception {
@@ -124,7 +124,7 @@ public class MicroPipelineResourceTest {
 		
 		MicroPipelineInstantiationResponse response = new MicroPipelineResource(microPipelineManager).instantiatePipeline("testInstantiatePipeline_withPipelineConfigurationMissingSetting", cfg);
 		Assert.assertNotNull("The response must not be null", response);
-		Assert.assertEquals("Values must be equal", MicroPipelineInstantationState.CONFIGURATION_MISSING, response.getState());
+		Assert.assertEquals("Values must be equal", MicroPipelineValidationResult.MISSING_CONFIGURATION, response.getState());
 		Assert.assertEquals("Values must be equal", "Missing setting", response.getMessage());
 		Assert.assertEquals("Values must be equal", "testInstantiatePipeline_withPipelineConfigurationMissingSetting", response.getPipelineId());
 		
@@ -135,7 +135,7 @@ public class MicroPipelineResourceTest {
 	/**
 	 * Test case for {@link MicroPipelineResource#instantiatePipeline(String, com.ottogroup.bi.spqr.pipeline.MicroPipelineConfiguration)} being
 	 * provided a pipeline configuration that leads to queue init exception which must lead to {@link MicroPipelineInstantiationResponse} 
-	 * showing {@link MicroPipelineInstantationState#QUEUE_INITIALIZATION_FAILED} as state
+	 * showing {@link MicroPipelineValidationResult#QUEUE_INITIALIZATION_FAILED} as state
 	 */
 	@Test	
 	public void testInstantiatePipeline_withQueueInitException() throws Exception {
@@ -147,7 +147,7 @@ public class MicroPipelineResourceTest {
 		
 		MicroPipelineInstantiationResponse response = new MicroPipelineResource(microPipelineManager).instantiatePipeline("testInstantiatePipeline_withQueueInitException", cfg);
 		Assert.assertNotNull("The response must not be null", response);
-		Assert.assertEquals("Values must be equal", MicroPipelineInstantationState.QUEUE_INITIALIZATION_FAILED, response.getState());
+		Assert.assertEquals("Values must be equal", MicroPipelineValidationResult.QUEUE_INITIALIZATION_FAILED, response.getState());
 		Assert.assertEquals("Values must be equal", "Queue init failed", response.getMessage());
 		Assert.assertEquals("Values must be equal", "testInstantiatePipeline_withQueueInitException", response.getPipelineId());
 		
@@ -158,7 +158,7 @@ public class MicroPipelineResourceTest {
 	/**
 	 * Test case for {@link MicroPipelineResource#instantiatePipeline(String, com.ottogroup.bi.spqr.pipeline.MicroPipelineConfiguration)} being
 	 * provided a pipeline configuration that leads to queue component exception which must lead to {@link MicroPipelineInstantiationResponse} 
-	 * showing {@link MicroPipelineInstantationState#COMPONENT_INITIALIZATION_FAILED} as state
+	 * showing {@link MicroPipelineValidationResult#COMPONENT_INITIALIZATION_FAILED} as state
 	 */
 	@Test	
 	public void testInstantiatePipeline_withComponentInitException() throws Exception {
@@ -170,7 +170,7 @@ public class MicroPipelineResourceTest {
 		
 		MicroPipelineInstantiationResponse response = new MicroPipelineResource(microPipelineManager).instantiatePipeline("testInstantiatePipeline_withComponentInitException", cfg);
 		Assert.assertNotNull("The response must not be null", response);
-		Assert.assertEquals("Values must be equal", MicroPipelineInstantationState.COMPONENT_INITIALIZATION_FAILED, response.getState());
+		Assert.assertEquals("Values must be equal", MicroPipelineValidationResult.COMPONENT_INITIALIZATION_FAILED, response.getState());
 		Assert.assertEquals("Values must be equal", "Component init failed", response.getMessage());
 		Assert.assertEquals("Values must be equal", "testInstantiatePipeline_withComponentInitException", response.getPipelineId());
 		
@@ -181,7 +181,7 @@ public class MicroPipelineResourceTest {
 	/**
 	 * Test case for {@link MicroPipelineResource#instantiatePipeline(String, com.ottogroup.bi.spqr.pipeline.MicroPipelineConfiguration)} being
 	 * provided a pipeline configuration that leads to pipeline init exception which must lead to {@link MicroPipelineInstantiationResponse} 
-	 * showing {@link MicroPipelineInstantationState#PIPELINE_INITIALIZATION_FAILED} as state
+	 * showing {@link MicroPipelineValidationResult#PIPELINE_INITIALIZATION_FAILED} as state
 	 */
 	@Test	
 	public void testInstantiatePipeline_withPipelineInitException() throws Exception {
@@ -193,7 +193,7 @@ public class MicroPipelineResourceTest {
 		
 		MicroPipelineInstantiationResponse response = new MicroPipelineResource(microPipelineManager).instantiatePipeline("testInstantiatePipeline_withPipelineInitException", cfg);
 		Assert.assertNotNull("The response must not be null", response);
-		Assert.assertEquals("Values must be equal", MicroPipelineInstantationState.PIPELINE_INITIALIZATION_FAILED, response.getState());
+		Assert.assertEquals("Values must be equal", MicroPipelineValidationResult.PIPELINE_INITIALIZATION_FAILED, response.getState());
 		Assert.assertEquals("Values must be equal", "Pipeline init failed", response.getMessage());
 		Assert.assertEquals("Values must be equal", "testInstantiatePipeline_withPipelineInitException", response.getPipelineId());
 		
@@ -204,7 +204,7 @@ public class MicroPipelineResourceTest {
 	/**
 	 * Test case for {@link MicroPipelineResource#instantiatePipeline(String, com.ottogroup.bi.spqr.pipeline.MicroPipelineConfiguration)} being
 	 * provided a pipeline configuration that leads to npe which must lead to {@link MicroPipelineInstantiationResponse} 
-	 * showing {@link MicroPipelineInstantationState#TECHNICAL_ERROR} as state
+	 * showing {@link MicroPipelineValidationResult#TECHNICAL_ERROR} as state
 	 */
 	@Test	
 	public void testInstantiatePipeline_withGeneralException() throws Exception {
@@ -216,7 +216,7 @@ public class MicroPipelineResourceTest {
 		
 		MicroPipelineInstantiationResponse response = new MicroPipelineResource(microPipelineManager).instantiatePipeline("testInstantiatePipeline_withGeneralException", cfg);
 		Assert.assertNotNull("The response must not be null", response);
-		Assert.assertEquals("Values must be equal", MicroPipelineInstantationState.TECHNICAL_ERROR, response.getState());
+		Assert.assertEquals("Values must be equal", MicroPipelineValidationResult.TECHNICAL_ERROR, response.getState());
 		Assert.assertEquals("Values must be equal", "General error", response.getMessage());
 		Assert.assertEquals("Values must be equal", "testInstantiatePipeline_withGeneralException", response.getPipelineId());
 		
@@ -226,7 +226,7 @@ public class MicroPipelineResourceTest {
 	/**
 	 * Test case for {@link MicroPipelineResource#instantiatePipeline(String, com.ottogroup.bi.spqr.pipeline.MicroPipelineConfiguration)} being
 	 * provided a pipeline configuration that leads to non-unique id exception which must lead to {@link MicroPipelineInstantiationResponse} 
-	 * showing {@link MicroPipelineInstantationState#NON_UNIQUE_PIPELINE_ID} as state
+	 * showing {@link MicroPipelineValidationResult#NON_UNIQUE_PIPELINE_ID} as state
 	 */
 	@Test	
 	public void testInstantiatePipeline_withNonUniqueIdException() throws Exception {
@@ -238,7 +238,7 @@ public class MicroPipelineResourceTest {
 		
 		MicroPipelineInstantiationResponse response = new MicroPipelineResource(microPipelineManager).instantiatePipeline("testInstantiatePipeline_withNonUniqueIdException", cfg);
 		Assert.assertNotNull("The response must not be null", response);
-		Assert.assertEquals("Values must be equal", MicroPipelineInstantationState.NON_UNIQUE_PIPELINE_ID, response.getState());
+		Assert.assertEquals("Values must be equal", MicroPipelineValidationResult.NON_UNIQUE_PIPELINE_ID, response.getState());
 		Assert.assertEquals("Values must be equal", "Non-unique id", response.getMessage());
 		Assert.assertEquals("Values must be equal", "testInstantiatePipeline_withNonUniqueIdException", response.getPipelineId());
 		
@@ -249,7 +249,7 @@ public class MicroPipelineResourceTest {
 	/**
 	 * Test case for {@link MicroPipelineResource#instantiatePipeline(String, com.ottogroup.bi.spqr.pipeline.MicroPipelineConfiguration)} being
 	 * provided a valid pipeline configuration which must lead to {@link MicroPipelineInstantiationResponse} 
-	 * showing {@link MicroPipelineInstantationState#OK} as state
+	 * showing {@link MicroPipelineValidationResult#OK} as state
 	 */
 	@Test	
 	public void testInstantiatePipeline_withValidConfiguration() throws Exception {
@@ -261,12 +261,83 @@ public class MicroPipelineResourceTest {
 		
 		MicroPipelineInstantiationResponse response = new MicroPipelineResource(microPipelineManager).instantiatePipeline("testInstantiatePipeline_withValidConfiguration", cfg);
 		Assert.assertNotNull("The response must not be null", response);
-		Assert.assertEquals("Values must be equal", MicroPipelineInstantationState.OK, response.getState());
+		Assert.assertEquals("Values must be equal", MicroPipelineValidationResult.OK, response.getState());
 		Assert.assertTrue("Message must be empty", StringUtils.isBlank(response.getMessage()));
 		Assert.assertEquals("Values must be equal", "testInstantiatePipeline_withValidConfiguration", response.getPipelineId());
 		
 		Mockito.verify(cfg).getId();
 		Mockito.verify(microPipelineManager).executePipeline(cfg);
+	}
+
+	/**
+	 * Test case for {@link MicroPipelineResource#updatePipeline(String, MicroPipelineConfiguration)} being provided the
+	 * configuration of an already existing pipeline which must lead to an update. As the code is similar to {@link MicroPipelineResource#instantiatePipeline(String, MicroPipelineConfiguration)}
+	 * test cases for invalid input were left out
+	 */
+	@Test
+	public void testUpdatePipeline_withExistingId() throws Exception {
+		
+		MicroPipelineConfiguration cfg = Mockito.mock(MicroPipelineConfiguration.class);
+		Mockito.when(cfg.getId()).thenReturn("testInstantiatePipeline_withValidConfiguration");
+		MicroPipelineManager microPipelineManager = Mockito.mock(MicroPipelineManager.class);
+		Mockito.when(microPipelineManager.executePipeline(cfg)).thenReturn("testInstantiatePipeline_withValidConfiguration");
+		Mockito.when(microPipelineManager.hasPipeline(cfg.getId())).thenReturn(true);
+		Mockito.when(microPipelineManager.shutdownPipeline(cfg.getId())).thenReturn("testInstantiatePipeline_withValidConfiguration".toLowerCase());
+		
+		MicroPipelineInstantiationResponse response = new MicroPipelineResource(microPipelineManager).instantiatePipeline("testInstantiatePipeline_withValidConfiguration", cfg);
+		Assert.assertNotNull("The response must not be null", response);
+		Assert.assertEquals("Values must be equal", MicroPipelineValidationResult.OK, response.getState());
+		Assert.assertTrue("Message must be empty", StringUtils.isBlank(response.getMessage()));
+		Assert.assertEquals("Values must be equal", "testInstantiatePipeline_withValidConfiguration", response.getPipelineId());
+		
+		response = new MicroPipelineResource(microPipelineManager).updatePipeline("testInstantiatePipeline_withValidConfiguration", cfg);
+		Assert.assertNotNull("The response must not be null", response);
+		Assert.assertEquals("Values must be equal", MicroPipelineValidationResult.OK, response.getState());
+		Assert.assertTrue("Message must be empty", StringUtils.isBlank(response.getMessage()));
+		Assert.assertEquals("Values must be equal", "testInstantiatePipeline_withValidConfiguration", response.getPipelineId());
+		
+		Mockito.verify(cfg, Mockito.times(4)).getId();
+		Mockito.verify(microPipelineManager).shutdownPipeline(cfg.getId());
+		Mockito.verify(microPipelineManager, Mockito.times(2)).executePipeline(cfg);
+		Mockito.verify(microPipelineManager, Mockito.times(1)).hasPipeline("testInstantiatePipeline_withValidConfiguration");
+	}
+
+	/**
+	 * Test case for {@link MicroPipelineResource#updatePipeline(String, MicroPipelineConfiguration)} being provided a fresh
+	 * configuration. As the code is similar to {@link MicroPipelineResource#instantiatePipeline(String, MicroPipelineConfiguration)}
+	 * test cases for invalid input were left out
+	 */
+	@Test
+	public void testUpdatePipeline_withNonExistingId() throws Exception {
+		
+		MicroPipelineConfiguration cfg = Mockito.mock(MicroPipelineConfiguration.class);
+		Mockito.when(cfg.getId()).thenReturn("testInstantiatePipeline_withValidConfiguration");
+		
+		MicroPipelineConfiguration anotherCfg = Mockito.mock(MicroPipelineConfiguration.class);
+		Mockito.when(anotherCfg.getId()).thenReturn("testInstantiatePipeline_withValidConfiguration_new");
+		
+		MicroPipelineManager microPipelineManager = Mockito.mock(MicroPipelineManager.class);
+		Mockito.when(microPipelineManager.executePipeline(cfg)).thenReturn("testInstantiatePipeline_withValidConfiguration");
+		Mockito.when(microPipelineManager.executePipeline(anotherCfg)).thenReturn("testInstantiatePipeline_withValidConfiguration_new");
+		Mockito.when(microPipelineManager.hasPipeline(anotherCfg.getId())).thenReturn(false);
+		
+		MicroPipelineInstantiationResponse response = new MicroPipelineResource(microPipelineManager).instantiatePipeline("testInstantiatePipeline_withValidConfiguration", cfg);
+		Assert.assertNotNull("The response must not be null", response);
+		Assert.assertEquals("Values must be equal", MicroPipelineValidationResult.OK, response.getState());
+		Assert.assertTrue("Message must be empty", StringUtils.isBlank(response.getMessage()));
+		Assert.assertEquals("Values must be equal", "testInstantiatePipeline_withValidConfiguration", response.getPipelineId());
+		
+		response = new MicroPipelineResource(microPipelineManager).updatePipeline("testInstantiatePipeline_withValidConfiguration_new", anotherCfg);
+		Assert.assertNotNull("The response must not be null", response);
+		Assert.assertEquals("Values must be equal", MicroPipelineValidationResult.OK, response.getState());
+		Assert.assertTrue("Message must be empty", StringUtils.isBlank(response.getMessage()));
+		Assert.assertEquals("Values must be equal", "testInstantiatePipeline_withValidConfiguration_new", response.getPipelineId());
+		
+		Mockito.verify(cfg, Mockito.times(1)).getId();
+		Mockito.verify(anotherCfg, Mockito.times(2)).getId();
+		Mockito.verify(microPipelineManager, Mockito.times(1)).executePipeline(cfg);
+		Mockito.verify(microPipelineManager, Mockito.times(1)).executePipeline(anotherCfg);
+		Mockito.verify(microPipelineManager, Mockito.times(1)).hasPipeline("testInstantiatePipeline_withValidConfiguration_new");
 	}
 	
 	/**

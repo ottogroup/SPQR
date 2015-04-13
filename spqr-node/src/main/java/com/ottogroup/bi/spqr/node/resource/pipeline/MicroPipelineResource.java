@@ -17,6 +17,7 @@ package com.ottogroup.bi.spqr.node.resource.pipeline;
 
 import javax.ws.rs.DELETE;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -29,11 +30,11 @@ import com.ottogroup.bi.spqr.exception.NonUniqueIdentifierException;
 import com.ottogroup.bi.spqr.exception.PipelineInstantiationFailedException;
 import com.ottogroup.bi.spqr.exception.QueueInitializationFailedException;
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
-import com.ottogroup.bi.spqr.node.resource.pipeline.MicroPipelineInstantiationResponse.MicroPipelineInstantationState;
 import com.ottogroup.bi.spqr.node.resource.pipeline.MicroPipelineShutdownResponse.MicroPipelineShutdownState;
 import com.ottogroup.bi.spqr.pipeline.MicroPipeline;
 import com.ottogroup.bi.spqr.pipeline.MicroPipelineConfiguration;
 import com.ottogroup.bi.spqr.pipeline.MicroPipelineManager;
+import com.ottogroup.bi.spqr.pipeline.MicroPipelineValidationResult;
 
 /**
  * REST resource providing access to {@link MicroPipeline pipelines} managed by {@link MicroPipelineManager}. The resource provides methods for
@@ -77,30 +78,74 @@ public class MicroPipelineResource {
 	public MicroPipelineInstantiationResponse instantiatePipeline(@PathParam("pipelineId") final String pipelineId, final MicroPipelineConfiguration configuration) {		
 		
 		if(StringUtils.isBlank(pipelineId))
-			return new MicroPipelineInstantiationResponse(pipelineId, MicroPipelineInstantationState.CONFIGURATION_MISSING, ERROR_MSG_PIPELINE_ID_MISSING);
+			return new MicroPipelineInstantiationResponse(pipelineId, MicroPipelineValidationResult.MISSING_CONFIGURATION, ERROR_MSG_PIPELINE_ID_MISSING);
 		
 		if(configuration == null)
-			return new MicroPipelineInstantiationResponse(pipelineId, MicroPipelineInstantationState.CONFIGURATION_MISSING, ERROR_MSG_PIPELINE_CONFIGURATION_MISSING);
+			return new MicroPipelineInstantiationResponse(pipelineId, MicroPipelineValidationResult.MISSING_CONFIGURATION, ERROR_MSG_PIPELINE_CONFIGURATION_MISSING);
 		
 		if(!StringUtils.equalsIgnoreCase(StringUtils.trim(pipelineId), configuration.getId())) 
-			return new MicroPipelineInstantiationResponse(pipelineId, MicroPipelineInstantationState.PIPELINE_INITIALIZATION_FAILED, ERROR_MSG_PIPELINE_IDS_DIFFER);
+			return new MicroPipelineInstantiationResponse(pipelineId, MicroPipelineValidationResult.PIPELINE_INITIALIZATION_FAILED, ERROR_MSG_PIPELINE_IDS_DIFFER);
 
 		try {
 			String id = this.microPipelineManager.executePipeline(configuration);
-			return new MicroPipelineInstantiationResponse(id, MicroPipelineInstantationState.OK, "");
+			return new MicroPipelineInstantiationResponse(id, MicroPipelineValidationResult.OK, "");
 		} catch (RequiredInputMissingException e) {
-			return new MicroPipelineInstantiationResponse(pipelineId, MicroPipelineInstantationState.CONFIGURATION_MISSING, e.getMessage());
+			return new MicroPipelineInstantiationResponse(pipelineId, MicroPipelineValidationResult.MISSING_CONFIGURATION, e.getMessage());
 		} catch (QueueInitializationFailedException e) {
-			return new MicroPipelineInstantiationResponse(pipelineId, MicroPipelineInstantationState.QUEUE_INITIALIZATION_FAILED, e.getMessage());
+			return new MicroPipelineInstantiationResponse(pipelineId, MicroPipelineValidationResult.QUEUE_INITIALIZATION_FAILED, e.getMessage());
 		} catch (ComponentInitializationFailedException e) {
-			return new MicroPipelineInstantiationResponse(pipelineId, MicroPipelineInstantationState.COMPONENT_INITIALIZATION_FAILED, e.getMessage());
+			return new MicroPipelineInstantiationResponse(pipelineId, MicroPipelineValidationResult.COMPONENT_INITIALIZATION_FAILED, e.getMessage());
 		} catch (PipelineInstantiationFailedException e) {
-			return new MicroPipelineInstantiationResponse(pipelineId, MicroPipelineInstantationState.PIPELINE_INITIALIZATION_FAILED, e.getMessage());
+			return new MicroPipelineInstantiationResponse(pipelineId, MicroPipelineValidationResult.PIPELINE_INITIALIZATION_FAILED, e.getMessage());
 		} catch (NonUniqueIdentifierException e) {
-			return new MicroPipelineInstantiationResponse(pipelineId, MicroPipelineInstantationState.NON_UNIQUE_PIPELINE_ID, e.getMessage());
+			return new MicroPipelineInstantiationResponse(pipelineId, MicroPipelineValidationResult.NON_UNIQUE_PIPELINE_ID, e.getMessage());
 		} catch(Exception e) {
-			return new MicroPipelineInstantiationResponse(pipelineId, MicroPipelineInstantationState.TECHNICAL_ERROR, e.getMessage());
+			return new MicroPipelineInstantiationResponse(pipelineId, MicroPipelineValidationResult.TECHNICAL_ERROR, e.getMessage());
 		}
+	}
+	
+	/**
+	 * Creates or updates a pipeline for the given identifier and {@link MicroPipelineConfiguration}
+	 * @param pipelineId
+	 * @param configuration
+	 * @return
+	 */
+	@Produces(value = "application/json")
+	@Timed(name = "pipeline-instantiation")
+	@PUT
+	@Path("{pipelineId}")
+	public MicroPipelineInstantiationResponse updatePipeline(@PathParam("pipelineId") final String pipelineId, final MicroPipelineConfiguration configuration) {
+		
+		if(StringUtils.isBlank(pipelineId))
+			return new MicroPipelineInstantiationResponse(pipelineId, MicroPipelineValidationResult.MISSING_CONFIGURATION, ERROR_MSG_PIPELINE_ID_MISSING);
+		
+		if(configuration == null)
+			return new MicroPipelineInstantiationResponse(pipelineId, MicroPipelineValidationResult.MISSING_CONFIGURATION, ERROR_MSG_PIPELINE_CONFIGURATION_MISSING);
+		
+		if(!StringUtils.equalsIgnoreCase(StringUtils.trim(pipelineId), configuration.getId())) 
+			return new MicroPipelineInstantiationResponse(pipelineId, MicroPipelineValidationResult.PIPELINE_INITIALIZATION_FAILED, ERROR_MSG_PIPELINE_IDS_DIFFER);
+
+		try {
+			// shutdown running instance of pipeline 
+			if(this.microPipelineManager.hasPipeline(pipelineId)) {
+				this.microPipelineManager.shutdownPipeline(pipelineId);
+			}
+			String id = this.microPipelineManager.executePipeline(configuration);
+			return new MicroPipelineInstantiationResponse(id, MicroPipelineValidationResult.OK, "");
+		} catch (RequiredInputMissingException e) {
+			return new MicroPipelineInstantiationResponse(pipelineId, MicroPipelineValidationResult.MISSING_CONFIGURATION, e.getMessage());
+		} catch (QueueInitializationFailedException e) {
+			return new MicroPipelineInstantiationResponse(pipelineId, MicroPipelineValidationResult.QUEUE_INITIALIZATION_FAILED, e.getMessage());
+		} catch (ComponentInitializationFailedException e) {
+			return new MicroPipelineInstantiationResponse(pipelineId, MicroPipelineValidationResult.COMPONENT_INITIALIZATION_FAILED, e.getMessage());
+		} catch (PipelineInstantiationFailedException e) {
+			return new MicroPipelineInstantiationResponse(pipelineId, MicroPipelineValidationResult.PIPELINE_INITIALIZATION_FAILED, e.getMessage());
+		} catch (NonUniqueIdentifierException e) {
+			return new MicroPipelineInstantiationResponse(pipelineId, MicroPipelineValidationResult.NON_UNIQUE_PIPELINE_ID, e.getMessage());
+		} catch(Exception e) {
+			return new MicroPipelineInstantiationResponse(pipelineId, MicroPipelineValidationResult.TECHNICAL_ERROR, e.getMessage());
+		}
+		
 	}
 	
 	/**

@@ -18,6 +18,7 @@ package com.ottogroup.bi.spqr.node.resource.pipeline;
 import java.io.Serializable;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.ottogroup.bi.spqr.pipeline.MicroPipelineValidationResult;
 
 /**
  * Message sent in response to pipeline instantiation request issued towards a spqr node
@@ -28,12 +29,8 @@ public class MicroPipelineInstantiationResponse implements Serializable {
 
 	private static final long serialVersionUID = -4416878440036933504L;
 
-	public enum MicroPipelineInstantationState implements Serializable {		
-		OK, CONFIGURATION_MISSING, NON_UNIQUE_PIPELINE_ID, QUEUE_INITIALIZATION_FAILED, COMPONENT_INITIALIZATION_FAILED, PIPELINE_INITIALIZATION_FAILED, TECHNICAL_ERROR	
-	}
-	
 	@JsonProperty(value="state", required=true)
-	private MicroPipelineInstantationState state = MicroPipelineInstantationState.OK;
+	private MicroPipelineValidationResult state = MicroPipelineValidationResult.OK;
 	@JsonProperty(value="msg", required=true)
 	private String message = null;
 	@JsonProperty(value="pid", required=true)
@@ -42,17 +39,17 @@ public class MicroPipelineInstantiationResponse implements Serializable {
 	public MicroPipelineInstantiationResponse() {		
 	}
 	
-	public MicroPipelineInstantiationResponse(final String pipelineId, final MicroPipelineInstantationState state, final String message) {
+	public MicroPipelineInstantiationResponse(final String pipelineId, final MicroPipelineValidationResult state, final String message) {
 		this.pipelineId = pipelineId;
 		this.state = state;
 		this.message = message;
 	}
 
-	public MicroPipelineInstantationState getState() {
+	public MicroPipelineValidationResult getState() {
 		return state;
 	}
 
-	public void setState(MicroPipelineInstantationState state) {
+	public void setState(MicroPipelineValidationResult state) {
 		this.state = state;
 	}
 
