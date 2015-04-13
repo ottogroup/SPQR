@@ -20,6 +20,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 
 import com.codahale.metrics.annotation.Timed;
+import com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponentConfiguration;
 
 /**
  * Provides a REST API to enable active processing node registration. All nodes that 
@@ -32,16 +33,13 @@ import com.codahale.metrics.annotation.Timed;
 public class SPQRNodeRegistrationResource {
 
 	/**
-	 * Registers a new processing node with the resource manager
+	 * Registers a new processing node with the resource manager. It accepts a {@link MicroPipeline
 	 */
 	@Produces(value = "application/json")
 	@Timed(name = "node-registration")
 	@POST
 	public void registerProcessingNode() {
-		
-		/*
-		  
-		 */
+				
 	}
 	
 }
