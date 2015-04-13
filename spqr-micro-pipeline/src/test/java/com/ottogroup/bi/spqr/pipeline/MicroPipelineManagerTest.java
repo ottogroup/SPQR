@@ -179,6 +179,41 @@ public class MicroPipelineManagerTest {
 	}
 	
 	/**
+	 * Test case for {@link MicroPipelineManager#hasPipeline(String)} with existing identifier 
+	 */
+	@Test
+	public void testHasPipeline_withExistingId() throws Exception {
+		MicroPipelineConfiguration cfg = new MicroPipelineConfiguration();
+		cfg.setId("testExecutePipeline_withValidConfiguration");
+		
+		MicroPipeline pipeline = Mockito.mock(MicroPipeline.class);
+		Mockito.when(pipeline.getId()).thenReturn(cfg.getId());
+		
+		MicroPipelineFactory factory = Mockito.mock(MicroPipelineFactory.class);
+		Mockito.when(factory.instantiatePipeline(cfg, executorService)).thenReturn(pipeline);
+		
+		MicroPipelineManager manager = new MicroPipelineManager(factory, executorService);
+		
+		Assert.assertEquals("Values must be equal", StringUtils.lowerCase(StringUtils.trim(cfg.getId())), manager.executePipeline(cfg));
+		Assert.assertEquals("Values must be equal", 1, manager.getNumOfRegisteredPipelines());
+		
+		Mockito.verify(factory).instantiatePipeline(cfg, executorService);
+		
+		Assert.assertTrue("Pipeline exists", manager.hasPipeline(cfg.getId()));
+	}
+	
+	/**
+	 * Test case for {@link MicroPipelineManager#hasPipeline(String)} with non-existing identifier
+	 * @throws Exception
+	 */
+	@Test	
+	public void testHasPipeline_withNonExistingId() throws Exception {
+		MicroPipelineFactory factory = Mockito.mock(MicroPipelineFactory.class);
+		
+		Assert.assertFalse("Pipeline does not exist", new MicroPipelineManager(factory, executorService).hasPipeline("unknown-id"));
+	}
+	
+	/**
 	 * Test case for {@link MicroPipelineManager#shutdownPipeline(String)} being provided
 	 * null as input which must not change the number of registered pipelines
 	 */

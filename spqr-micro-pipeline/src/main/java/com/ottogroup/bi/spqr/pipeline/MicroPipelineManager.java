@@ -151,6 +151,16 @@ public class MicroPipelineManager {
 	}
 	
 	/**
+	 * Returns true if a {@link MicroPipeline} for the given identifier exists otherwise
+	 * it returns false
+	 * @param pipelineId
+	 * @return
+	 */
+	public boolean hasPipeline(final String pipelineId) {
+		return this.pipelines.containsKey(StringUtils.lowerCase(StringUtils.trim(pipelineId)));
+	}
+	
+	/**
 	 * Returns the number of registered {@link MicroPipeline} instances
 	 * @return
 	 */
