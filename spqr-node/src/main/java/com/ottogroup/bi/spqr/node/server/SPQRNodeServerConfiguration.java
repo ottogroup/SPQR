@@ -38,6 +38,27 @@ public class SPQRNodeServerConfiguration extends Configuration {
 	/** number of threads assigned to internal executor service, default: 0 -- cached thread pool will be used */
 	@JsonProperty(value="numOfThreads", required=true)
 	private int numOfThreads = 0;
+	/** host - forwarded to resource manager during startup */
+	@JsonProperty(value="host", required=true)
+	private String host = null;
+	/** protocol to be used for communication with this node */
+	@JsonProperty(value="protocol", required=true)
+	private String protocol = "http";
+	/** service port */
+	@JsonProperty(value="servicePort", required=true)
+	private int servicePort = 8080;
+	/** admin port */
+	@JsonProperty(value="adminPort", required=true)
+	private int adminPort = 8081;
+	/** resource manager protocol */
+	@JsonProperty(value="resmanProtocol", required=true)
+	private String resmanProtocol = "http";
+	/** resource manager host */
+	@JsonProperty(value="resmanHost", required=true)
+	private String resmanHost = null;
+	/** resource manager port */
+	@JsonProperty(value="resmanPort", required=true)
+	private int resmanPort = 8080;	
 	
 	public String getLog4jConfiguration() {
 		return log4jConfiguration;
@@ -62,6 +83,48 @@ public class SPQRNodeServerConfiguration extends Configuration {
 	}
 	public void setNumOfThreads(int numOfThreads) {
 		this.numOfThreads = numOfThreads;
+	}
+	public String getHost() {
+		return host;
+	}
+	public void setHost(String host) {
+		this.host = host;
+	}
+	public String getProtocol() {
+		return protocol;
+	}
+	public void setProtocol(String protocol) {
+		this.protocol = protocol;
+	}
+	public int getServicePort() {
+		return servicePort;
+	}
+	public void setServicePort(int servicePort) {
+		this.servicePort = servicePort;
+	}
+	public int getAdminPort() {
+		return adminPort;
+	}
+	public void setAdminPort(int adminPort) {
+		this.adminPort = adminPort;
+	}
+	public String getResmanProtocol() {
+		return resmanProtocol;
+	}
+	public void setResmanProtocol(String resmanProtocol) {
+		this.resmanProtocol = resmanProtocol;
+	}
+	public String getResmanHost() {
+		return resmanHost;
+	}
+	public void setResmanHost(String resmanHost) {
+		this.resmanHost = resmanHost;
+	}
+	public int getResmanPort() {
+		return resmanPort;
+	}
+	public void setResmanPort(int resmanPort) {
+		this.resmanPort = resmanPort;
 	}
 		
 }

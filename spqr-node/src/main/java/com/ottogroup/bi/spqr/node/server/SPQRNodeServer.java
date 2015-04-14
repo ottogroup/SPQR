@@ -31,6 +31,7 @@ import org.apache.log4j.PropertyConfigurator;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
+import com.ottogroup.bi.spqr.node.resman.SPQRResourceManagerClient;
 import com.ottogroup.bi.spqr.node.resource.pipeline.MicroPipelineResource;
 import com.ottogroup.bi.spqr.pipeline.MicroPipeline;
 import com.ottogroup.bi.spqr.pipeline.MicroPipelineManager;
@@ -47,6 +48,7 @@ public class SPQRNodeServer extends Application<SPQRNodeServerConfiguration> {
 	private static final Logger logger = Logger.getLogger(SPQRNodeServer.class);
 	
 	private MicroPipelineManager microPipelineManager;
+	private SPQRResourceManagerClient resourceManagerClient;
 	
 	/**
 	 * @see io.dropwizard.Application#run(io.dropwizard.Configuration, io.dropwizard.setup.Environment)
@@ -55,6 +57,9 @@ public class SPQRNodeServer extends Application<SPQRNodeServerConfiguration> {
 		initializeLog4j(configuration.getLog4jConfiguration());
 		
 		this.microPipelineManager = new MicroPipelineManager(loadAndDeployApplicationRepository(configuration.getComponentRepositoryFolder()), configuration.getNumOfThreads());
+		this.resourceManagerClient = new SPQRResourceManagerClient(configuration.getResmanProtocol(), configuration.getResmanHost(), configuration.getResmanPort());
+		this.resourceManagerClient.registerNode(configuration.getProtocol(), configuration.getHost(), configuration.getServicePort(), configuration.getAdminPort());
+		
 		
 		// register exposed resources
 		environment.jersey().register(new MicroPipelineResource(this.microPipelineManager));
