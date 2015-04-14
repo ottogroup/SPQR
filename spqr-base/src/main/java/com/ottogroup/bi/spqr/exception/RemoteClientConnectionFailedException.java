@@ -13,12 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.ottogroup.bi.spqr.resman.exception;
+package com.ottogroup.bi.spqr.exception;
 
-import com.ottogroup.bi.spqr.resman.node.SPQRNodeClient;
 
 /**
- * Exception thrown by {@link SPQRNodeClient} on any failure during remote client access
+ * Exception thrown by client on any failure during remote api access
  * @author mnxfst
  * @since Apr 13, 2015
  */

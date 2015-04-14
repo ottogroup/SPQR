@@ -23,6 +23,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ottogroup.bi.spqr.exception.RemoteClientConnectionFailedException;
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
 import com.ottogroup.bi.spqr.node.resource.pipeline.MicroPipelineInstantiationResponse;
 import com.ottogroup.bi.spqr.node.resource.pipeline.MicroPipelineShutdownResponse;
@@ -30,7 +31,6 @@ import com.ottogroup.bi.spqr.node.resource.pipeline.MicroPipelineShutdownRespons
 import com.ottogroup.bi.spqr.pipeline.MicroPipelineConfiguration;
 import com.ottogroup.bi.spqr.pipeline.MicroPipelineValidationResult;
 import com.ottogroup.bi.spqr.pipeline.MicroPipelineValidator;
-import com.ottogroup.bi.spqr.resman.exception.RemoteClientConnectionFailedException;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
@@ -131,7 +131,7 @@ public class SPQRNodeClient {
 	 * @throws RemoteClientConnectionFailedException
 	 */
 	public MicroPipelineInstantiationResponse instantiatePipeline(final MicroPipelineConfiguration pipelineConfiguration) 
-			throws RequiredInputMissingException, IOException, RemoteClientConnectionFailedException {
+			throws IOException, RemoteClientConnectionFailedException {
 				
 		///////////////////////////////////////////////////////
 		// validate input for not being null as the content
@@ -169,7 +169,7 @@ public class SPQRNodeClient {
 	 * @throws RemoteClientConnectionFailedException
 	 */
 	public MicroPipelineInstantiationResponse updatePipeline(final MicroPipelineConfiguration pipelineConfiguration) 
-			throws RequiredInputMissingException, IOException, RemoteClientConnectionFailedException {
+			throws IOException, RemoteClientConnectionFailedException {
 		
 		///////////////////////////////////////////////////////
 		// validate input
@@ -204,7 +204,7 @@ public class SPQRNodeClient {
 	 * @throws RequiredInputMissingException
 	 * @throws RemoteClientConnectionFailedException
 	 */
-	public MicroPipelineShutdownResponse shutdown(final String pipelineId) throws RequiredInputMissingException, RemoteClientConnectionFailedException {
+	public MicroPipelineShutdownResponse shutdown(final String pipelineId) throws RemoteClientConnectionFailedException {
 		
 		///////////////////////////////////////////////////////
 		// validate input
