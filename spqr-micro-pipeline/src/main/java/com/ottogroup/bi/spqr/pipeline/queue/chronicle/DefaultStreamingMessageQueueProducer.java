@@ -24,6 +24,7 @@ import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueProducer;
  * Default {@link StreamingMessageQueueProducer} implementation accessing {@link DefaultStreamingMessageQueue}
  * @author mnxfst
  * @since Mar 5, 2015
+ * TODO async implementation required
  */
 public class DefaultStreamingMessageQueueProducer implements
 		StreamingMessageQueueProducer {

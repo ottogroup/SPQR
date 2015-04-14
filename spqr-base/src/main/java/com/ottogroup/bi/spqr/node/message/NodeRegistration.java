@@ -30,7 +30,7 @@ public class NodeRegistration implements Serializable {
 	private static final long serialVersionUID = 7705558777452312428L;
 
 	public enum NodeRegistrationState implements Serializable {
-		OK, MISSING_HOST, MISSING_SERVICE_PORT, MISSING_ADMIN_PORT, MISSING_REQUEST, TECHNICAL_ERROR
+		OK, MISSING_PROTOCOL, MISSING_HOST, MISSING_SERVICE_PORT, MISSING_ADMIN_PORT, MISSING_REQUEST, NODE_ID_COMPUTATION_FAILED, TECHNICAL_ERROR
 	}
 	
 	@JsonRootName(value="nodeRegistrationRequest")
@@ -38,6 +38,9 @@ public class NodeRegistration implements Serializable {
 		
 		private static final long serialVersionUID = 666656242856426666L;
 
+		/** protocol used to communicate, http, https ... */
+		@JsonProperty(value="protocol", required=true)
+		private String protocol = null;
 		/** host the node to register lives on */
 		@JsonProperty(value="host",required=true)
 		private String host = null;
@@ -51,10 +54,19 @@ public class NodeRegistration implements Serializable {
 		public NodeRegistrationRequest() {			
 		}
 		
-		public NodeRegistrationRequest(final String host, final int servicePort, final int adminPort) {
+		public NodeRegistrationRequest(final String protocol, final String host, final int servicePort, final int adminPort) {
+			this.protocol = protocol;
 			this.host = host;
 			this.servicePort = servicePort;
 			this.adminPort = adminPort;
+		}
+
+		public String getProtocol() {
+			return protocol;
+		}
+
+		public void setProtocol(String protocol) {
+			this.protocol = protocol;
 		}
 
 		public String getHost() {
@@ -107,6 +119,7 @@ public class NodeRegistration implements Serializable {
 		}
 
 		public NodeRegistrationResponse(final String id, final NodeRegistrationState state, final String msg) {
+			this.id = id;
 			this.state = state;
 			this.message = msg;
 		}

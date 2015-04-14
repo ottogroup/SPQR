@@ -15,16 +15,18 @@
  */
 package com.ottogroup.bi.spqr.resman.resource.node;
 
+import javax.ws.rs.DELETE;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 
-import org.apache.commons.lang3.StringUtils;
-
 import com.codahale.metrics.annotation.Timed;
+import com.ottogroup.bi.spqr.node.message.NodeDeRegistration.NodeDeRegistrationResponse;
 import com.ottogroup.bi.spqr.node.message.NodeRegistration.NodeRegistrationRequest;
 import com.ottogroup.bi.spqr.node.message.NodeRegistration.NodeRegistrationResponse;
 import com.ottogroup.bi.spqr.node.message.NodeRegistration.NodeRegistrationState;
+import com.ottogroup.bi.spqr.resman.node.SPQRNodeManager;
 
 /**
  * Provides a REST API which allows active processing node registration and shutdown. All nodes that wish to participate in 
@@ -35,29 +37,40 @@ import com.ottogroup.bi.spqr.node.message.NodeRegistration.NodeRegistrationState
 @Path("/nodes")
 public class SPQRNodeManagementResource {
 
-	/**
-	 * required information for node registration: 
-	 */
+	private final SPQRNodeManager nodeManager;
+	
+	public SPQRNodeManagementResource(final SPQRNodeManager nodeManager) {
+		this.nodeManager = nodeManager;
+	}
 
+	/**
+	 * Registers the processing node which lives at the location provided inside the request
+	 * @param request
+	 * @return
+	 */
 	@Produces(value = "application/json")
 	@Timed(name = "node-registration")
 	@POST
 	public NodeRegistrationResponse registerNode(final NodeRegistrationRequest request) {
-		
-		///////////////////////////////////////////////////////////////////////////
-		// validate request
+
+		// ensure that the incoming request carries a valid and accessible body
 		if(request == null)
 			return new NodeRegistrationResponse("", NodeRegistrationState.MISSING_REQUEST, "Missing request body carrying required node information");
-		if(StringUtils.isBlank(request.getHost()))
-			return new NodeRegistrationResponse("", NodeRegistrationState.MISSING_HOST, "Missing required host name for processing node");
-		if(request.getServicePort() < 1)
-			return new NodeRegistrationResponse("", NodeRegistrationState.MISSING_SERVICE_PORT, "Missing valid service port for processing node");
-		if(request.getAdminPort() < 1)
-			return new NodeRegistrationResponse("", NodeRegistrationState.MISSING_SERVICE_PORT, "Missing valid admin port for processing node");
-		//
-		///////////////////////////////////////////////////////////////////////////
 
-		return null;
-		
+		return this.nodeManager.registerNode(request.getProtocol(), request.getHost(), request.getServicePort(), request.getAdminPort());		
 	}
+	
+	/**
+	 * De-Registers the referenced processing node and thus removes it from the SQPR cluster
+	 * @param nodeId
+	 * @return
+	 */
+	@Produces(value = "application/json")
+	@Timed(name = "node-deregistration")
+	@Path("{nodeId}")
+	@DELETE
+	public NodeDeRegistrationResponse deregisterNode(@PathParam("nodeId") final String nodeId) {		
+		return this.nodeManager.deregisterNode(nodeId);		
+	}
+	
 }

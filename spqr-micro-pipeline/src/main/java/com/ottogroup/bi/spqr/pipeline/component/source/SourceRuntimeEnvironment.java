@@ -102,6 +102,9 @@ public class SourceRuntimeEnvironment implements Runnable, IncomingMessageCallba
 	 */
 	public void onMessage(StreamingDataMessage message) {
 		this.queueProducer.insert(message);
+		
+		message.getBody();
+		message.getTimestamp();
 	}
 	
 	/**

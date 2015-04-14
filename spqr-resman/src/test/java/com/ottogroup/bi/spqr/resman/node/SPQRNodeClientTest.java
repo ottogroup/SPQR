@@ -26,6 +26,8 @@ import org.mockito.Mockito;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
 import com.ottogroup.bi.spqr.node.resource.pipeline.MicroPipelineInstantiationResponse;
+import com.ottogroup.bi.spqr.node.resource.pipeline.MicroPipelineShutdownResponse;
+import com.ottogroup.bi.spqr.node.resource.pipeline.MicroPipelineShutdownResponse.MicroPipelineShutdownState;
 import com.ottogroup.bi.spqr.pipeline.MicroPipelineConfiguration;
 import com.ottogroup.bi.spqr.pipeline.MicroPipelineValidationResult;
 import com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponentConfiguration;
@@ -113,7 +115,7 @@ public class SPQRNodeClientTest {
 	
 	/**
 	 * Test case for {@link SPQRNodeClient#instantiatePipeline(com.ottogroup.bi.spqr.pipeline.MicroPipelineConfiguration)} being
-	 * provided null to test the validation of incoming configurations. As the validator is checked somewhere else it is not
+	 * provided null to test the validation of incoming configurations. As the validator is tested somewhere else it is not
 	 * necessary to do all in-depth thorough checking again as the constraints do not change
 	 */
 	@Test
@@ -121,13 +123,69 @@ public class SPQRNodeClientTest {
 		SPQRNodeClient client = new SPQRNodeClient("http", "localhost", 8080, 8081);
 		Assert.assertEquals("Values must be equal", MicroPipelineValidationResult.MISSING_CONFIGURATION, client.instantiatePipeline(null).getState());
 	}
-	
+
 	/**
-	 * Test case for {@link ProcessingNodeClient#instantiatePipeline(com.ottogroup.bi.asap.node.pipeline.MicroPipelineConfiguration)}
+	 * Test case for {@link SPQRNodeClient#updatePipeline(MicroPipelineConfiguration)}
 	 * being provided valid input
 	 */
 	@Test
 	public void testInstantiatePipeline_withValidInput() throws Exception {
+
+		ObjectMapper jsonMapper = new ObjectMapper();
+		String processingNodeHost = "processing-node-localhost";
+		int processingNodeServicePort = 7070;
+		int processingNodeAdminPort = 7071;
+		MicroPipelineConfiguration sampleConfiguration = new MicroPipelineConfiguration();
+		sampleConfiguration.setId("Test");
+		
+		MicroPipelineComponentConfiguration componentCfg = new MicroPipelineComponentConfiguration();
+		componentCfg.setId("test-component");
+		componentCfg.setName("test");
+		componentCfg.setSettings(null);
+		componentCfg.setToQueue("test-destination-queue");
+		componentCfg.setType(MicroPipelineComponentType.SOURCE);
+		componentCfg.setVersion("test-version");
+		
+		sampleConfiguration.getComponents().add(componentCfg);
+		sampleConfiguration.getQueues().add(new StreamingMessageQueueConfiguration("test-destination-queue"));
+		
+		String pipelineInstantiationRequest = jsonMapper.writeValueAsString(sampleConfiguration);
+		String pipelineInstantiationResponse = jsonMapper.writeValueAsString(new MicroPipelineInstantiationResponse(sampleConfiguration.getId(), MicroPipelineValidationResult.OK, ""));
+		String url = new StringBuffer("http://").append(processingNodeHost).append(":").append(processingNodeServicePort).append("/pipelines").toString();
+		
+		//////////////////////////////////////////////////////////
+		// prepare mocked entities
+		Client clientMock = Mockito.mock(Client.class);		
+		WebResource webResourceMock = Mockito.mock(WebResource.class);
+		ClientResponse clientResponseMock = Mockito.mock(ClientResponse.class);
+		Builder b1Mock = Mockito.mock(Builder.class);
+		Builder b2Mock = Mockito.mock(Builder.class);		
+		
+		Mockito.when(clientMock.resource(url)).thenReturn(webResourceMock);
+		Mockito.when(webResourceMock.accept(MediaType.APPLICATION_JSON)).thenReturn(b1Mock);
+		Mockito.when(b1Mock.type(MediaType.APPLICATION_JSON)).thenReturn(b2Mock); // required to support chained methods for retrieving client response
+		Mockito.when(b2Mock.post(ClientResponse.class, pipelineInstantiationRequest)).thenReturn(clientResponseMock);
+		Mockito.when(clientResponseMock.getEntity(String.class)).thenReturn(pipelineInstantiationResponse);
+		//
+		//////////////////////////////////////////////////////////				
+		
+		SPQRNodeClient client = new SPQRNodeClient("http", processingNodeHost, processingNodeServicePort, processingNodeAdminPort, clientMock);
+		MicroPipelineInstantiationResponse response = client.instantiatePipeline(sampleConfiguration);
+		Assert.assertNotNull("Response must not be null", response);
+		Assert.assertEquals("State must be 'OK'", MicroPipelineValidationResult.OK, response.getState());
+
+		Mockito.verify(clientMock).resource(url);
+		Mockito.verify(webResourceMock).accept(MediaType.APPLICATION_JSON);
+		Mockito.verify(b1Mock).type(MediaType.APPLICATION_JSON);
+		Mockito.verify(b2Mock).post(ClientResponse.class, pipelineInstantiationRequest);
+	}
+
+	/**
+	 * Test case for {@link SPQRNodeClient#updatePipeline(MicroPipelineConfiguration)}
+	 * being provided valid input
+	 */
+	@Test
+	public void testUpdatePipeline_withValidInput() throws Exception {
 
 		ObjectMapper jsonMapper = new ObjectMapper();
 		String processingNodeHost = "processing-node-localhost";
@@ -162,14 +220,78 @@ public class SPQRNodeClientTest {
 		Mockito.when(clientMock.resource(url)).thenReturn(webResourceMock);
 		Mockito.when(webResourceMock.accept(MediaType.APPLICATION_JSON)).thenReturn(b1Mock);
 		Mockito.when(b1Mock.type(MediaType.APPLICATION_JSON)).thenReturn(b2Mock); // required to support chained methods for retrieving client response
-		Mockito.when(b2Mock.post(ClientResponse.class, pipelineInstantiationRequest)).thenReturn(clientResponseMock);
+		Mockito.when(b2Mock.put(ClientResponse.class, pipelineInstantiationRequest)).thenReturn(clientResponseMock);
 		Mockito.when(clientResponseMock.getEntity(String.class)).thenReturn(pipelineInstantiationResponse);
 		//
 		//////////////////////////////////////////////////////////				
 		
 		SPQRNodeClient client = new SPQRNodeClient("http", processingNodeHost, processingNodeServicePort, processingNodeAdminPort, clientMock);
-		MicroPipelineInstantiationResponse response = client.instantiatePipeline(sampleConfiguration);
+		MicroPipelineInstantiationResponse response = client.updatePipeline(sampleConfiguration);
 		Assert.assertNotNull("Response must not be null", response);
 		Assert.assertEquals("State must be 'OK'", MicroPipelineValidationResult.OK, response.getState());
+		
+		Mockito.verify(clientMock).resource(url);
+		Mockito.verify(webResourceMock).accept(MediaType.APPLICATION_JSON);
+		Mockito.verify(b1Mock).type(MediaType.APPLICATION_JSON);
+		Mockito.verify(b2Mock).put(ClientResponse.class, pipelineInstantiationRequest);
 	}
+	
+	/**
+	 * Test case for {@link SPQRNodeClient#shutdown(String)} being provided an empty string
+	 */
+	@Test
+	public void testShutdownPipeline_withNullInput() throws Exception {
+		Client clientMock = Mockito.mock(Client.class);		
+		String processingNodeHost = "processing-node-localhost";
+		int processingNodeServicePort = 7070;
+		int processingNodeAdminPort = 7071;
+		SPQRNodeClient client = new SPQRNodeClient("http", processingNodeHost, processingNodeServicePort, processingNodeAdminPort, clientMock);
+		
+		MicroPipelineShutdownResponse response = client.shutdown(null);
+		Assert.assertEquals("Invalid input", MicroPipelineShutdownState.PIPELINE_ID_MISSING, response.getState());	
+	}
+	
+	/**
+	 * Test case for {@link SPQRNodeClient#shutdown(String)} being provided a valid string
+	 */
+	@Test
+	public void testShutdownPipeline_withValidInput() throws Exception {
+		
+		ObjectMapper jsonMapper = new ObjectMapper();
+		String processingNodeHost = "processing-node-localhost";
+		int processingNodeServicePort = 7070;
+		int processingNodeAdminPort = 7071;
+		String pipelineId = "test-pipeline-id";
+		
+		String pipelineShutdownResponse = jsonMapper.writeValueAsString(new MicroPipelineShutdownResponse(pipelineId, MicroPipelineShutdownState.OK, ""));
+		String url = new StringBuffer("http://").append(processingNodeHost).append(":").append(processingNodeServicePort).append("/pipelines/").append(pipelineId).toString();
+		
+		//////////////////////////////////////////////////////////
+		// prepare mocked entities
+		Client clientMock = Mockito.mock(Client.class);		
+		WebResource webResourceMock = Mockito.mock(WebResource.class);
+		ClientResponse clientResponseMock = Mockito.mock(ClientResponse.class);
+		Builder b1Mock = Mockito.mock(Builder.class);
+		Builder b2Mock = Mockito.mock(Builder.class);		
+		
+		Mockito.when(clientMock.resource(url)).thenReturn(webResourceMock);
+		Mockito.when(webResourceMock.accept(MediaType.APPLICATION_JSON)).thenReturn(b1Mock);
+		Mockito.when(b1Mock.type(MediaType.APPLICATION_JSON)).thenReturn(b2Mock); // required to support chained methods for retrieving client response
+		Mockito.when(b2Mock.delete(ClientResponse.class)).thenReturn(clientResponseMock);
+		Mockito.when(clientResponseMock.getEntity(String.class)).thenReturn(pipelineShutdownResponse);
+		//
+		//////////////////////////////////////////////////////////				
+		
+		SPQRNodeClient client = new SPQRNodeClient("http", processingNodeHost, processingNodeServicePort, processingNodeAdminPort, clientMock);
+		MicroPipelineShutdownResponse response = client.shutdown("test-pipeline-id");
+		Assert.assertNotNull("Response must not be null", response);
+		Assert.assertEquals("State must be 'OK'", MicroPipelineShutdownState.OK, response.getState());
+		
+		Mockito.verify(clientMock).resource(url);
+		Mockito.verify(webResourceMock).accept(MediaType.APPLICATION_JSON);
+		Mockito.verify(b1Mock).type(MediaType.APPLICATION_JSON);
+		Mockito.verify(b2Mock).delete(ClientResponse.class);
+	}
+	
+	
 }

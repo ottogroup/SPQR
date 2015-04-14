@@ -115,8 +115,7 @@ public class MicroPipelineManager {
 		
 		String id = StringUtils.lowerCase(StringUtils.trim(configuration.getId()));
 		if(this.pipelines.containsKey(id))
-			throw new NonUniqueIdentifierException("A pipeline already exists for id '"+id+"'");
-		
+			throw new NonUniqueIdentifierException("A pipeline already exists for id '"+id+"'");		
 		
 		
 		MicroPipeline pipeline = this.microPipelineFactory.instantiatePipeline(configuration, this.executorService);		

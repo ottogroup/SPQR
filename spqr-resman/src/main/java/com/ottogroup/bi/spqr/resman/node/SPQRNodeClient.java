@@ -144,7 +144,7 @@ public class SPQRNodeClient {
 		///////////////////////////////////////////////////////		
 		
 		String message = jsonMapper.writeValueAsString(pipelineConfiguration); 
-		StringBuffer url = new StringBuffer(this.processingNodeServiceBaseUrl).append("/pipelines/").append(pipelineConfiguration.getId());
+		StringBuffer url = new StringBuffer(this.processingNodeServiceBaseUrl).append("/pipelines");
 		
 		if(logger.isDebugEnabled()) 
 			logger.debug("Instantiating pipeline [id="+pipelineConfiguration.getId()+"] on processing node " + url.toString());
@@ -168,7 +168,7 @@ public class SPQRNodeClient {
 	 * @throws IOException
 	 * @throws RemoteClientConnectionFailedException
 	 */
-	public MicroPipelineInstantiationResponse updateOrInstantiatePipeline(final MicroPipelineConfiguration pipelineConfiguration) 
+	public MicroPipelineInstantiationResponse updatePipeline(final MicroPipelineConfiguration pipelineConfiguration) 
 			throws RequiredInputMissingException, IOException, RemoteClientConnectionFailedException {
 		
 		///////////////////////////////////////////////////////
@@ -229,6 +229,13 @@ public class SPQRNodeClient {
 
 	}
 
+	/**
+	 * Called by {@link SPQRNodeManager} on client de-registration 
+	 */
+	public void shutdown() {
+		
+	}
+	
 	protected String getProcessingNodeServiceBaseUrl() {
 		return processingNodeServiceBaseUrl;
 	}
