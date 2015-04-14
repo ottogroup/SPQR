@@ -60,9 +60,10 @@ public class MicroPipelineResourceTest {
 	public void testInstantiatePipeline_withNullPipelineId() throws Exception {
 		
 		MicroPipelineConfiguration cfg = Mockito.mock(MicroPipelineConfiguration.class);
+		Mockito.when(cfg.getId()).thenReturn(null);
 		MicroPipelineManager microPipelineManager = Mockito.mock(MicroPipelineManager.class);
 		
-		MicroPipelineInstantiationResponse response = new MicroPipelineResource(microPipelineManager).instantiatePipeline(null, cfg);
+		MicroPipelineInstantiationResponse response = new MicroPipelineResource(microPipelineManager).instantiatePipeline(cfg);
 		Assert.assertNotNull("The response must not be null", response);
 		Assert.assertEquals("Values must be equal", MicroPipelineValidationResult.MISSING_CONFIGURATION, response.getState());
 		Assert.assertEquals("Values must be equal", MicroPipelineResource.ERROR_MSG_PIPELINE_ID_MISSING, response.getMessage());
@@ -81,32 +82,11 @@ public class MicroPipelineResourceTest {
 		
 		MicroPipelineManager microPipelineManager = Mockito.mock(MicroPipelineManager.class);
 		
-		MicroPipelineInstantiationResponse response = new MicroPipelineResource(microPipelineManager).instantiatePipeline("testInstantiatePipeline_withNullConfiguration", null);
+		MicroPipelineInstantiationResponse response = new MicroPipelineResource(microPipelineManager).instantiatePipeline(null);
 		Assert.assertNotNull("The response must not be null", response);
 		Assert.assertEquals("Values must be equal", MicroPipelineValidationResult.MISSING_CONFIGURATION, response.getState());
 		Assert.assertEquals("Values must be equal", MicroPipelineResource.ERROR_MSG_PIPELINE_CONFIGURATION_MISSING, response.getMessage());
-		Assert.assertEquals("Values must be equal", "testInstantiatePipeline_withNullConfiguration", response.getPipelineId());
-	}
-	
-	/**
-	 * Test case for {@link MicroPipelineResource#instantiatePipeline(String, com.ottogroup.bi.spqr.pipeline.MicroPipelineConfiguration)} being
-	 * provided a pipeline id which is not equal to id in pipeline configuration which must lead to {@link MicroPipelineInstantiationResponse} 
-	 * showing {@link MicroPipelineValidationResult#PIPELINE_INITIALIZATION_FAILED} as state
-	 */
-	@Test	
-	public void testInstantiatePipeline_withPipelineIdDifferingFromConfigurationId() throws Exception {
-		
-		MicroPipelineConfiguration cfg = Mockito.mock(MicroPipelineConfiguration.class);
-		MicroPipelineManager microPipelineManager = Mockito.mock(MicroPipelineManager.class);
-		
-		MicroPipelineInstantiationResponse response = new MicroPipelineResource(microPipelineManager).instantiatePipeline("testInstantiatePipeline_withPipelineIdDifferingFromConfigurationId", cfg);
-		Assert.assertNotNull("The response must not be null", response);
-		Assert.assertEquals("Values must be equal", MicroPipelineValidationResult.PIPELINE_INITIALIZATION_FAILED, response.getState());
-		Assert.assertEquals("Values must be equal", MicroPipelineResource.ERROR_MSG_PIPELINE_IDS_DIFFER, response.getMessage());
-		Assert.assertEquals("Values must be equal", "testInstantiatePipeline_withPipelineIdDifferingFromConfigurationId", response.getPipelineId());
-		
-		Mockito.verify(cfg).getId();
-		Mockito.verify(microPipelineManager, Mockito.never()).executePipeline(cfg);
+		Assert.assertTrue("Value must be empty", StringUtils.isBlank(response.getPipelineId()));
 	}
 	
 	/**
@@ -122,13 +102,13 @@ public class MicroPipelineResourceTest {
 		MicroPipelineManager microPipelineManager = Mockito.mock(MicroPipelineManager.class);
 		Mockito.when(microPipelineManager.executePipeline(cfg)).thenThrow(new RequiredInputMissingException("Missing setting"));
 		
-		MicroPipelineInstantiationResponse response = new MicroPipelineResource(microPipelineManager).instantiatePipeline("testInstantiatePipeline_withPipelineConfigurationMissingSetting", cfg);
+		MicroPipelineInstantiationResponse response = new MicroPipelineResource(microPipelineManager).instantiatePipeline(cfg);
 		Assert.assertNotNull("The response must not be null", response);
 		Assert.assertEquals("Values must be equal", MicroPipelineValidationResult.MISSING_CONFIGURATION, response.getState());
 		Assert.assertEquals("Values must be equal", "Missing setting", response.getMessage());
 		Assert.assertEquals("Values must be equal", "testInstantiatePipeline_withPipelineConfigurationMissingSetting", response.getPipelineId());
 		
-		Mockito.verify(cfg).getId();
+		Mockito.verify(cfg, Mockito.times(2)).getId();
 		Mockito.verify(microPipelineManager).executePipeline(cfg);
 	}
 	
@@ -145,13 +125,13 @@ public class MicroPipelineResourceTest {
 		MicroPipelineManager microPipelineManager = Mockito.mock(MicroPipelineManager.class);
 		Mockito.when(microPipelineManager.executePipeline(cfg)).thenThrow(new QueueInitializationFailedException("Queue init failed"));
 		
-		MicroPipelineInstantiationResponse response = new MicroPipelineResource(microPipelineManager).instantiatePipeline("testInstantiatePipeline_withQueueInitException", cfg);
+		MicroPipelineInstantiationResponse response = new MicroPipelineResource(microPipelineManager).instantiatePipeline(cfg);
 		Assert.assertNotNull("The response must not be null", response);
 		Assert.assertEquals("Values must be equal", MicroPipelineValidationResult.QUEUE_INITIALIZATION_FAILED, response.getState());
 		Assert.assertEquals("Values must be equal", "Queue init failed", response.getMessage());
 		Assert.assertEquals("Values must be equal", "testInstantiatePipeline_withQueueInitException", response.getPipelineId());
 		
-		Mockito.verify(cfg).getId();
+		Mockito.verify(cfg, Mockito.times(2)).getId();
 		Mockito.verify(microPipelineManager).executePipeline(cfg);
 	}
 	
@@ -168,13 +148,13 @@ public class MicroPipelineResourceTest {
 		MicroPipelineManager microPipelineManager = Mockito.mock(MicroPipelineManager.class);
 		Mockito.when(microPipelineManager.executePipeline(cfg)).thenThrow(new ComponentInitializationFailedException("Component init failed"));
 		
-		MicroPipelineInstantiationResponse response = new MicroPipelineResource(microPipelineManager).instantiatePipeline("testInstantiatePipeline_withComponentInitException", cfg);
+		MicroPipelineInstantiationResponse response = new MicroPipelineResource(microPipelineManager).instantiatePipeline(cfg);
 		Assert.assertNotNull("The response must not be null", response);
 		Assert.assertEquals("Values must be equal", MicroPipelineValidationResult.COMPONENT_INITIALIZATION_FAILED, response.getState());
 		Assert.assertEquals("Values must be equal", "Component init failed", response.getMessage());
 		Assert.assertEquals("Values must be equal", "testInstantiatePipeline_withComponentInitException", response.getPipelineId());
 		
-		Mockito.verify(cfg).getId();
+		Mockito.verify(cfg, Mockito.times(2)).getId();
 		Mockito.verify(microPipelineManager).executePipeline(cfg);
 	}
 	
@@ -191,13 +171,13 @@ public class MicroPipelineResourceTest {
 		MicroPipelineManager microPipelineManager = Mockito.mock(MicroPipelineManager.class);
 		Mockito.when(microPipelineManager.executePipeline(cfg)).thenThrow(new PipelineInstantiationFailedException("Pipeline init failed"));
 		
-		MicroPipelineInstantiationResponse response = new MicroPipelineResource(microPipelineManager).instantiatePipeline("testInstantiatePipeline_withPipelineInitException", cfg);
+		MicroPipelineInstantiationResponse response = new MicroPipelineResource(microPipelineManager).instantiatePipeline(cfg);
 		Assert.assertNotNull("The response must not be null", response);
 		Assert.assertEquals("Values must be equal", MicroPipelineValidationResult.PIPELINE_INITIALIZATION_FAILED, response.getState());
 		Assert.assertEquals("Values must be equal", "Pipeline init failed", response.getMessage());
 		Assert.assertEquals("Values must be equal", "testInstantiatePipeline_withPipelineInitException", response.getPipelineId());
 		
-		Mockito.verify(cfg).getId();
+		Mockito.verify(cfg, Mockito.times(2)).getId();
 		Mockito.verify(microPipelineManager).executePipeline(cfg);
 	}
 
@@ -214,13 +194,13 @@ public class MicroPipelineResourceTest {
 		MicroPipelineManager microPipelineManager = Mockito.mock(MicroPipelineManager.class);
 		Mockito.when(microPipelineManager.executePipeline(cfg)).thenThrow(new NullPointerException("General error"));
 		
-		MicroPipelineInstantiationResponse response = new MicroPipelineResource(microPipelineManager).instantiatePipeline("testInstantiatePipeline_withGeneralException", cfg);
+		MicroPipelineInstantiationResponse response = new MicroPipelineResource(microPipelineManager).instantiatePipeline(cfg);
 		Assert.assertNotNull("The response must not be null", response);
 		Assert.assertEquals("Values must be equal", MicroPipelineValidationResult.TECHNICAL_ERROR, response.getState());
 		Assert.assertEquals("Values must be equal", "General error", response.getMessage());
 		Assert.assertEquals("Values must be equal", "testInstantiatePipeline_withGeneralException", response.getPipelineId());
 		
-		Mockito.verify(cfg).getId();
+		Mockito.verify(cfg, Mockito.times(2)).getId();
 		Mockito.verify(microPipelineManager).executePipeline(cfg);
 	}
 	/**
@@ -236,13 +216,13 @@ public class MicroPipelineResourceTest {
 		MicroPipelineManager microPipelineManager = Mockito.mock(MicroPipelineManager.class);
 		Mockito.when(microPipelineManager.executePipeline(cfg)).thenThrow(new NonUniqueIdentifierException("Non-unique id"));
 		
-		MicroPipelineInstantiationResponse response = new MicroPipelineResource(microPipelineManager).instantiatePipeline("testInstantiatePipeline_withNonUniqueIdException", cfg);
+		MicroPipelineInstantiationResponse response = new MicroPipelineResource(microPipelineManager).instantiatePipeline(cfg);
 		Assert.assertNotNull("The response must not be null", response);
 		Assert.assertEquals("Values must be equal", MicroPipelineValidationResult.NON_UNIQUE_PIPELINE_ID, response.getState());
 		Assert.assertEquals("Values must be equal", "Non-unique id", response.getMessage());
 		Assert.assertEquals("Values must be equal", "testInstantiatePipeline_withNonUniqueIdException", response.getPipelineId());
 		
-		Mockito.verify(cfg).getId();
+		Mockito.verify(cfg, Mockito.times(2)).getId();
 		Mockito.verify(microPipelineManager).executePipeline(cfg);
 	}
 	
@@ -259,7 +239,7 @@ public class MicroPipelineResourceTest {
 		MicroPipelineManager microPipelineManager = Mockito.mock(MicroPipelineManager.class);
 		Mockito.when(microPipelineManager.executePipeline(cfg)).thenReturn("testInstantiatePipeline_withValidConfiguration");
 		
-		MicroPipelineInstantiationResponse response = new MicroPipelineResource(microPipelineManager).instantiatePipeline("testInstantiatePipeline_withValidConfiguration", cfg);
+		MicroPipelineInstantiationResponse response = new MicroPipelineResource(microPipelineManager).instantiatePipeline(cfg);
 		Assert.assertNotNull("The response must not be null", response);
 		Assert.assertEquals("Values must be equal", MicroPipelineValidationResult.OK, response.getState());
 		Assert.assertTrue("Message must be empty", StringUtils.isBlank(response.getMessage()));
@@ -284,7 +264,7 @@ public class MicroPipelineResourceTest {
 		Mockito.when(microPipelineManager.hasPipeline(cfg.getId())).thenReturn(true);
 		Mockito.when(microPipelineManager.shutdownPipeline(cfg.getId())).thenReturn("testInstantiatePipeline_withValidConfiguration".toLowerCase());
 		
-		MicroPipelineInstantiationResponse response = new MicroPipelineResource(microPipelineManager).instantiatePipeline("testInstantiatePipeline_withValidConfiguration", cfg);
+		MicroPipelineInstantiationResponse response = new MicroPipelineResource(microPipelineManager).instantiatePipeline(cfg);
 		Assert.assertNotNull("The response must not be null", response);
 		Assert.assertEquals("Values must be equal", MicroPipelineValidationResult.OK, response.getState());
 		Assert.assertTrue("Message must be empty", StringUtils.isBlank(response.getMessage()));
@@ -321,7 +301,7 @@ public class MicroPipelineResourceTest {
 		Mockito.when(microPipelineManager.executePipeline(anotherCfg)).thenReturn("testInstantiatePipeline_withValidConfiguration_new");
 		Mockito.when(microPipelineManager.hasPipeline(anotherCfg.getId())).thenReturn(false);
 		
-		MicroPipelineInstantiationResponse response = new MicroPipelineResource(microPipelineManager).instantiatePipeline("testInstantiatePipeline_withValidConfiguration", cfg);
+		MicroPipelineInstantiationResponse response = new MicroPipelineResource(microPipelineManager).instantiatePipeline(cfg);
 		Assert.assertNotNull("The response must not be null", response);
 		Assert.assertEquals("Values must be equal", MicroPipelineValidationResult.OK, response.getState());
 		Assert.assertTrue("Message must be empty", StringUtils.isBlank(response.getMessage()));

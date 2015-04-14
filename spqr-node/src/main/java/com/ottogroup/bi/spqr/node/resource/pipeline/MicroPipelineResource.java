@@ -74,33 +74,29 @@ public class MicroPipelineResource {
 	@Produces(value = "application/json")
 	@Timed(name = "pipeline-instantiation")
 	@POST
-	@Path("{pipelineId}")
-	public MicroPipelineInstantiationResponse instantiatePipeline(@PathParam("pipelineId") final String pipelineId, final MicroPipelineConfiguration configuration) {		
-		
-		if(StringUtils.isBlank(pipelineId))
-			return new MicroPipelineInstantiationResponse(pipelineId, MicroPipelineValidationResult.MISSING_CONFIGURATION, ERROR_MSG_PIPELINE_ID_MISSING);
-		
+	public MicroPipelineInstantiationResponse instantiatePipeline(final MicroPipelineConfiguration configuration) {		
+
 		if(configuration == null)
-			return new MicroPipelineInstantiationResponse(pipelineId, MicroPipelineValidationResult.MISSING_CONFIGURATION, ERROR_MSG_PIPELINE_CONFIGURATION_MISSING);
-		
-		if(!StringUtils.equalsIgnoreCase(StringUtils.trim(pipelineId), configuration.getId())) 
-			return new MicroPipelineInstantiationResponse(pipelineId, MicroPipelineValidationResult.PIPELINE_INITIALIZATION_FAILED, ERROR_MSG_PIPELINE_IDS_DIFFER);
+			return new MicroPipelineInstantiationResponse("", MicroPipelineValidationResult.MISSING_CONFIGURATION, ERROR_MSG_PIPELINE_CONFIGURATION_MISSING);
+				
+		if(StringUtils.isBlank(configuration.getId()))
+			return new MicroPipelineInstantiationResponse("", MicroPipelineValidationResult.MISSING_CONFIGURATION, ERROR_MSG_PIPELINE_ID_MISSING);
 
 		try {
 			String id = this.microPipelineManager.executePipeline(configuration);
 			return new MicroPipelineInstantiationResponse(id, MicroPipelineValidationResult.OK, "");
 		} catch (RequiredInputMissingException e) {
-			return new MicroPipelineInstantiationResponse(pipelineId, MicroPipelineValidationResult.MISSING_CONFIGURATION, e.getMessage());
+			return new MicroPipelineInstantiationResponse(configuration.getId(), MicroPipelineValidationResult.MISSING_CONFIGURATION, e.getMessage());
 		} catch (QueueInitializationFailedException e) {
-			return new MicroPipelineInstantiationResponse(pipelineId, MicroPipelineValidationResult.QUEUE_INITIALIZATION_FAILED, e.getMessage());
+			return new MicroPipelineInstantiationResponse(configuration.getId(), MicroPipelineValidationResult.QUEUE_INITIALIZATION_FAILED, e.getMessage());
 		} catch (ComponentInitializationFailedException e) {
-			return new MicroPipelineInstantiationResponse(pipelineId, MicroPipelineValidationResult.COMPONENT_INITIALIZATION_FAILED, e.getMessage());
+			return new MicroPipelineInstantiationResponse(configuration.getId(), MicroPipelineValidationResult.COMPONENT_INITIALIZATION_FAILED, e.getMessage());
 		} catch (PipelineInstantiationFailedException e) {
-			return new MicroPipelineInstantiationResponse(pipelineId, MicroPipelineValidationResult.PIPELINE_INITIALIZATION_FAILED, e.getMessage());
+			return new MicroPipelineInstantiationResponse(configuration.getId(), MicroPipelineValidationResult.PIPELINE_INITIALIZATION_FAILED, e.getMessage());
 		} catch (NonUniqueIdentifierException e) {
-			return new MicroPipelineInstantiationResponse(pipelineId, MicroPipelineValidationResult.NON_UNIQUE_PIPELINE_ID, e.getMessage());
+			return new MicroPipelineInstantiationResponse(configuration.getId(), MicroPipelineValidationResult.NON_UNIQUE_PIPELINE_ID, e.getMessage());
 		} catch(Exception e) {
-			return new MicroPipelineInstantiationResponse(pipelineId, MicroPipelineValidationResult.TECHNICAL_ERROR, e.getMessage());
+			return new MicroPipelineInstantiationResponse(configuration.getId(), MicroPipelineValidationResult.TECHNICAL_ERROR, e.getMessage());
 		}
 	}
 	
