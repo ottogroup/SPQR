@@ -51,6 +51,14 @@ mkdir -p $DEST_FOLDER/spqr-node/repo
 mkdir -p $DEST_FOLDER/spqr-node/log
 mkdir -p $DEST_FOLDER/spqr-node/queues
 
+mkdir -p $DEST_FOLDER/spqr-resman/lib
+mkdir -p $DEST_FOLDER/spqr-resman/bin
+mkdir -p $DEST_FOLDER/spqr-resman/etc
+mkdir -p $DEST_FOLDER/spqr-resman/repo
+mkdir -p $DEST_FOLDER/spqr-resman/log
+
+#######################################################################
+# spqr-node
 # copy configuration from processing node project to destination folder
 cp $SRC_FOLDER/spqr-node/src/main/config/* $DEST_FOLDER/spqr-node/etc/
 
@@ -60,5 +68,19 @@ cp $SRC_FOLDER/spqr-node/target/lib/* $DEST_FOLDER/spqr-node/lib/
 
 # copy scripts from processing node project to destination folder
 cp $SRC_FOLDER/spqr-node/src/main/scripts/* $DEST_FOLDER/spqr-node/bin/
+#######################################################################
+
+#######################################################################
+# spqr-resman
+# copy configuration from resource manager project to destination folder
+cp $SRC_FOLDER/spqr-resman/src/main/config/* $DEST_FOLDER/spqr-resman/etc/
+
+# copy libraries from resource manager project to destination folder (remove log4j-over-slf4j jar first)
+rm $SRC_FOLDER/spqr-resman/target/lib/log4j-over-slf4j-*.jar
+cp $SRC_FOLDER/spqr-resman/target/lib/* $DEST_FOLDER/spqr-resman/lib/
+
+# copy scripts from resource manager project to destination folder
+cp $SRC_FOLDER/spqr-resman/src/main/scripts/* $DEST_FOLDER/spqr-resman/bin/
+#######################################################################
 
 echo "Build and Deployment finished"

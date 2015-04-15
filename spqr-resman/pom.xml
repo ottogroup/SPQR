@@ -85,7 +85,8 @@
   		<dependency>
 			<groupId>com.sun.jersey</groupId>
 			<artifactId>jersey-client</artifactId>
-			<version>1.18.2</version>
+			<version>1.19</version>
+			<scope>provided</scope>
 			<exclusions>
         		<exclusion>
             		<groupId>log4j</groupId>

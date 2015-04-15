@@ -24,7 +24,7 @@ if [ "$1" = "start" ]; then
 	fi
 	
 	CLASSPATH=.:$BASEDIR/../lib/*
-    java -d64 -server -XX:MaxPermSize=512M -XX:MaxGCPauseMillis=500 -XX:+UseG1GC -Xms1G -cp $CLASSPATH com.ottogroup.bi.spqr.node.server.SPQRNodeServer server $2 &	
+    java -d64 -server -XX:MaxPermSize=512M -XX:MaxGCPauseMillis=500 -XX:+UseG1GC -Xms1G -cp $CLASSPATH com.ottogroup.bi.spqr.resman.server.SPQRResourceManagerServer server $2 &	
 	echo $! > $PIDFILE
 	echo "spqr resource manager running. process id: `cat $PIDFILE`"
 fi
@@ -51,7 +51,7 @@ if [ "$1" = "restart" ]; then
 	fi
 
 	CLASSPATH=.:$BASEDIR/../lib/*
-    java -d64 -server -XX:MaxPermSize=512M -XX:MaxGCPauseMillis=500 -XX:+UseG1GC -Xms1G -cp $CLASSPATH com.ottogroup.bi.spqr.node.server.SPQRNodeServer server $2 &	
+    java -d64 -server -XX:MaxPermSize=512M -XX:MaxGCPauseMillis=500 -XX:+UseG1GC -Xms1G -cp $CLASSPATH com.ottogroup.bi.spqr.resman.server.SPQRResourceManagerServer server $2 &	
 	echo $! > $PIDFILE
 	echo "spqr resource manager running. process id: `cat $PIDFILE`"
 fi

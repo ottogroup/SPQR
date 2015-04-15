@@ -63,6 +63,7 @@
 		<module>../spqr-repository</module>
 		<module>../spqr-micro-pipeline</module>
 		<module>../spqr-node</module>
+		<module>../spqr-resman</module>
 		<module>../spqr-operators/spqr-kafka</module>
 		<module>../spqr-operators/spqr-twitter</module>
 		<module>../spqr-operators/spqr-webtrends</module>
