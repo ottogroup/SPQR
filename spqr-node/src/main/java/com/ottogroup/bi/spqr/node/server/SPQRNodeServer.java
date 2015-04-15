@@ -30,7 +30,10 @@ import org.apache.log4j.PropertyConfigurator;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
+import com.ottogroup.bi.spqr.exception.RemoteClientConnectionFailedException;
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
+import com.ottogroup.bi.spqr.node.message.NodeRegistration.NodeRegistrationResponse;
+import com.ottogroup.bi.spqr.node.message.NodeRegistration.NodeRegistrationState;
 import com.ottogroup.bi.spqr.node.resman.SPQRResourceManagerClient;
 import com.ottogroup.bi.spqr.node.resource.pipeline.MicroPipelineResource;
 import com.ottogroup.bi.spqr.pipeline.MicroPipeline;
@@ -57,14 +60,19 @@ public class SPQRNodeServer extends Application<SPQRNodeServerConfiguration> {
 		initializeLog4j(configuration.getLog4jConfiguration());
 		
 		this.microPipelineManager = new MicroPipelineManager(loadAndDeployApplicationRepository(configuration.getComponentRepositoryFolder()), configuration.getNumOfThreads());
-		this.resourceManagerClient = new SPQRResourceManagerClient(configuration.getResmanProtocol(), configuration.getResmanHost(), configuration.getResmanPort());
-		this.resourceManagerClient.registerNode(configuration.getProtocol(), configuration.getHost(), configuration.getServicePort(), configuration.getAdminPort());
+		logger.info("pipeline manager initialized [threads="+configuration.getNumOfThreads()+", repo="+configuration.getComponentRepositoryFolder()+"]");
 		
+		this.resourceManagerClient = new SPQRResourceManagerClient(configuration.getResmanProtocol(), configuration.getResmanHost(), configuration.getResmanPort());
+		logger.info("resource manager client initialized [proto="+configuration.getResmanProtocol() +", host="+configuration.getResmanHost()+", port="+configuration.getResmanPort()+"]");
+		
+		final String nodeId = registerProcessingNode(configuration.getProtocol(), configuration.getHost(), configuration.getServicePort(), configuration.getAdminPort(), this.resourceManagerClient);
+		logger.info("node successfully registered [id="+nodeId+", proto="+configuration.getProtocol()+", host="+configuration.getHost()+", servicePort="+configuration.getServicePort()+", adminPort="+configuration.getAdminPort()+"]");
 		
 		// register exposed resources
 		environment.jersey().register(new MicroPipelineResource(this.microPipelineManager));
 		
-		Runtime.getRuntime().addShutdownHook(new SPQRNodeShutdownHandler(this.microPipelineManager));
+		// register shutdown handler
+		Runtime.getRuntime().addShutdownHook(new SPQRNodeShutdownHandler(this.microPipelineManager, this.resourceManagerClient, nodeId));
 	}
 	
 	/**
@@ -89,6 +97,41 @@ public class SPQRNodeServer extends Application<SPQRNodeServerConfiguration> {
 		}
 	}
 	
+	/**
+	 * Registers this processing node with the remote resource manager
+	 * @param protocol
+	 * @param host
+	 * @param servicePort
+	 * @param adminPort
+	 * @return
+	 * @throws RequiredInputMissingException
+	 * @throws RemoteClientConnectionFailedException
+	 * @throws IOException
+	 */
+	protected String registerProcessingNode(final String protocol, final String host, final int servicePort, final int adminPort, final SPQRResourceManagerClient client) 
+			throws RequiredInputMissingException, RemoteClientConnectionFailedException, IOException {
+		
+		///////////////////////////////////////////////////////////////////////////
+		// validate provided input
+		if(StringUtils.isBlank(protocol))
+			throw new RequiredInputMissingException("Missing require communication protocol used by resource manager for accessing this node. See 'protocol' property in config file.");
+		if(StringUtils.isBlank(host))
+			throw new RequiredInputMissingException("Missing required host name used by resource manager for accessing this node. See 'host' property in config file.");
+		if(servicePort < 1)
+			throw new RequiredInputMissingException("Missing required service port used by resource manager for accessing this node. See 'servicePort' property in config file.");
+		if(adminPort < 1)
+			throw new RequiredInputMissingException("Missing required admin port used by resource manager for accessing this node. See 'adminPort' property in config file.");
+		//
+		///////////////////////////////////////////////////////////////////////////
+
+		final NodeRegistrationResponse registrationResponse = client.registerNode(protocol, host, servicePort, adminPort);
+		if(registrationResponse == null)
+			throw new RemoteClientConnectionFailedException("Failed to connect with resource manager. Error: no response received");
+		if(registrationResponse.getState() != NodeRegistrationState.OK)
+			throw new RemoteClientConnectionFailedException("Failed to register processing node with resource manage. Reason: " + registrationResponse.getState() + ". Message: " + registrationResponse.getMessage());
+		
+		return registrationResponse.getId();
+	}
 
 	/**
 	 * Reads contents from {@link ApplicationRepositoryConfiguration referenced repository} and deploys them to given
@@ -100,7 +143,7 @@ public class SPQRNodeServer extends Application<SPQRNodeServerConfiguration> {
 	 * @throws JsonMappingException
 	 * @throws IOException
 	 */
-	public ComponentRepository loadAndDeployApplicationRepository(final String repositoryPath) throws RequiredInputMissingException, JsonParseException, JsonMappingException, IOException {
+	protected ComponentRepository loadAndDeployApplicationRepository(final String repositoryPath) throws RequiredInputMissingException, JsonParseException, JsonMappingException, IOException {
 
 		////////////////////////////////////////////////////////////////////////////
 		// validate provided input and ensure that folder exists

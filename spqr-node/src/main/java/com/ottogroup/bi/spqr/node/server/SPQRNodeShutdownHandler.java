@@ -17,9 +17,13 @@ package com.ottogroup.bi.spqr.node.server;
 
 import org.apache.log4j.Logger;
 
+import com.ottogroup.bi.spqr.node.resman.SPQRResourceManagerClient;
+import com.ottogroup.bi.spqr.pipeline.MicroPipeline;
 import com.ottogroup.bi.spqr.pipeline.MicroPipelineManager;
 
 /**
+ * Invoked on application shutdown the handler ensures that all resources are properly released,
+ * all {@link MicroPipeline} instances shut down and the node de-registered from the resource manager.
  * @author mnxfst
  * @since Mar 17, 2015
  */
@@ -29,23 +33,40 @@ public class SPQRNodeShutdownHandler extends Thread {
 	private static final Logger logger = Logger.getLogger(SPQRNodeShutdownHandler.class);
 	
 	private final MicroPipelineManager microPipelineManager;
+	private final SPQRResourceManagerClient resourceManagerClient;
+	private final String nodeId;
 	
 	/**
-	 * Initializes the shutdown handler by assigning the provided {@link MicroPipelineManager}
-	 * which is used on shutdown to stop all running micro pipelines
+	 * Initializes the shutdown handler using the provided input
 	 * @param microPipelineManager
+	 * @param resourceManagerClient
+	 * @param nodeId
 	 */
-	public SPQRNodeShutdownHandler(final MicroPipelineManager microPipelineManager) {
+	public SPQRNodeShutdownHandler(final MicroPipelineManager microPipelineManager, final SPQRResourceManagerClient resourceManagerClient, final String nodeId) {
 		this.microPipelineManager = microPipelineManager;
+		this.resourceManagerClient = resourceManagerClient;
+		this.nodeId = nodeId;
 	}
 	
 	/**
 	 * @see java.lang.Runnable#run()
 	 */
 	public void run() {
+		
 		logger.info("Preparing to shut down node");
-		this.microPipelineManager.shutdown();
-		logger.info("All running pipelines shut down...");		
+		
+		try {
+			this.microPipelineManager.shutdown();
+			logger.info("All running pipelines shut down...");
+		} catch(Exception e) {
+			logger.info("Error while shutting down running pipelines: " + e.getMessage());
+		}
+		
+		try {
+			this.resourceManagerClient.deregisterNode(nodeId);
+			logger.info("Node de-registered from resource manager");
+		} catch(Exception e) {
+			logger.error("Error while de-registering node from resource manager: " + e.getMessage());
+		}
 	}
-
 }
