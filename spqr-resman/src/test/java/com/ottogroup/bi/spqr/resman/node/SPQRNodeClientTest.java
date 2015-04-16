@@ -17,13 +17,16 @@ package com.ottogroup.bi.spqr.resman.node;
 
 
 
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.Invocation.Builder;
+import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
 import com.ottogroup.bi.spqr.node.resource.pipeline.MicroPipelineInstantiationResponse;
 import com.ottogroup.bi.spqr.node.resource.pipeline.MicroPipelineShutdownResponse;
@@ -33,10 +36,6 @@ import com.ottogroup.bi.spqr.pipeline.MicroPipelineValidationResult;
 import com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponentConfiguration;
 import com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponentType;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConfiguration;
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.api.client.WebResource.Builder;
 
 /**
  * Test case for {@link SPQRNodeClient}
@@ -53,7 +52,7 @@ public class SPQRNodeClientTest {
 	@Test
 	public void testConstructor_withEmptyProtocol() {
 		try {
-			new SPQRNodeClient("", "localhost", 8080, 9090);
+			new SPQRNodeClient("", "localhost", 8080, 9090, Mockito.mock(Client.class));
 			Assert.fail("Missing required input");
 		} catch(RequiredInputMissingException e) {
 			// expected
@@ -67,7 +66,7 @@ public class SPQRNodeClientTest {
 	@Test
 	public void testConstructor_withEmptyRemoteHost() {
 		try {
-			new SPQRNodeClient("http", "", 8080, 9090);
+			new SPQRNodeClient("http", "", 8080, 9090, Mockito.mock(Client.class));
 			Assert.fail("Missing required input");
 		} catch(RequiredInputMissingException e) {
 			// expected
@@ -81,7 +80,7 @@ public class SPQRNodeClientTest {
 	@Test
 	public void testConstructor_withInvalidServicePort() {
 		try {
-			new SPQRNodeClient("http", "", -1, 9090);
+			new SPQRNodeClient("http", "", -1, 9090, Mockito.mock(Client.class));
 			Assert.fail("Missing required input");
 		} catch(RequiredInputMissingException e) {
 			// expected
@@ -95,7 +94,21 @@ public class SPQRNodeClientTest {
 	@Test
 	public void testConstructor_withInvalidAdminPort() {
 		try {
-			new SPQRNodeClient("http", "", 8080, -1);
+			new SPQRNodeClient("http", "", 8080, -1, Mockito.mock(Client.class));
+			Assert.fail("Missing required input");
+		} catch(RequiredInputMissingException e) {
+			// expected
+		}
+	}
+
+	/**
+	 * Test case for {@link SPQRNodeClient#SPQRNodeClient(String, String, int, int, com.sun.jersey.api.client.Client)} being provided
+	 * null as client ref
+	 */
+	@Test
+	public void testConstructor_withNullClient() {
+		try {
+			new SPQRNodeClient("http", "", 8080, 8081, null);
 			Assert.fail("Missing required input");
 		} catch(RequiredInputMissingException e) {
 			// expected
@@ -108,7 +121,7 @@ public class SPQRNodeClientTest {
 	 */
 	@Test
 	public void testConstructor_withValidInput() throws Exception {
-		SPQRNodeClient client = new SPQRNodeClient("http", "localhost", 8080, 8081);
+		SPQRNodeClient client = new SPQRNodeClient("http", "localhost", 8080, 8081, Mockito.mock(Client.class));
 		Assert.assertEquals("Values must be equal", "http://localhost:8080", client.getProcessingNodeServiceBaseUrl());
 		Assert.assertEquals("Values must be equal", "http://localhost:8081", client.getProcessingNodeAdminBaseUrl());
 	}
@@ -120,7 +133,7 @@ public class SPQRNodeClientTest {
 	 */
 	@Test
 	public void testInstantiatePipeline_withEmptyConfiguration() throws Exception {
-		SPQRNodeClient client = new SPQRNodeClient("http", "localhost", 8080, 8081);
+		SPQRNodeClient client = new SPQRNodeClient("http", "localhost", 8080, 8081, Mockito.mock(Client.class));
 		Assert.assertEquals("Values must be equal", MicroPipelineValidationResult.MISSING_CONFIGURATION, client.instantiatePipeline(null).getState());
 	}
 
@@ -131,7 +144,6 @@ public class SPQRNodeClientTest {
 	@Test
 	public void testInstantiatePipeline_withValidInput() throws Exception {
 
-		ObjectMapper jsonMapper = new ObjectMapper();
 		String processingNodeHost = "processing-node-localhost";
 		int processingNodeServicePort = 7070;
 		int processingNodeAdminPort = 7071;
@@ -149,23 +161,20 @@ public class SPQRNodeClientTest {
 		sampleConfiguration.getComponents().add(componentCfg);
 		sampleConfiguration.getQueues().add(new StreamingMessageQueueConfiguration("test-destination-queue"));
 		
-		String pipelineInstantiationRequest = jsonMapper.writeValueAsString(sampleConfiguration);
-		String pipelineInstantiationResponse = jsonMapper.writeValueAsString(new MicroPipelineInstantiationResponse(sampleConfiguration.getId(), MicroPipelineValidationResult.OK, ""));
+		MicroPipelineInstantiationResponse pipelineInstantiationResponse = new MicroPipelineInstantiationResponse(sampleConfiguration.getId(), MicroPipelineValidationResult.OK, "");
 		String url = new StringBuffer("http://").append(processingNodeHost).append(":").append(processingNodeServicePort).append("/pipelines").toString();
 		
 		//////////////////////////////////////////////////////////
 		// prepare mocked entities
 		Client clientMock = Mockito.mock(Client.class);		
-		WebResource webResourceMock = Mockito.mock(WebResource.class);
-		ClientResponse clientResponseMock = Mockito.mock(ClientResponse.class);
+		WebTarget webTargetMock = Mockito.mock(WebTarget.class);
 		Builder b1Mock = Mockito.mock(Builder.class);
 		Builder b2Mock = Mockito.mock(Builder.class);		
 		
-		Mockito.when(clientMock.resource(url)).thenReturn(webResourceMock);
-		Mockito.when(webResourceMock.accept(MediaType.APPLICATION_JSON)).thenReturn(b1Mock);
-		Mockito.when(b1Mock.type(MediaType.APPLICATION_JSON)).thenReturn(b2Mock); // required to support chained methods for retrieving client response
-		Mockito.when(b2Mock.post(ClientResponse.class, pipelineInstantiationRequest)).thenReturn(clientResponseMock);
-		Mockito.when(clientResponseMock.getEntity(String.class)).thenReturn(pipelineInstantiationResponse);
+		Mockito.when(clientMock.target(url)).thenReturn(webTargetMock);
+		Mockito.when(webTargetMock.request(MediaType.APPLICATION_JSON)).thenReturn(b1Mock);
+		Mockito.when(b1Mock.accept(MediaType.APPLICATION_JSON)).thenReturn(b2Mock); // required to support chained methods for retrieving client response
+		Mockito.when(b2Mock.post(Mockito.isA(Entity.class), Mockito.eq(MicroPipelineInstantiationResponse.class))).thenReturn(pipelineInstantiationResponse);
 		//
 		//////////////////////////////////////////////////////////				
 		
@@ -174,10 +183,10 @@ public class SPQRNodeClientTest {
 		Assert.assertNotNull("Response must not be null", response);
 		Assert.assertEquals("State must be 'OK'", MicroPipelineValidationResult.OK, response.getState());
 
-		Mockito.verify(clientMock).resource(url);
-		Mockito.verify(webResourceMock).accept(MediaType.APPLICATION_JSON);
-		Mockito.verify(b1Mock).type(MediaType.APPLICATION_JSON);
-		Mockito.verify(b2Mock).post(ClientResponse.class, pipelineInstantiationRequest);
+		Mockito.verify(clientMock).target(url);
+		Mockito.verify(webTargetMock).request(MediaType.APPLICATION_JSON);
+		Mockito.verify(b1Mock).accept(MediaType.APPLICATION_JSON);
+		Mockito.verify(b2Mock).post(Mockito.isA(Entity.class), Mockito.eq(MicroPipelineInstantiationResponse.class));
 	}
 
 	/**
@@ -187,7 +196,6 @@ public class SPQRNodeClientTest {
 	@Test
 	public void testUpdatePipeline_withValidInput() throws Exception {
 
-		ObjectMapper jsonMapper = new ObjectMapper();
 		String processingNodeHost = "processing-node-localhost";
 		int processingNodeServicePort = 7070;
 		int processingNodeAdminPort = 7071;
@@ -205,23 +213,20 @@ public class SPQRNodeClientTest {
 		sampleConfiguration.getComponents().add(componentCfg);
 		sampleConfiguration.getQueues().add(new StreamingMessageQueueConfiguration("test-destination-queue"));
 		
-		String pipelineInstantiationRequest = jsonMapper.writeValueAsString(sampleConfiguration);
-		String pipelineInstantiationResponse = jsonMapper.writeValueAsString(new MicroPipelineInstantiationResponse(sampleConfiguration.getId(), MicroPipelineValidationResult.OK, ""));
+		MicroPipelineInstantiationResponse pipelineInstantiationResponse = new MicroPipelineInstantiationResponse(sampleConfiguration.getId(), MicroPipelineValidationResult.OK, "");
 		String url = new StringBuffer("http://").append(processingNodeHost).append(":").append(processingNodeServicePort).append("/pipelines/").append(sampleConfiguration.getId()).toString();
 		
 		//////////////////////////////////////////////////////////
 		// prepare mocked entities
 		Client clientMock = Mockito.mock(Client.class);		
-		WebResource webResourceMock = Mockito.mock(WebResource.class);
-		ClientResponse clientResponseMock = Mockito.mock(ClientResponse.class);
+		WebTarget webTargetMock = Mockito.mock(WebTarget.class);
 		Builder b1Mock = Mockito.mock(Builder.class);
 		Builder b2Mock = Mockito.mock(Builder.class);		
 		
-		Mockito.when(clientMock.resource(url)).thenReturn(webResourceMock);
-		Mockito.when(webResourceMock.accept(MediaType.APPLICATION_JSON)).thenReturn(b1Mock);
-		Mockito.when(b1Mock.type(MediaType.APPLICATION_JSON)).thenReturn(b2Mock); // required to support chained methods for retrieving client response
-		Mockito.when(b2Mock.put(ClientResponse.class, pipelineInstantiationRequest)).thenReturn(clientResponseMock);
-		Mockito.when(clientResponseMock.getEntity(String.class)).thenReturn(pipelineInstantiationResponse);
+		Mockito.when(clientMock.target(url)).thenReturn(webTargetMock);
+		Mockito.when(webTargetMock.request(MediaType.APPLICATION_JSON)).thenReturn(b1Mock);
+		Mockito.when(b1Mock.accept(MediaType.APPLICATION_JSON)).thenReturn(b2Mock); // required to support chained methods for retrieving client response
+		Mockito.when(b2Mock.put(Mockito.isA(Entity.class), Mockito.eq(MicroPipelineInstantiationResponse.class))).thenReturn(pipelineInstantiationResponse);
 		//
 		//////////////////////////////////////////////////////////				
 		
@@ -230,10 +235,10 @@ public class SPQRNodeClientTest {
 		Assert.assertNotNull("Response must not be null", response);
 		Assert.assertEquals("State must be 'OK'", MicroPipelineValidationResult.OK, response.getState());
 		
-		Mockito.verify(clientMock).resource(url);
-		Mockito.verify(webResourceMock).accept(MediaType.APPLICATION_JSON);
-		Mockito.verify(b1Mock).type(MediaType.APPLICATION_JSON);
-		Mockito.verify(b2Mock).put(ClientResponse.class, pipelineInstantiationRequest);
+		Mockito.verify(clientMock).target(url);
+		Mockito.verify(webTargetMock).request(MediaType.APPLICATION_JSON);
+		Mockito.verify(b1Mock).accept(MediaType.APPLICATION_JSON);
+		Mockito.verify(b2Mock).put(Mockito.isA(Entity.class), Mockito.eq(MicroPipelineInstantiationResponse.class));
 	}
 	
 	/**
@@ -257,28 +262,25 @@ public class SPQRNodeClientTest {
 	@Test
 	public void testShutdownPipeline_withValidInput() throws Exception {
 		
-		ObjectMapper jsonMapper = new ObjectMapper();
 		String processingNodeHost = "processing-node-localhost";
 		int processingNodeServicePort = 7070;
 		int processingNodeAdminPort = 7071;
 		String pipelineId = "test-pipeline-id";
 		
-		String pipelineShutdownResponse = jsonMapper.writeValueAsString(new MicroPipelineShutdownResponse(pipelineId, MicroPipelineShutdownState.OK, ""));
+		MicroPipelineShutdownResponse pipelineShutdownResponse = new MicroPipelineShutdownResponse(pipelineId, MicroPipelineShutdownState.OK, "");
 		String url = new StringBuffer("http://").append(processingNodeHost).append(":").append(processingNodeServicePort).append("/pipelines/").append(pipelineId).toString();
 		
 		//////////////////////////////////////////////////////////
 		// prepare mocked entities
 		Client clientMock = Mockito.mock(Client.class);		
-		WebResource webResourceMock = Mockito.mock(WebResource.class);
-		ClientResponse clientResponseMock = Mockito.mock(ClientResponse.class);
+		WebTarget webTargetMock = Mockito.mock(WebTarget.class);
 		Builder b1Mock = Mockito.mock(Builder.class);
 		Builder b2Mock = Mockito.mock(Builder.class);		
 		
-		Mockito.when(clientMock.resource(url)).thenReturn(webResourceMock);
-		Mockito.when(webResourceMock.accept(MediaType.APPLICATION_JSON)).thenReturn(b1Mock);
-		Mockito.when(b1Mock.type(MediaType.APPLICATION_JSON)).thenReturn(b2Mock); // required to support chained methods for retrieving client response
-		Mockito.when(b2Mock.delete(ClientResponse.class)).thenReturn(clientResponseMock);
-		Mockito.when(clientResponseMock.getEntity(String.class)).thenReturn(pipelineShutdownResponse);
+		Mockito.when(clientMock.target(url)).thenReturn(webTargetMock);
+		Mockito.when(webTargetMock.request(MediaType.APPLICATION_JSON)).thenReturn(b1Mock);
+		Mockito.when(b1Mock.accept(MediaType.APPLICATION_JSON)).thenReturn(b2Mock); // required to support chained methods for retrieving client response
+		Mockito.when(b2Mock.delete(Mockito.eq(MicroPipelineShutdownResponse.class))).thenReturn(pipelineShutdownResponse);
 		//
 		//////////////////////////////////////////////////////////				
 		
@@ -287,10 +289,10 @@ public class SPQRNodeClientTest {
 		Assert.assertNotNull("Response must not be null", response);
 		Assert.assertEquals("State must be 'OK'", MicroPipelineShutdownState.OK, response.getState());
 		
-		Mockito.verify(clientMock).resource(url);
-		Mockito.verify(webResourceMock).accept(MediaType.APPLICATION_JSON);
-		Mockito.verify(b1Mock).type(MediaType.APPLICATION_JSON);
-		Mockito.verify(b2Mock).delete(ClientResponse.class);
+		Mockito.verify(clientMock).target(url);
+		Mockito.verify(webTargetMock).request(MediaType.APPLICATION_JSON);
+		Mockito.verify(b1Mock).accept(MediaType.APPLICATION_JSON);
+		Mockito.verify(b2Mock).delete(Mockito.eq(MicroPipelineShutdownResponse.class));
 	}
 	
 	
