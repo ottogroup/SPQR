@@ -82,6 +82,20 @@ public class SPQRResourceManagerClientTest {
 
 	/**
 	 * Test case for {@link SPQRResourceManagerClient#SPQRResourceManagerClient(String, String, int, com.sun.jersey.api.client.Client)} being
+	 * provided null as client ref
+	 */
+	@Test	
+	public void testConstructor_withNullClient() {
+		try {
+			new SPQRResourceManagerClient("http", "localhost", 8080, null);
+			Assert.fail("Invalid input");
+		} catch(RequiredInputMissingException e) {
+			// expected
+		}
+	}
+
+	/**
+	 * Test case for {@link SPQRResourceManagerClient#SPQRResourceManagerClient(String, String, int, com.sun.jersey.api.client.Client)} being
 	 * provided valid input
 	 */
 	@Test	

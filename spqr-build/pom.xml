@@ -5,7 +5,7 @@
   	<!-- maven specifc artifact grouping and versioning information -->
   	<groupId>com.ottogroup.bi.spqr</groupId>
 	<artifactId>spqr-build</artifactId>
-  	<version>0.2.0</version>
+  	<version>0.3.0</version>
   	<packaging>pom</packaging>
 
 	<!-- application owner -->

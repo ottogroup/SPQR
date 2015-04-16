@@ -18,6 +18,7 @@ package com.ottogroup.bi.spqr.resman.server;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.dropwizard.Configuration;
+import io.dropwizard.client.JerseyClientConfiguration;
 
 /**
  * Provides a mapping for all relevant configuration options required on resource
@@ -33,7 +34,10 @@ public class SPQRResourceManagerConfiguration extends Configuration {
 	/** component repository folder */
 	@JsonProperty(value="componentRepositoryFolder", required=true)
 	private String componentRepositoryFolder = null;
-	
+	/** http client configuration */
+	@JsonProperty(value="httpClient", required=true)
+    private JerseyClientConfiguration httpClient;
+
 	public String getLog4jConfiguration() {
 		return log4jConfiguration;
 	}
@@ -45,6 +49,12 @@ public class SPQRResourceManagerConfiguration extends Configuration {
 	}
 	public void setComponentRepositoryFolder(String componentRepositoryFolder) {
 		this.componentRepositoryFolder = componentRepositoryFolder;
+	}
+	public JerseyClientConfiguration getHttpClient() {
+		return httpClient;
+	}
+	public void setHttpClient(JerseyClientConfiguration httpClient) {
+		this.httpClient = httpClient;
 	}
 
 	

@@ -15,8 +15,14 @@
  */
 package com.ottogroup.bi.spqr.resman.node;
 
+import io.dropwizard.client.JerseyClientBuilder;
+import io.dropwizard.client.JerseyClientConfiguration;
+import io.dropwizard.setup.Environment;
+
 import java.util.HashMap;
 import java.util.Map;
+
+import javax.ws.rs.client.Client;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -45,13 +51,18 @@ public class SPQRNodeManager {
 	private final Map<String, SPQRNodeClient> processingNodes = new HashMap<>();
 	/** number of retries to compute an unique node identifier */
 	private final int numIdentifierComputationRetries;
+	/** builder to use for creating new rest client */
+	private final JerseyClientBuilder httpClientBuilder;
+	
 	
 	/**
 	 * Initializes the manager using the provided input
 	 * @param numIdentifierComputationRetries
+	 * @param httpClientBuilder
 	 */
-	public SPQRNodeManager(final int numIdentifierComputationRetries) {
+	public SPQRNodeManager(final int numIdentifierComputationRetries, final JerseyClientBuilder httpClientBuilder) {
 		this.numIdentifierComputationRetries = numIdentifierComputationRetries;
+		this.httpClientBuilder = httpClientBuilder;
 	}
 	
 	/**
@@ -89,7 +100,7 @@ public class SPQRNodeManager {
 		///////////////////////////////////////////////////////////////////////////////
 		// register client to access remote node if required
 		try {
-			this.processingNodes.put(nodeId, new SPQRNodeClient(protocol, remoteHost, servicePort, adminPort));
+			this.processingNodes.put(nodeId, new SPQRNodeClient(protocol, remoteHost, servicePort, adminPort, getHttpClient(nodeId)));
 		} catch(RequiredInputMissingException e) {
 			return new NodeRegistrationResponse("", NodeRegistrationState.TECHNICAL_ERROR, "Failed to create spqr node client. Error: " +e.getMessage());
 		}
@@ -131,5 +142,13 @@ public class SPQRNodeManager {
 		return this.processingNodes.containsKey(StringUtils.lowerCase(StringUtils.trim(nodeId)));
 	}
 	
+	/**
+	 * Creates a new {@link Client} instance and assigns the given identifier
+	 * @param clientId
+	 * @return
+	 */
+	protected Client getHttpClient(final String clientId) {
+		return httpClientBuilder.build(clientId);
+	}
 
 }

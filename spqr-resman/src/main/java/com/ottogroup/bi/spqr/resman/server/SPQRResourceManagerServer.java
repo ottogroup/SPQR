@@ -16,6 +16,7 @@
 package com.ottogroup.bi.spqr.resman.server;
 
 import io.dropwizard.Application;
+import io.dropwizard.client.JerseyClientBuilder;
 import io.dropwizard.setup.Environment;
 
 import java.io.File;
@@ -33,6 +34,9 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
 import com.ottogroup.bi.spqr.repository.ComponentDescriptor;
 import com.ottogroup.bi.spqr.repository.ComponentRepository;
+import com.ottogroup.bi.spqr.resman.node.SPQRNodeManager;
+import com.ottogroup.bi.spqr.resman.resource.node.SPQRNodeManagementResource;
+import com.ottogroup.bi.spqr.resman.resource.pipeline.SPQRPipelineManagementResource;
 
 /**
  * @author mnxfst
@@ -45,6 +49,8 @@ public class SPQRResourceManagerServer extends Application<SPQRResourceManagerCo
 	
 	/** reference to component repository - required for deploying new artifacts to nodes on request */
 	private ComponentRepository componentRepository = null;
+	/** reference to spqr node manager */
+	private SPQRNodeManager spqrNodeManager = null;
 	
 	/**
 	 * @see io.dropwizard.Application#run(io.dropwizard.Configuration, io.dropwizard.setup.Environment)
@@ -52,6 +58,9 @@ public class SPQRResourceManagerServer extends Application<SPQRResourceManagerCo
 	public void run(SPQRResourceManagerConfiguration configuration,	Environment environment) throws Exception {		
 		initializeLog4j(configuration.getLog4jConfiguration());		
 		this.componentRepository = loadAndDeployApplicationRepository(configuration.getComponentRepositoryFolder());
+		this.spqrNodeManager = new SPQRNodeManager(5, new JerseyClientBuilder(environment).using(configuration.getHttpClient()));
+		environment.jersey().register(new SPQRPipelineManagementResource());
+		environment.jersey().register(new SPQRNodeManagementResource(spqrNodeManager));
 		Runtime.getRuntime().addShutdownHook(new SPQRResourceManagerShutdownHandler());		
 	}
 
