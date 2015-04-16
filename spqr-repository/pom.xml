@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>com.ottogroup.bi.spqr</groupId>
 		<artifactId>spqr-parent</artifactId>
-		<version>0.3.0</version>
+		<version>0.4.0-SNAPSHOT</version>
 	</parent>
   
   	<!-- maven specifc artifact grouping and versioning information -->
@@ -91,6 +91,24 @@
 						<encoding>UTF-8</encoding>
 					</configuration>
 				</plugin>
+
+				<!-- copies all dependencies to library folder below target directory -->
+	  			<plugin>
+		            <artifactId>maven-dependency-plugin</artifactId>
+		            <executions>
+		              <execution>
+		                <phase>package</phase>
+		                <goals>
+		                  <goal>copy-dependencies</goal>
+		                </goals>
+		                <configuration>
+		                	<excludeScope>provided</excludeScope>
+		                	<excludeGroupIds>junit,org.slf4j,org.mockito,log4j</excludeGroupIds>
+		                  <outputDirectory>${project.build.directory}/lib</outputDirectory>
+		                </configuration>
+		              </execution>
+		            </executions>
+	          	</plugin>
 
   			</plugins>
   		</pluginManagement>			

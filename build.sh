@@ -63,7 +63,6 @@ mkdir -p $DEST_FOLDER/spqr-resman/log
 cp $SRC_FOLDER/spqr-node/src/main/config/* $DEST_FOLDER/spqr-node/etc/
 
 # copy libraries from processing node project to destination folder (remove log4j-over-slf4j jar first)
-rm $SRC_FOLDER/spqr-node/target/lib/log4j-over-slf4j-*.jar
 cp $SRC_FOLDER/spqr-node/target/lib/* $DEST_FOLDER/spqr-node/lib/
 
 # copy scripts from processing node project to destination folder
@@ -76,11 +75,37 @@ cp $SRC_FOLDER/spqr-node/src/main/scripts/* $DEST_FOLDER/spqr-node/bin/
 cp $SRC_FOLDER/spqr-resman/src/main/config/* $DEST_FOLDER/spqr-resman/etc/
 
 # copy libraries from resource manager project to destination folder (remove log4j-over-slf4j jar first)
-rm $SRC_FOLDER/spqr-resman/target/lib/log4j-over-slf4j-*.jar
 cp $SRC_FOLDER/spqr-resman/target/lib/* $DEST_FOLDER/spqr-resman/lib/
 
 # copy scripts from resource manager project to destination folder
 cp $SRC_FOLDER/spqr-resman/src/main/scripts/* $DEST_FOLDER/spqr-resman/bin/
+#######################################################################
+
+#######################################################################
+# spqr-json operator
+mkdir -p $DEST_FOLDER/spqr-node/repo/spqr-json
+mkdir -p $DEST_FOLDER/spqr-resman/repo/spqr-json
+cp $SRC_FOLDER/spqr-operators/spqr-json/target/lib/* $DEST_FOLDER/spqr-node/repo/spqr-json/
+cp $SRC_FOLDER/spqr-operators/spqr-json/target/lib/* $DEST_FOLDER/spqr-resman/repo/spqr-json/
+
+# spqr-kafka operator
+mkdir -p $DEST_FOLDER/spqr-node/repo/spqr-kafka
+mkdir -p $DEST_FOLDER/spqr-resman/repo/spqr-kafka
+cp $SRC_FOLDER/spqr-operators/spqr-kafka/target/lib/* $DEST_FOLDER/spqr-node/repo/spqr-kafka/
+cp $SRC_FOLDER/spqr-operators/spqr-kafka/target/lib/* $DEST_FOLDER/spqr-resman/repo/spqr-kafka/
+
+# spqr-twitter operator
+mkdir -p $DEST_FOLDER/spqr-node/repo/spqr-twitter
+mkdir -p $DEST_FOLDER/spqr-resman/repo/spqr-twitter
+cp $SRC_FOLDER/spqr-operators/spqr-twitter/target/lib/* $DEST_FOLDER/spqr-node/repo/spqr-twitter/
+cp $SRC_FOLDER/spqr-operators/spqr-twitter/target/lib/* $DEST_FOLDER/spqr-resman/repo/spqr-twitter/
+
+# spqr-webtrends operator
+mkdir -p $DEST_FOLDER/spqr-node/repo/spqr-webtrends
+mkdir -p $DEST_FOLDER/spqr-resman/repo/spqr-webtrends
+cp $SRC_FOLDER/spqr-operators/spqr-webtrends/target/lib/* $DEST_FOLDER/spqr-node/repo/spqr-twitter/
+cp $SRC_FOLDER/spqr-operators/spqr-webtrends/target/lib/* $DEST_FOLDER/spqr-resman/repo/spqr-twitter/
+
 #######################################################################
 
 echo "Build and Deployment finished"

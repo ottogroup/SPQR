@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>com.ottogroup.bi.spqr</groupId>
 		<artifactId>spqr-parent</artifactId>
-		<version>0.3.0</version>
+		<version>0.4.0-SNAPSHOT</version>
 	</parent>
   
   	<!-- maven specifc artifact grouping and versioning information -->
@@ -115,7 +115,8 @@
 	                </goals>
 	                <configuration>
 	                	<excludeScope>provided</excludeScope>
-	                	<excludeGroupIds>junit, org.mockito, log4j-over-slf4j</excludeGroupIds>
+	                	<excludeGroupIds>junit,org.mockito,log4j-over-slf4j</excludeGroupIds>
+	                	<excludeArtifactIds>log4j-over-slf4j</excludeArtifactIds>
 	                  <outputDirectory>${project.build.directory}/lib</outputDirectory>
 	                </configuration>
 	              </execution>
