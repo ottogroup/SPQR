@@ -1,5 +1,5 @@
 # Introduction
-The SPQR framework implements a dynamic framework for processing high volume data streams through pipelines. 
+The SPQR ("spooker") framework implements a dynamic framework for processing high volume data streams through pipelines. 
 Established stream processing frameworks such as [Apache Storm](https://storm.apache.org/), [Apache Spark Streaming](http://spark.apache.org/) or [Apache Samza](http://samza.incubator.apache.org/) follow a static approach to building data stream processing pipelines:
 
 1. pipelines are defined in code
@@ -26,6 +26,12 @@ SPQR allows for the code of data stream processing operators to be deployed to a
 
 # Concepts
 On a conceptual level the framework follows the notion of [pipelines](https://github.com/ottogroup/SPQR/wiki/Pipelines) which consumes data from a [data source](https://github.com/ottogroup/SPQR/wiki/Source), [processes](https://github.com/ottogroup/SPQR/wiki/Operator) it and [exports](https://github.com/ottogroup/SPQR/wiki/Emitter) the result into an attached destination. To form larger units these pipelines may be interconnected by exchanging data using a common [transportation layer](https://github.com/ottogroup/SPQR/wiki/Transportation-Layer).
+
+# From ASAP to SPQR
+The first version of SPQR ("spooker") was released under the acronym _ASAP_. Due to trademark issues it was later changed. From a technical perspective changing the name came along with some simplifications when it comes to pipeline setup. A number of generalization attempts were removed to simplify and speed up the use of SPQR in different context. 
+
+For example, the mailbox is not a [pipeline component](https://github.com/ottogroup/SPQR/wiki/SPQR-component-annotation) anymore that may be replaced by customized implementation on the fly but now uses the only available implementation based on [chronicles](https://github.com/OpenHFT/Java-Chronicle). Although it restricts flexibility it reduces complexity and leads to faster deployment processes. 
+
 
 # Building Blocks
 
