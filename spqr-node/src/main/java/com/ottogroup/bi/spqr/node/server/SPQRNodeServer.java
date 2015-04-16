@@ -16,6 +16,7 @@
 package com.ottogroup.bi.spqr.node.server;
 
 import io.dropwizard.Application;
+import io.dropwizard.client.JerseyClientBuilder;
 import io.dropwizard.setup.Environment;
 
 import java.io.File;
@@ -36,6 +37,7 @@ import com.ottogroup.bi.spqr.node.message.NodeRegistration.NodeRegistrationRespo
 import com.ottogroup.bi.spqr.node.message.NodeRegistration.NodeRegistrationState;
 import com.ottogroup.bi.spqr.node.resman.SPQRResourceManagerClient;
 import com.ottogroup.bi.spqr.node.resource.pipeline.MicroPipelineResource;
+import com.ottogroup.bi.spqr.node.server.SPQRResourceManagerConfiguration.ResourceManagerMode;
 import com.ottogroup.bi.spqr.pipeline.MicroPipeline;
 import com.ottogroup.bi.spqr.pipeline.MicroPipelineManager;
 import com.ottogroup.bi.spqr.repository.ComponentDescriptor;
@@ -51,22 +53,41 @@ public class SPQRNodeServer extends Application<SPQRNodeServerConfiguration> {
 	private static final Logger logger = Logger.getLogger(SPQRNodeServer.class);
 	
 	private MicroPipelineManager microPipelineManager;
+	private String nodeId;
 	private SPQRResourceManagerClient resourceManagerClient;
 	
 	/**
 	 * @see io.dropwizard.Application#run(io.dropwizard.Configuration, io.dropwizard.setup.Environment)
 	 */
 	public void run(SPQRNodeServerConfiguration configuration, Environment environment) throws Exception {
-		initializeLog4j(configuration.getLog4jConfiguration());
+
+		// initialize log4j environment using the settings provided via node configuration 
+		initializeLog4j(configuration.getSpqrNode().getLog4jConfiguration());
 		
-		this.microPipelineManager = new MicroPipelineManager(loadAndDeployApplicationRepository(configuration.getComponentRepositoryFolder()), configuration.getNumOfThreads());
-		logger.info("pipeline manager initialized [threads="+configuration.getNumOfThreads()+", repo="+configuration.getComponentRepositoryFolder()+"]");
+		// initialize the micro pipeline manager
+		this.microPipelineManager = new MicroPipelineManager(loadAndDeployApplicationRepository(configuration.getSpqrNode().getComponentRepositoryFolder()), configuration.getSpqrNode().getNumOfThreads());
+		logger.info("pipeline manager initialized [threads="+configuration.getSpqrNode().getNumOfThreads()+", repo="+configuration.getSpqrNode().getComponentRepositoryFolder()+"]");
 		
-		this.resourceManagerClient = new SPQRResourceManagerClient(configuration.getResmanProtocol(), configuration.getResmanHost(), configuration.getResmanPort());
-		logger.info("resource manager client initialized [proto="+configuration.getResmanProtocol() +", host="+configuration.getResmanHost()+", port="+configuration.getResmanPort()+"]");
-		
-		final String nodeId = registerProcessingNode(configuration.getProtocol(), configuration.getHost(), configuration.getServicePort(), configuration.getAdminPort(), this.resourceManagerClient);
-		logger.info("node successfully registered [id="+nodeId+", proto="+configuration.getProtocol()+", host="+configuration.getHost()+", servicePort="+configuration.getServicePort()+", adminPort="+configuration.getAdminPort()+"]");
+		// check which type of resource management is requested via configuration 
+		if(configuration.getResourceManagerConfiguration().getMode() == ResourceManagerMode.REMOTE) {
+
+			// prepare for use remote resource management: fetch configuration  
+			SPQRResourceManagerConfiguration resManCfg = configuration.getResourceManagerConfiguration();
+			logger.info("[resource manager [mode="+ResourceManagerMode.REMOTE+", protocol="+resManCfg.getProtocol()+", host="+resManCfg.getHost()+", port="+resManCfg.getPort()+"]");
+
+			// initialize client to use for remote communication
+			this.resourceManagerClient = new SPQRResourceManagerClient(resManCfg.getProtocol(), resManCfg.getHost(), resManCfg.getPort(), new JerseyClientBuilder(environment).using(configuration.getHttpClient()).build("resourceManagerClient"));
+			
+			// finally: register node with remote resource manager
+			this.nodeId = registerProcessingNode(configuration.getSpqrNode().getProtocol(), configuration.getSpqrNode().getHost(), configuration.getSpqrNode().getServicePort(), 
+					configuration.getSpqrNode().getAdminPort(), this.resourceManagerClient);
+			logger.info("node successfully registered [id="+nodeId+", proto="+configuration.getSpqrNode().getProtocol()+", host="+configuration.getSpqrNode().getHost()+", servicePort="+configuration.getSpqrNode().getServicePort()+", adminPort="+configuration.getSpqrNode().getAdminPort()+"]");
+			
+		} else {
+			this.nodeId = "standalone";
+			this.resourceManagerClient = null;
+			logger.info("resource manager [mode="+ResourceManagerMode.LOCAL+"]");
+		}
 		
 		// register exposed resources
 		environment.jersey().register(new MicroPipelineResource(this.microPipelineManager));
@@ -196,6 +217,7 @@ public class SPQRNodeServer extends Application<SPQRNodeServerConfiguration> {
 	 * @param args
 	 */
 	public static void main(String[] args) throws Exception {
+		
 		new SPQRNodeServer().run(args);
 	}
 

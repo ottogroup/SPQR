@@ -62,11 +62,13 @@ public class SPQRNodeShutdownHandler extends Thread {
 			logger.info("Error while shutting down running pipelines: " + e.getMessage());
 		}
 		
-		try {
-			this.resourceManagerClient.deregisterNode(nodeId);
-			logger.info("Node de-registered from resource manager");
-		} catch(Exception e) {
-			logger.error("Error while de-registering node from resource manager: " + e.getMessage());
+		if(this.resourceManagerClient != null) {
+			try {
+				this.resourceManagerClient.deregisterNode(nodeId);
+				logger.info("Node de-registered from resource manager");
+			} catch(Exception e) {
+				logger.error("Error while de-registering node from resource manager: " + e.getMessage());
+			}
 		}
 	}
 }

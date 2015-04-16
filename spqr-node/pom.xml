@@ -65,18 +65,6 @@
   			<scope>compile</scope>
   		</dependency>
   		
-  		<!-- rest client -->
-  		<dependency>
-			<groupId>com.sun.jersey</groupId>
-			<artifactId>jersey-client</artifactId>
-			<version>1.18.2</version>
-			<exclusions>
-        		<exclusion>
-            		<groupId>log4j</groupId>
-            		<artifactId>log4j</artifactId>
-        		</exclusion>
-    		</exclusions>
-		</dependency>
   		
   		<!-- apache commons -->
 		<dependency>
@@ -92,6 +80,12 @@
     		<artifactId>dropwizard-core</artifactId>
     		<version>0.8.0</version>
     		<scope>compile</scope>
+    	</dependency>
+    	
+    	<dependency>
+    		<groupId>io.dropwizard</groupId>
+    		<artifactId>dropwizard-client</artifactId>
+    		<version>0.8.0</version>
     	</dependency>
 
   	</dependencies>

@@ -16,6 +16,7 @@
 package com.ottogroup.bi.spqr.node.server;
 
 import io.dropwizard.Configuration;
+import io.dropwizard.client.JerseyClientConfiguration;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -26,105 +27,34 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class SPQRNodeServerConfiguration extends Configuration {
 
-	/** log4j */
-	@JsonProperty(value="log4jConfiguration", required=true)
-	private String log4jConfiguration = null;
-	/** component repository folder */
-	@JsonProperty(value="componentRepositoryFolder", required=true)
-	private String componentRepositoryFolder = null;
-	/** folder used for storing temporary queue data */
-	@JsonProperty(value="temporaryQueueFolder", required=true)
-	private String temporaryQueueFolder = null;
-	/** number of threads assigned to internal executor service, default: 0 -- cached thread pool will be used */
-	@JsonProperty(value="numOfThreads", required=true)
-	private int numOfThreads = 0;
-	/** host - forwarded to resource manager during startup */
-	@JsonProperty(value="host", required=true)
-	private String host = null;
-	/** protocol to be used for communication with this node */
-	@JsonProperty(value="protocol", required=true)
-	private String protocol = "http";
-	/** service port */
-	@JsonProperty(value="servicePort", required=true)
-	private int servicePort = 8080;
-	/** admin port */
-	@JsonProperty(value="adminPort", required=true)
-	private int adminPort = 8081;
-	/** resource manager protocol */
-	@JsonProperty(value="resmanProtocol", required=true)
-	private String resmanProtocol = "http";
-	/** resource manager host */
-	@JsonProperty(value="resmanHost", required=true)
-	private String resmanHost = null;
-	/** resource manager port */
-	@JsonProperty(value="resmanPort", required=true)
-	private int resmanPort = 8080;	
+	/** processing node specific settings */
+	@JsonProperty(value="spqrNode", required=true)
+	private SPQRProcessingNodeConfiguration spqrNode = null;
+	/** resource manager configuration: local or remote */
+	@JsonProperty(value="resourceManager", required=true)
+	private SPQRResourceManagerConfiguration resourceManagerConfiguration = null;	
+	/** http client configuration */
+	@JsonProperty(value="httpClient", required=true)
+    private JerseyClientConfiguration httpClient;
 	
-	public String getLog4jConfiguration() {
-		return log4jConfiguration;
+	public SPQRProcessingNodeConfiguration getSpqrNode() {
+		return spqrNode;
 	}
-	public void setLog4jConfiguration(String log4jConfiguration) {
-		this.log4jConfiguration = log4jConfiguration;
+	public void setSpqrNode(SPQRProcessingNodeConfiguration spqrNode) {
+		this.spqrNode = spqrNode;
 	}
-	public String getComponentRepositoryFolder() {
-		return componentRepositoryFolder;
+	public SPQRResourceManagerConfiguration getResourceManagerConfiguration() {
+		return resourceManagerConfiguration;
 	}
-	public void setComponentRepositoryFolder(String componentRepositoryFolder) {
-		this.componentRepositoryFolder = componentRepositoryFolder;
+	public void setResourceManagerConfiguration(
+			SPQRResourceManagerConfiguration resourceManagerConfiguration) {
+		this.resourceManagerConfiguration = resourceManagerConfiguration;
 	}
-	public String getTemporaryQueueFolder() {
-		return temporaryQueueFolder;
+	public JerseyClientConfiguration getHttpClient() {
+		return httpClient;
 	}
-	public void setTemporaryQueueFolder(String temporaryQueueFolder) {
-		this.temporaryQueueFolder = temporaryQueueFolder;
-	}
-	public int getNumOfThreads() {
-		return numOfThreads;
-	}
-	public void setNumOfThreads(int numOfThreads) {
-		this.numOfThreads = numOfThreads;
-	}
-	public String getHost() {
-		return host;
-	}
-	public void setHost(String host) {
-		this.host = host;
-	}
-	public String getProtocol() {
-		return protocol;
-	}
-	public void setProtocol(String protocol) {
-		this.protocol = protocol;
-	}
-	public int getServicePort() {
-		return servicePort;
-	}
-	public void setServicePort(int servicePort) {
-		this.servicePort = servicePort;
-	}
-	public int getAdminPort() {
-		return adminPort;
-	}
-	public void setAdminPort(int adminPort) {
-		this.adminPort = adminPort;
-	}
-	public String getResmanProtocol() {
-		return resmanProtocol;
-	}
-	public void setResmanProtocol(String resmanProtocol) {
-		this.resmanProtocol = resmanProtocol;
-	}
-	public String getResmanHost() {
-		return resmanHost;
-	}
-	public void setResmanHost(String resmanHost) {
-		this.resmanHost = resmanHost;
-	}
-	public int getResmanPort() {
-		return resmanPort;
-	}
-	public void setResmanPort(int resmanPort) {
-		this.resmanPort = resmanPort;
+	public void setHttpClient(JerseyClientConfiguration httpClient) {
+		this.httpClient = httpClient;
 	}
 		
 }

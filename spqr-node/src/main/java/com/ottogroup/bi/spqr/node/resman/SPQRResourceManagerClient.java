@@ -17,20 +17,19 @@ package com.ottogroup.bi.spqr.node.resman;
 
 import java.io.IOException;
 
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ottogroup.bi.spqr.exception.RemoteClientConnectionFailedException;
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
 import com.ottogroup.bi.spqr.node.message.NodeDeRegistration.NodeDeRegistrationResponse;
 import com.ottogroup.bi.spqr.node.message.NodeRegistration.NodeRegistrationRequest;
 import com.ottogroup.bi.spqr.node.message.NodeRegistration.NodeRegistrationResponse;
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.WebResource;
 
 /**
  * Client to manage all communication with the SPQR resource manager
@@ -42,8 +41,6 @@ public class SPQRResourceManagerClient {
 	/** our faithful logging service .... ;-) */
 	private static final Logger logger = Logger.getLogger(SPQRResourceManagerClient.class);
 	
-	/** mapper used for back-and-forward json conversion */
-	private final ObjectMapper jsonMapper = new ObjectMapper();
 	/** client to be used for accessing remote processing node */
 	private final Client restClient;
 	/** remote service base url */
@@ -79,18 +76,6 @@ public class SPQRResourceManagerClient {
 	}
 	
 	/**
-	 * Initializes the resource manager client using the provided input
-	 * @param resourceManagerProtocol
-	 * @param resourceManagerRemoteHost
-	 * @param resourceManagerServicePort
-	 * @throws RequiredInputMissingException
-	 */
-	public SPQRResourceManagerClient(final String resourceManagerProtocol, final String resourceManagerRemoteHost, 
-			final int resourceManagerServicePort) throws RequiredInputMissingException {
-		this(resourceManagerProtocol, resourceManagerRemoteHost, resourceManagerServicePort, new Client());
-	}
-	
-	/**
 	 * Registers this node with the resource manager using the given information as instructions how to access this node
 	 * @param nodeProtocol
 	 * @param nodeHost
@@ -114,17 +99,15 @@ public class SPQRResourceManagerClient {
 		//
 		//////////////////////////////////////////////////////////////////
 		
-		String message = jsonMapper.writeValueAsString(new NodeRegistrationRequest(nodeProtocol, nodeHost, nodeServicePort, nodeAdminPort)); 
+		NodeRegistrationRequest message = new NodeRegistrationRequest(nodeProtocol, nodeHost, nodeServicePort, nodeAdminPort);
 		StringBuffer url = new StringBuffer(this.resourceManagerServiceBaseUrl).append("/nodes");
 		
 		if(logger.isDebugEnabled()) 
 			logger.debug("Registering processing node [protocol="+nodeProtocol+", host="+nodeHost+", servicePort="+nodeServicePort+", adminPort="+nodeAdminPort+"] at resource manager " + url.toString());
 		
 		try {
-			WebResource nodeRegistrationResource = this.restClient.resource(url.toString());
-			ClientResponse response = nodeRegistrationResource.accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON).post(ClientResponse.class, message);
-			String responseString = response.getEntity(String.class);
-			return this.jsonMapper.readValue(responseString, NodeRegistrationResponse.class);
+			final WebTarget webTarget = this.restClient.target(url.toString());			
+			return webTarget.request(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).post(Entity.entity(message, MediaType.APPLICATION_JSON), NodeRegistrationResponse.class);
 		} catch(Exception e) {
 			throw new RemoteClientConnectionFailedException("Failed to establish a connection with the remote resource manager [url="+url.toString()+"]. Error: " + e.getMessage());
 		}
@@ -151,10 +134,8 @@ public class SPQRResourceManagerClient {
 			logger.debug("De-registering processing node [nodeId="+nodeId+"] at resource manager " + url.toString());
 		
 		try {
-			WebResource nodeRegistrationResource = this.restClient.resource(url.toString());
-			ClientResponse response = nodeRegistrationResource.accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON).delete(ClientResponse.class);
-			String responseString = response.getEntity(String.class);
-			return this.jsonMapper.readValue(responseString, NodeDeRegistrationResponse.class);
+			final WebTarget webTarget = this.restClient.target(url.toString());
+			return webTarget.request(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).delete(NodeDeRegistrationResponse.class);
 		} catch(Exception e) {
 			throw new RemoteClientConnectionFailedException("Failed to establish a connection with the remote resource manager [url="+url.toString()+"]. Error: " + e.getMessage());
 		}

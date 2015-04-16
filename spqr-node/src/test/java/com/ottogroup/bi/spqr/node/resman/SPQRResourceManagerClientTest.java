@@ -15,23 +15,21 @@
  */
 package com.ottogroup.bi.spqr.node.resman;
 
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.Invocation.Builder;
+import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
 import com.ottogroup.bi.spqr.node.message.NodeDeRegistration.NodeDeRegistrationResponse;
 import com.ottogroup.bi.spqr.node.message.NodeDeRegistration.NodeDeRegistrationState;
-import com.ottogroup.bi.spqr.node.message.NodeRegistration.NodeRegistrationRequest;
 import com.ottogroup.bi.spqr.node.message.NodeRegistration.NodeRegistrationResponse;
 import com.ottogroup.bi.spqr.node.message.NodeRegistration.NodeRegistrationState;
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.api.client.WebResource.Builder;
 
 /**
  * Test case for {@link SPQRResourceManagerClient}
@@ -99,7 +97,7 @@ public class SPQRResourceManagerClientTest {
 	@Test
 	public void testRegisterNode_withEmptyNodeProtocol() throws Exception {
 		try {
-			new SPQRResourceManagerClient("http", "resourceManager", 9090).registerNode("", "localhost", 8080, 8081);
+			new SPQRResourceManagerClient("http", "resourceManager", 9090, Mockito.mock(Client.class)).registerNode("", "localhost", 8080, 8081);
 			Assert.fail("Invalid input");
 		} catch(RequiredInputMissingException e) {
 			// expected
@@ -113,7 +111,7 @@ public class SPQRResourceManagerClientTest {
 	@Test
 	public void testRegisterNode_withEmptyNodeHost() throws Exception {
 		try {
-			new SPQRResourceManagerClient("http", "localhost", 9090).registerNode("http", "", 8080, 8081);
+			new SPQRResourceManagerClient("http", "localhost", 9090, Mockito.mock(Client.class)).registerNode("http", "", 8080, 8081);
 			Assert.fail("Invalid input");
 		} catch(RequiredInputMissingException e) {
 			// expected
@@ -127,7 +125,7 @@ public class SPQRResourceManagerClientTest {
 	@Test
 	public void testRegisterNode_withInvalidNodeServicePort() throws Exception {
 		try {
-			new SPQRResourceManagerClient("http", "resourceManager", 9090).registerNode("http", "localhost", -1, 8081);
+			new SPQRResourceManagerClient("http", "resourceManager", 9090, Mockito.mock(Client.class)).registerNode("http", "localhost", -1, 8081);
 			Assert.fail("Invalid input");
 		} catch(RequiredInputMissingException e) {
 			// expected
@@ -141,7 +139,7 @@ public class SPQRResourceManagerClientTest {
 	@Test
 	public void testRegisterNode_withInvalidNodeAdminPort() throws Exception {
 		try {
-			new SPQRResourceManagerClient("http", "resourceManager", 9090).registerNode("http", "localhost", 8080, -1);
+			new SPQRResourceManagerClient("http", "resourceManager", 9090, Mockito.mock(Client.class)).registerNode("http", "localhost", 8080, -1);
 			Assert.fail("Invalid input");
 		} catch(RequiredInputMissingException e) {
 			// expected
@@ -154,36 +152,30 @@ public class SPQRResourceManagerClientTest {
 	 */
 	@Test
 	public void testRegisterNode_withValidInput() throws Exception {
-		
 		String remoteUrl = "http://localhost:7070/nodes";
-		ObjectMapper mapper = new ObjectMapper();
-		String requestString = mapper.writeValueAsString(new NodeRegistrationRequest("http", "localhost", 8080, 8081)); 
-		String responseString = mapper.writeValueAsString(new NodeRegistrationResponse("test-id", NodeRegistrationState.OK));
+		NodeRegistrationResponse expectedResponse = new NodeRegistrationResponse("test-id", NodeRegistrationState.OK);
+
+		Builder builder2 = Mockito.mock(Builder.class);
+		Mockito.when(builder2.post(Mockito.isA(Entity.class), Mockito.eq(NodeRegistrationResponse.class))).thenReturn(expectedResponse);
 		
-		ClientResponse mockClientResponse = Mockito.mock(ClientResponse.class);
-		Mockito.when(mockClientResponse.getEntity(String.class)).thenReturn(responseString);
-		
-		Builder mockBuilderType = Mockito.mock(Builder.class);
-		Mockito.when(mockBuilderType.post(ClientResponse.class, requestString)).thenReturn(mockClientResponse);
-		
-		Builder mockBuilderAccept = Mockito.mock(Builder.class);
-		Mockito.when(mockBuilderAccept.type(MediaType.APPLICATION_JSON)).thenReturn(mockBuilderType);		
-		
-		WebResource mockWebResource = Mockito.mock(WebResource.class);
-		Mockito.when(mockWebResource.accept(MediaType.APPLICATION_JSON)).thenReturn(mockBuilderAccept);
+		Builder builder1 = Mockito.mock(Builder.class);
+		Mockito.when(builder1.accept(MediaType.APPLICATION_JSON)).thenReturn(builder2);
+				
+		WebTarget mockWebTarget = Mockito.mock(WebTarget.class);
+		Mockito.when(mockWebTarget.request(MediaType.APPLICATION_JSON)).thenReturn(builder1);
 		
 		Client mockClient = Mockito.mock(Client.class);
-		Mockito.when(mockClient.resource(remoteUrl)).thenReturn(mockWebResource);
-
+		Mockito.when(mockClient.target(remoteUrl)).thenReturn(mockWebTarget);
+		
 		SPQRResourceManagerClient client = new SPQRResourceManagerClient("http", "localhost", 7070, mockClient);
 		NodeRegistrationResponse response = client.registerNode("http", "localhost", 8080, 8081);
 		Assert.assertNotNull("The response must not be null", response);
 		Assert.assertEquals("No errors expected", NodeRegistrationState.OK, response.getState());
 		
-		Mockito.verify(mockClient).resource(remoteUrl);
-		Mockito.verify(mockWebResource).accept(MediaType.APPLICATION_JSON);
-		Mockito.verify(mockBuilderAccept).type(MediaType.APPLICATION_JSON);
-		Mockito.verify(mockClientResponse).getEntity(String.class);
+		Mockito.verify(mockClient).target(remoteUrl);
+		Mockito.verify(mockWebTarget).request(MediaType.APPLICATION_JSON);
+		Mockito.verify(builder1).accept(MediaType.APPLICATION_JSON);
+		Mockito.verify(builder2).post(Mockito.isA(Entity.class), Mockito.eq(NodeRegistrationResponse.class));
 	}
 	
 	/**
@@ -192,7 +184,7 @@ public class SPQRResourceManagerClientTest {
 	@Test
 	public void testDeRegisterNode_withEmptyInput() throws Exception {
 		try {
-			new SPQRResourceManagerClient("http", "localhost", 8080).deregisterNode(null);
+			new SPQRResourceManagerClient("http", "localhost", 8080, Mockito.mock(Client.class)).deregisterNode(null);
 			Assert.fail("Invalid input");
 		} catch(RequiredInputMissingException e) {
 			// expected
@@ -205,35 +197,32 @@ public class SPQRResourceManagerClientTest {
 	 */
 	@Test
 	public void testDeRegisterNode_withValidInput() throws Exception {
-		
+	
 		String remoteUrl = "http://localhost:7070/nodes/test-id";
-		ObjectMapper mapper = new ObjectMapper();
-		String responseString = mapper.writeValueAsString(new NodeDeRegistrationResponse("test-id", NodeDeRegistrationState.OK, ""));
+		NodeDeRegistrationResponse expectedResponse = new NodeDeRegistrationResponse("test-id", NodeDeRegistrationState.OK, "");
+
+		Builder builder2 = Mockito.mock(Builder.class);
+		Mockito.when(builder2.delete(NodeDeRegistrationResponse.class)).thenReturn(expectedResponse);
 		
-		ClientResponse mockClientResponse = Mockito.mock(ClientResponse.class);
-		Mockito.when(mockClientResponse.getEntity(String.class)).thenReturn(responseString);
-		
-		Builder mockBuilderType = Mockito.mock(Builder.class);
-		Mockito.when(mockBuilderType.delete(ClientResponse.class)).thenReturn(mockClientResponse);
-		
-		Builder mockBuilderAccept = Mockito.mock(Builder.class);
-		Mockito.when(mockBuilderAccept.type(MediaType.APPLICATION_JSON)).thenReturn(mockBuilderType);		
-		
-		WebResource mockWebResource = Mockito.mock(WebResource.class);
-		Mockito.when(mockWebResource.accept(MediaType.APPLICATION_JSON)).thenReturn(mockBuilderAccept);
+		Builder builder1 = Mockito.mock(Builder.class);
+		Mockito.when(builder1.accept(MediaType.APPLICATION_JSON)).thenReturn(builder2);
+				
+		WebTarget mockWebTarget = Mockito.mock(WebTarget.class);
+		Mockito.when(mockWebTarget.request(MediaType.APPLICATION_JSON)).thenReturn(builder1);
 		
 		Client mockClient = Mockito.mock(Client.class);
-		Mockito.when(mockClient.resource(remoteUrl)).thenReturn(mockWebResource);
-
+		Mockito.when(mockClient.target(remoteUrl)).thenReturn(mockWebTarget);
+		
 		SPQRResourceManagerClient client = new SPQRResourceManagerClient("http", "localhost", 7070, mockClient);
 		NodeDeRegistrationResponse response = client.deregisterNode("test-id");
 		Assert.assertNotNull("The response must not be null", response);
 		Assert.assertEquals("No errors expected", NodeDeRegistrationState.OK, response.getState());
 		
-		Mockito.verify(mockClient).resource(remoteUrl);
-		Mockito.verify(mockWebResource).accept(MediaType.APPLICATION_JSON);
-		Mockito.verify(mockBuilderAccept).type(MediaType.APPLICATION_JSON);
-		Mockito.verify(mockClientResponse).getEntity(String.class);
+		Mockito.verify(mockClient).target(remoteUrl);
+		Mockito.verify(mockWebTarget).request(MediaType.APPLICATION_JSON);
+		Mockito.verify(builder1).accept(MediaType.APPLICATION_JSON);
+		Mockito.verify(builder2).delete(NodeDeRegistrationResponse.class);
+
 	}
 
 }
