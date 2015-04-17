@@ -1,32 +1,39 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
 	<modelVersion>4.0.0</modelVersion>
+ 	<prerequisites>
+        	<maven>3.0.1</maven>
+	</prerequisites>
   
   	<!-- maven specifc artifact grouping and versioning information -->
   	<groupId>com.ottogroup.bi.spqr</groupId>
-	<artifactId>spqr-build</artifactId>
+	<artifactId>spqr-parent</artifactId>
   	<version>0.4.0-SNAPSHOT</version>
   	<packaging>pom</packaging>
-
-	<!-- application owner -->
-	<organization>
-		<name>Otto (GmbH &amp; Co KG)</name>
-		<url>http://www.ottogroup.com</url>
-	</organization>
 
   	<!-- general project information, eg. name and description -->
   	<name>spqr-build</name>
   	<description>SPQR build project</description>
   	<url>https://github.com/ottogroup/spqr.git</url>
   	<inceptionYear>2014</inceptionYear>  	
-  	
-  	<licenses>
-	  <license>
-	    <name>Apache License, Version 2.0</name>
-	    <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-	    <distribution>repo</distribution>
-	  </license>
-	</licenses>
+
+  	<modules>
+		<module>spqr-base</module>
+		<module>spqr-repository</module>
+		<module>spqr-micro-pipeline</module>
+		<module>spqr-node</module>
+		<module>spqr-resman</module>
+		<module>spqr-operators/spqr-kafka</module>
+		<module>spqr-operators/spqr-twitter</module>
+		<module>spqr-operators/spqr-webtrends</module>
+		<module>spqr-operators/spqr-json</module>
+  	</modules>
+
+	<!-- application owner -->
+	<organization>
+		<name>Otto (GmbH &amp; Co KG)</name>
+		<url>http://www.ottogroup.com</url>
+	</organization>
 
 	<!-- involved developers -->
 	<developers>
@@ -42,7 +49,7 @@
 				<role>Developer</role>
 			</roles>
 			<url>http://twitter.com/mnxfst</url>
-			<timezone>+1</timezone>
+			<timezone>Europe/Berlin</timezone>
 		</developer>
 		<developer>
 			<id>gwesterm</id>
@@ -53,20 +60,30 @@
 				<role>Developer</role>
 				<role>Advisor</role>				
 			</roles>
-			<timezone>+1</timezone>
+	   	        <timezone>Europe/Berlin</timezone>
 		</developer>
   	</developers>
 
-  	<modules>
-		<module>../spqr-parent</module>
-		<module>../spqr-base</module>
-		<module>../spqr-repository</module>
-		<module>../spqr-micro-pipeline</module>
-		<module>../spqr-node</module>
-		<module>../spqr-resman</module>
-		<module>../spqr-operators/spqr-kafka</module>
-		<module>../spqr-operators/spqr-twitter</module>
-		<module>../spqr-operators/spqr-webtrends</module>
-		<module>../spqr-operators/spqr-json</module>
-  	</modules>
+  	<licenses>
+	  <license>
+	    <name>Apache License, Version 2.0</name>
+	    <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+	    <distribution>repo</distribution>
+	  </license>
+	</licenses>
+
+        <scm>
+        	<connection>scm:git:git://github.com/ottogroup/SPQR.git</connection>
+	        <developerConnection>scm:git:git@github.com:ottogroup/SPQR.git</developerConnection>
+        	<url>https://github.com/ottogroup/SPQR</url>
+        	<tag>HEAD</tag>
+    	</scm>
+
+ 	<issueManagement>
+        	<system>GitHub</system>
+        	<url>https://github.com/ottogroup/SPQR/issues</url>
+    	</issueManagement>
+
+
 </project>
+
