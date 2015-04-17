@@ -35,12 +35,7 @@ DEST_FOLDER=$2
 
 echo "source folder: $SRC_FOLDER, destination folder: $DEST_FOLDER"
 
-# change to spqr parent project and build & deploy it to repository
-cd $SRC_FOLDER/spqr-parent
-mvn clean; mvn install;
-
-# change to spqr build project and execute build & deployment
-cd $SRC_FOLDER/spqr-build
+cd $SRC_FOLDER
 mvn clean; mvn install;
 
 # create destination folders
