@@ -217,15 +217,14 @@ public class TwitterStreamSource implements Source {
 			try {
 				String msg = streamMessageQueue.poll(100, TimeUnit.MILLISECONDS);
 				if(msg != null) {
-					logger.info("message: " + msg);
 					this.incomingMessageCallback.onMessage(new StreamingDataMessage(msg.getBytes(), System.currentTimeMillis()));
 					this.messageCount++;
 				}
 				
-				Event e = eventMessageQueue.poll(100, TimeUnit.MILLISECONDS);
-				if(e != null) {
-					logger.info(e.getEventType() + ": " + e.getMessage());
-				}
+//				Event e = eventMessageQueue.poll(100, TimeUnit.MILLISECONDS);
+//				if(e != null) {
+//					logger.info(e.getEventType() + ": " + e.getMessage());
+//				}
 					
 			} catch (InterruptedException e) {
 			}
