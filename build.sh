@@ -52,6 +52,11 @@ mkdir -p $DEST_FOLDER/spqr-resman/etc
 mkdir -p $DEST_FOLDER/spqr-resman/repo
 mkdir -p $DEST_FOLDER/spqr-resman/log
 
+mkdir -p $DEST_FOLDER/spqr-websocket-server/lib
+mkdir -p $DEST_FOLDER/spqr-websocket-server/bin
+mkdir -p $DEST_FOLDER/spqr-websocket-server/etc/
+mkdir -p $DEST_FOLDER/spqr-websocket-server/log
+
 #######################################################################
 # spqr-node
 # copy configuration from processing node project to destination folder
@@ -100,6 +105,14 @@ mkdir -p $DEST_FOLDER/spqr-node/repo/spqr-webtrends
 mkdir -p $DEST_FOLDER/spqr-resman/repo/spqr-webtrends
 cp $SRC_FOLDER/spqr-operators/spqr-webtrends/target/lib/* $DEST_FOLDER/spqr-node/repo/spqr-twitter/
 cp $SRC_FOLDER/spqr-operators/spqr-webtrends/target/lib/* $DEST_FOLDER/spqr-resman/repo/spqr-twitter/
+
+#######################################################################
+
+#######################################################################
+# spqr-websocket-server
+cp $SRC_FOLDER/spqr-websocket-server/target/lib/* $DEST_FOLDER/spqr-websocket-server/lib/
+cp $SRC_FOLDER/spqr-websocket-server/src/main/scripts/* $DEST_FOLDER/spqr-websocket-server/bin
+cp $SRC_FOLDER/spqr-websocket-server/src/main/config/* $DEST_FOLDER/spqr-websocket-server/etc
 
 #######################################################################
 
