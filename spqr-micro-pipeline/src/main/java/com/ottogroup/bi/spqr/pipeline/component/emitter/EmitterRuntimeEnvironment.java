@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
 import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConsumer;
+import com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueWaitStrategy;
 
 /**
  * Provides a runtime environment for {@link Emitter} instances. The environment retrieves all
@@ -71,8 +72,14 @@ public class EmitterRuntimeEnvironment implements Runnable {
 	 * @see java.lang.Runnable#run()
 	 */
 	public void run() {		
+		StreamingMessageQueueWaitStrategy queueWaitStrategy = this.queueConsumer.getWaitStrategy();
 		while(running) {
-			StreamingDataMessage message = this.queueConsumer.next();
+			StreamingDataMessage message = null;
+			try {
+				message = queueWaitStrategy.waitFor(this.queueConsumer);//this.queueConsumer.next();
+			} catch(Exception e) {
+				// 
+			}
 			if(message != null) {
 				try {
 					this.emitter.onMessage(message);

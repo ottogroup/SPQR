@@ -19,6 +19,7 @@ import net.openhft.chronicle.ExcerptAppender;
 
 import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueProducer;
+import com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueWaitStrategy;
 
 /**
  * Default {@link StreamingMessageQueueProducer} implementation accessing {@link DefaultStreamingMessageQueue}
@@ -30,13 +31,16 @@ public class DefaultStreamingMessageQueueProducer implements
 		StreamingMessageQueueProducer {
 
 	private final ExcerptAppender queueProducer;
+	private final StreamingMessageQueueWaitStrategy waitStrategy;
 	
 	/**
 	 * Initializes the producer using the provided input
 	 * @param queueProducer
+	 * @param waitStrategy
 	 */
-	public DefaultStreamingMessageQueueProducer(final ExcerptAppender queueProducer) {
+	public DefaultStreamingMessageQueueProducer(final ExcerptAppender queueProducer, final StreamingMessageQueueWaitStrategy waitStrategy) {
 		this.queueProducer = queueProducer;
+		this.waitStrategy = waitStrategy;
 	}
 	
 	/**
@@ -54,6 +58,13 @@ public class DefaultStreamingMessageQueueProducer implements
 		}
 		
 		return false;
+	}
+
+	/**
+	 * @see com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueProducer#getWaitStrategy()
+	 */
+	public StreamingMessageQueueWaitStrategy getWaitStrategy() {
+		return this.waitStrategy;
 	}
 
 }

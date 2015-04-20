@@ -31,6 +31,8 @@ import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueue;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConsumer;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueProducer;
+import com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueBlockingWaitStrategy;
+import com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueWaitStrategy;
 
 /**
  * Implements a {@link StreamingMessageQueue} based on {@link Chronicle}
@@ -45,6 +47,7 @@ public class DefaultStreamingMessageQueue implements StreamingMessageQueue {
 	
 	public static final String CFG_CHRONICLE_QUEUE_PATH = "queue.chronicle.path";
 	public static final String CFG_CHRONICLE_QUEUE_DELETE_ON_EXIT = "queue.chronicle.deleteOnExist";
+	public static final String CFG_QUEUE_MESSAGE_WAIT_STRATEGY = "queue.message.waitStrategy";
 
 	/** unique queue identifier */
 	private String id = null;
@@ -58,6 +61,8 @@ public class DefaultStreamingMessageQueue implements StreamingMessageQueue {
 	private DefaultStreamingMessageQueueConsumer queueConsumer = null;
 	/** provides write access to chronicle */
 	private DefaultStreamingMessageQueueProducer queueProducer = null;
+	/** wait strategy applied on this queue */
+	private StreamingMessageQueueWaitStrategy queueWaitStrategy = null;
 
 	/**
 	 * @see com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueue#initialize(java.util.Properties)
@@ -83,6 +88,12 @@ public class DefaultStreamingMessageQueue implements StreamingMessageQueue {
 		if(!StringUtils.endsWith(pathToChronicle, File.separator))
 			pathToChronicle = pathToChronicle + File.separator;
 		pathToChronicle = pathToChronicle + id;
+		
+		String waitStrategyClass = StringUtils.trim(properties.getProperty(CFG_QUEUE_MESSAGE_WAIT_STRATEGY));
+		if(StringUtils.isBlank(waitStrategyClass))
+			waitStrategyClass = StreamingMessageQueueBlockingWaitStrategy.class.getName();
+		this.queueWaitStrategy = getWaitStrategy(waitStrategyClass);
+		
 		//
 		////////////////////////////////////////////////////////////////////////////////
 		
@@ -92,8 +103,8 @@ public class DefaultStreamingMessageQueue implements StreamingMessageQueue {
 		
         try {
 			this.chronicle = ChronicleQueueBuilder.indexed(pathToChronicle).build();
-			this.queueConsumer = new DefaultStreamingMessageQueueConsumer(this.chronicle.createTailer());
-			this.queueProducer = new DefaultStreamingMessageQueueProducer(this.chronicle.createAppender());
+			this.queueConsumer = new DefaultStreamingMessageQueueConsumer(this.chronicle.createTailer(), this.queueWaitStrategy);
+			this.queueProducer = new DefaultStreamingMessageQueueProducer(this.chronicle.createAppender(), this.queueWaitStrategy);
 		} catch (IOException e) {
 			throw new RuntimeException("Failed to initialize chronicle at '"+pathToChronicle+"'. Error: " + e.getMessage());
 		}
@@ -101,6 +112,20 @@ public class DefaultStreamingMessageQueue implements StreamingMessageQueue {
         logger.info("queue[type=chronicle, id="+this.id+", deleteOnExist="+this.deleteOnExit+", path="+pathToChronicle+"']");       		
 	}
 
+	/**
+	 * Return an instance of the referenced {@link StreamingMessageQueueWaitStrategy wait strategy class}
+	 * @param waitStrategyClass
+	 * @return
+	 */
+	protected StreamingMessageQueueWaitStrategy getWaitStrategy(final String waitStrategyClass) {
+		try {
+			Class<?> clazz = Class.forName(waitStrategyClass);
+			return (StreamingMessageQueueWaitStrategy)clazz.newInstance();
+		} catch(Exception e) {
+			throw new RuntimeException("Failed to instantiate wait strategy class '"+waitStrategyClass+"'. Error: " + e.getMessage());
+		}
+	}
+	
 	/**
 	 * @see com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueue#shutdown()
 	 */

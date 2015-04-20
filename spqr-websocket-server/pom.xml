@@ -24,8 +24,25 @@
 	    <distribution>repo</distribution>
 	  </license>
 	</licenses>
+
+	<properties>
+		<websocket.api.version>1.0</websocket.api.version>
+		<websocket.client.version>9.0.7.v20131107</websocket.client.version>
+	</properties>
   
   	<dependencies>
+
+		<dependency>
+        	<groupId>javax.websocket</groupId>
+            <artifactId>javax.websocket-api</artifactId>
+            <version>${websocket.api.version}</version>
+		</dependency>
+                
+		<dependency>
+        	<groupId>org.eclipse.jetty.websocket</groupId>
+            <artifactId>websocket-client</artifactId>
+            <version>${websocket.client.version}</version>
+		</dependency>  	
 
 		<!-- junit -->
 		<dependency>

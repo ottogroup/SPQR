@@ -18,10 +18,10 @@ package com.ottogroup.bi.spqr.websocket.server.cfg;
 import java.io.Serializable;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.ottogroup.bi.spqr.websocket.kafka.KafkaConsumer;
+import com.ottogroup.bi.spqr.websocket.kafka.KafkaTopicConsumer;
 
 /**
- * All required configuration options for setting up the {@link KafkaConsumer} 
+ * All required configuration options for setting up the {@link KafkaTopicConsumer} 
  * @author mnxfst
  * @since Apr 17, 2015
  */

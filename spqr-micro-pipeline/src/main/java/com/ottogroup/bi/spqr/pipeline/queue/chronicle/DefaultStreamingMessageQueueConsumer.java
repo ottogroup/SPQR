@@ -19,6 +19,7 @@ import net.openhft.chronicle.ExcerptTailer;
 
 import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConsumer;
+import com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueWaitStrategy;
 
 /**
  * Default {@link StreamingMessageQueueConsumer} implementation accessing {@link DefaultStreamingMessageQueue}
@@ -28,13 +29,16 @@ import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConsumer;
 public class DefaultStreamingMessageQueueConsumer implements StreamingMessageQueueConsumer {
 
 	private final ExcerptTailer queueReader;
+	private final StreamingMessageQueueWaitStrategy waitStrategy;
 	
 	/**
 	 * Initializes the consumer using the provided input
 	 * @param queueReader
+	 * @param waitStrategy
 	 */
-	public DefaultStreamingMessageQueueConsumer(final ExcerptTailer queueReader) {
+	public DefaultStreamingMessageQueueConsumer(final ExcerptTailer queueReader, final StreamingMessageQueueWaitStrategy waitStrategy) {
 		this.queueReader = queueReader;
+		this.waitStrategy = waitStrategy;
 	}
 	
 	/**
@@ -57,4 +61,12 @@ public class DefaultStreamingMessageQueueConsumer implements StreamingMessageQue
 		
 	}
 
+	/**
+	 * @see com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConsumer#getWaitStrategy()
+	 */
+	public StreamingMessageQueueWaitStrategy getWaitStrategy() {
+		return this.waitStrategy;
+	}
+
+	
 }

@@ -16,6 +16,7 @@
 package com.ottogroup.bi.spqr.pipeline.queue;
 
 import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
+import com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueWaitStrategy;
 
 /**
  * Provides <b>read-only</b> access to a {@link StreamingMessageQueue}
@@ -29,5 +30,11 @@ public interface StreamingMessageQueueConsumer {
 	 * @return
 	 */
 	public StreamingDataMessage next();
-	
+
+	/**
+	 * Returns the optional {@link StreamingMessageQueueWaitStrategy} assigned to the queue
+	 * @return 
+	 */
+	public StreamingMessageQueueWaitStrategy getWaitStrategy();
+
 }

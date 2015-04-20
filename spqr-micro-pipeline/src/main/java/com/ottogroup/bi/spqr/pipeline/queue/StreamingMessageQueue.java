@@ -82,5 +82,7 @@ public interface StreamingMessageQueue  {
 	 * @return
 	 */
 	public StreamingMessageQueueConsumer getConsumer();
+	
+	
 }
 
