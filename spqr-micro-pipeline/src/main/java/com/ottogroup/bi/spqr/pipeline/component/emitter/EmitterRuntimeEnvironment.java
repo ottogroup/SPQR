@@ -66,28 +66,28 @@ public class EmitterRuntimeEnvironment implements Runnable {
 			logger.debug("emitter runtime environment initialized [id="+emitter.getId()+"]");
 
 	}
-	
-	
+		
 	/**
 	 * @see java.lang.Runnable#run()
 	 */
-	public void run() {		
+	public void run() {
+		
+		// fetch the wait strategy attached to the queue (provided through the queue consumer)
 		StreamingMessageQueueWaitStrategy queueWaitStrategy = this.queueConsumer.getWaitStrategy();
+		
 		while(running) {
-			StreamingDataMessage message = null;
+
 			try {
-				message = queueWaitStrategy.waitFor(this.queueConsumer);//this.queueConsumer.next();
-			} catch(Exception e) {
-				// 
-			}
-			if(message != null) {
-				try {
+				// fetch message from queue consumer via strategy
+				StreamingDataMessage message = queueWaitStrategy.waitFor(this.queueConsumer);
+				if(message != null) {
 					this.emitter.onMessage(message);
-				} catch(Exception e) {
-					logger.error("Failed to process incoming message with emitter [id="+emitter.getId()+"']. Reason: " + e.getMessage());
-				}
-			} else {
-				// TODO provide wait strategy
+				} 
+			} catch(InterruptedException e) {
+				// do nothing - waiting was interrupted				
+			} catch(Exception e) {
+				logger.error("Failed to process message with attached emitter. Reason: " + e.getMessage());
+				// TODO add handler for responding to errors 
 			}
 		}		
 	}

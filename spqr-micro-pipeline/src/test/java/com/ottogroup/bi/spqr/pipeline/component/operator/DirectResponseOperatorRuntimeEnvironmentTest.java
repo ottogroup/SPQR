@@ -27,6 +27,7 @@ import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
 import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConsumer;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueProducer;
+import com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueWaitStrategy;
 
 /**
  * Test case for {@link DirectResponseOperatorRuntimeEnvironment}
@@ -105,14 +106,24 @@ public class DirectResponseOperatorRuntimeEnvironmentTest {
 		DirectResponseOperator operator = Mockito.mock(DirectResponseOperator.class);
 		Mockito.when(operator.onMessage(inputMessage)).thenThrow(new RuntimeException("Failed to process message"));
 		StreamingMessageQueueConsumer queueConsumer = Mockito.mock(StreamingMessageQueueConsumer.class);
-		Mockito.when(queueConsumer.next()).thenReturn(inputMessage);
+		StreamingMessageQueueWaitStrategy queueConsumerStrategy = Mockito.mock(StreamingMessageQueueWaitStrategy.class);
+		Mockito.when(queueConsumer.getWaitStrategy()).thenReturn(queueConsumerStrategy);
+		
+		Mockito.when(queueConsumerStrategy.waitFor(queueConsumer)).thenReturn(inputMessage);
 		StreamingMessageQueueProducer queueProducer = Mockito.mock(StreamingMessageQueueProducer.class);
+		StreamingMessageQueueWaitStrategy queueProducerStrategy = Mockito.mock(StreamingMessageQueueWaitStrategy.class);
+		Mockito.when(queueProducer.getWaitStrategy()).thenReturn(queueProducerStrategy);
 		
 		DirectResponseOperatorRuntimeEnvironment env = new DirectResponseOperatorRuntimeEnvironment(operator, queueConsumer, queueProducer);
 		executorService.submit(env);
 		Thread.sleep(100);
+
 		
 		Mockito.verify(operator, Mockito.atLeast(1)).onMessage(inputMessage);
+		Mockito.verify(queueConsumer, Mockito.atLeastOnce()).getWaitStrategy();
+		Mockito.verify(queueConsumerStrategy, Mockito.atLeastOnce()).waitFor(queueConsumer);
+		Mockito.verify(queueProducer, Mockito.atLeastOnce()).getWaitStrategy();
+		Mockito.verify(queueProducerStrategy, Mockito.never()).forceLockRelease();
 		Mockito.verify(queueProducer, Mockito.never()).insert(inputMessage);
 		
 		Assert.assertTrue("The environment must be running", env.isRunning());
@@ -128,15 +139,24 @@ public class DirectResponseOperatorRuntimeEnvironmentTest {
 		DirectResponseOperator operator = Mockito.mock(DirectResponseOperator.class);
 		Mockito.when(operator.onMessage(inputMessage)).thenReturn(new StreamingDataMessage[]{inputMessage});
 		StreamingMessageQueueConsumer queueConsumer = Mockito.mock(StreamingMessageQueueConsumer.class);
-		Mockito.when(queueConsumer.next()).thenReturn(inputMessage);
+		StreamingMessageQueueWaitStrategy queueConsumerStrategy = Mockito.mock(StreamingMessageQueueWaitStrategy.class);
+		Mockito.when(queueConsumer.getWaitStrategy()).thenReturn(queueConsumerStrategy);
+		
+		Mockito.when(queueConsumerStrategy.waitFor(queueConsumer)).thenReturn(inputMessage);
 		StreamingMessageQueueProducer queueProducer = Mockito.mock(StreamingMessageQueueProducer.class);
+		StreamingMessageQueueWaitStrategy queueProducerStrategy = Mockito.mock(StreamingMessageQueueWaitStrategy.class);
+		Mockito.when(queueProducer.getWaitStrategy()).thenReturn(queueProducerStrategy);
 		
 		DirectResponseOperatorRuntimeEnvironment env = new DirectResponseOperatorRuntimeEnvironment(operator, queueConsumer, queueProducer);
 		executorService.submit(env);
 		Thread.sleep(50);
-		Mockito.verify(operator, Mockito.atLeast(1)).onMessage(inputMessage);
-		Mockito.verify(queueProducer, Mockito.atLeast(1)).insert(inputMessage);
 		
+		Mockito.verify(operator, Mockito.atLeast(1)).onMessage(inputMessage);
+		Mockito.verify(queueConsumer, Mockito.atLeastOnce()).getWaitStrategy();
+		Mockito.verify(queueConsumerStrategy, Mockito.atLeastOnce()).waitFor(queueConsumer);
+		Mockito.verify(queueProducer, Mockito.atLeastOnce()).getWaitStrategy();
+		Mockito.verify(queueProducerStrategy, Mockito.atLeastOnce()).forceLockRelease();
+		Mockito.verify(queueProducer, Mockito.atLeastOnce()).insert(inputMessage);		
 		Assert.assertTrue("The environment must be running", env.isRunning());
 	}
 	

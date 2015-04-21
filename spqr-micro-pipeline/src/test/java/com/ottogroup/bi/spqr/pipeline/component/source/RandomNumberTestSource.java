@@ -16,7 +16,6 @@
 package com.ottogroup.bi.spqr.pipeline.component.source;
 
 import java.util.Properties;
-import java.util.Random;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -58,6 +57,7 @@ public class RandomNumberTestSource implements Source {
 		this.content = (properties.containsKey(CFG_CONTENT) ? properties.getProperty(CFG_CONTENT).getBytes() : new byte[0]);
 				
 		this.running = true;
+		System.out.println("seed: " + seed);
 	}
 
 
@@ -66,11 +66,11 @@ public class RandomNumberTestSource implements Source {
 	 */
 	public void run() {
 		logger.info("Starting random number generator");
-		Random rnd = null;
-		if(seed > 0)
-			rnd = new Random(seed);
-		else
-			rnd = new Random();
+//		Random rnd = null;
+//		if(seed > 0)
+//			rnd = new Random(seed);
+//		else
+//			rnd = new Random();
 		
 		int count = 0;
 		long s1 = System.currentTimeMillis();

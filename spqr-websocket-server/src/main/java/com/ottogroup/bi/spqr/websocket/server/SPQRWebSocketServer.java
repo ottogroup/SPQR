@@ -105,6 +105,9 @@ public class SPQRWebSocketServer {
 
 		EventLoopGroup bossGroup = new NioEventLoopGroup(cfg.getBossEventGroupThreads());
 		EventLoopGroup workerGroup = new NioEventLoopGroup(cfg.getWorkerEventGroupThreads());
+		
+		logger.info("websocket server [port="+cfg.getPort()+", bossGroupThreads="+cfg.getBossEventGroupThreads()+", workerGroupThreads="+cfg.getWorkerEventGroupThreads()+"]");
+		
 		try {
 			ServerBootstrap bootstrap = new ServerBootstrap();
 			bootstrap.group(bossGroup, workerGroup)

@@ -27,6 +27,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class SPQRNodeSupervisorResult implements Serializable {
 
+	private static final long serialVersionUID = 8402125222047766899L;
+
 	/** unique node identifier previously assigned by node manager */
 	@JsonProperty(value="nodeId", required=true)
 	private String nodeId = null;

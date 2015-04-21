@@ -16,8 +16,6 @@
 package com.ottogroup.bi.spqr.resman.node;
 
 import io.dropwizard.client.JerseyClientBuilder;
-import io.dropwizard.client.JerseyClientConfiguration;
-import io.dropwizard.setup.Environment;
 
 import java.util.HashMap;
 import java.util.Map;

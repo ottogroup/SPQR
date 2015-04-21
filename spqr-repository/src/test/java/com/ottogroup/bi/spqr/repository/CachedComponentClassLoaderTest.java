@@ -15,13 +15,8 @@
  */
 package com.ottogroup.bi.spqr.repository;
 
-import java.io.IOException;
-import java.util.Properties;
-
 import org.junit.Assert;
 import org.junit.Test;
-
-import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
 
 /**
  * Test case for {@link CachedComponentClassLoader}

@@ -91,7 +91,7 @@ public class DefaultStreamingMessageQueue implements StreamingMessageQueue {
 		
 		String waitStrategyClass = StringUtils.trim(properties.getProperty(CFG_QUEUE_MESSAGE_WAIT_STRATEGY));
 		if(StringUtils.isBlank(waitStrategyClass))
-			waitStrategyClass = StreamingMessageQueueBlockingWaitStrategy.class.getName();
+			waitStrategyClass = StreamingMessageQueueBlockingWaitStrategy.class.getName(); //StreamingMessageQueueDirectPassStrategy.class.getName(); // default strategy: active waiting
 		this.queueWaitStrategy = getWaitStrategy(waitStrategyClass);
 		
 		//

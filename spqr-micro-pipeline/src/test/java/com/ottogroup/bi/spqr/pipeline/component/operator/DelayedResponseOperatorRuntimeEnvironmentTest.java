@@ -27,6 +27,7 @@ import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
 import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConsumer;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueProducer;
+import com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueWaitStrategy;
 
 /**
  * Test case for {@link DelayedResponseOperatorRuntimeEnvironment}
@@ -119,21 +120,28 @@ public class DelayedResponseOperatorRuntimeEnvironmentTest {
 		DelayedResponseOperatorWaitStrategy responseWaitStrategy = Mockito.mock(DelayedResponseOperatorWaitStrategy.class);
 		StreamingMessageQueueConsumer queueConsumer = Mockito.mock(StreamingMessageQueueConsumer.class);
 		StreamingMessageQueueProducer queueProducer = Mockito.mock(StreamingMessageQueueProducer.class);
+		StreamingMessageQueueWaitStrategy queueConsumerWaitStrategy = Mockito.mock(StreamingMessageQueueWaitStrategy.class);
+		StreamingMessageQueueWaitStrategy queueProducerWaitStrategy = Mockito.mock(StreamingMessageQueueWaitStrategy.class);
 		
 		StreamingDataMessage message = new StreamingDataMessage("test-message".getBytes(), System.currentTimeMillis());		
 		StreamingDataMessage response = new StreamingDataMessage("response-test-message".getBytes(), System.currentTimeMillis());
-		Mockito.when(queueConsumer.next()).thenReturn(message);
+		Mockito.when(queueConsumer.getWaitStrategy()).thenReturn(queueConsumerWaitStrategy);
+		Mockito.when(queueConsumerWaitStrategy.waitFor(queueConsumer)).thenReturn(message);
 		Mockito.when(delayedResponseOperator.getResult()).thenReturn(new StreamingDataMessage[]{response});
 		Mockito.when(delayedResponseOperator.getId()).thenReturn("test-id");
+		Mockito.when(queueProducer.getWaitStrategy()).thenReturn(queueProducerWaitStrategy);
 		
 		DelayedResponseOperatorRuntimeEnvironment env = new DelayedResponseOperatorRuntimeEnvironment(delayedResponseOperator, responseWaitStrategy, queueConsumer, queueProducer);
 		executorService.submit(env);
 		Thread.sleep(100);
 		env.retrieveMessages();
 		
+		Mockito.verify(queueConsumer, Mockito.atLeastOnce()).getWaitStrategy();
+		Mockito.verify(queueConsumerWaitStrategy, Mockito.atLeastOnce()).waitFor(queueConsumer);
 		Mockito.verify(delayedResponseOperator, Mockito.atLeast(1)).onMessage(message);
 		Mockito.verify(responseWaitStrategy, Mockito.atLeast(1)).onMessage(message);
 		Mockito.verify(delayedResponseOperator).getResult();
+		Mockito.verify(queueProducerWaitStrategy).forceLockRelease();
 		Mockito.verify(queueProducer).insert(response);
 		
 		Assert.assertTrue("The environment must be running", env.isRunning());

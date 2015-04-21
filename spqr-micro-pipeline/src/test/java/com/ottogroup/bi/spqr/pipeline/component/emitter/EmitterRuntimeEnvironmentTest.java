@@ -26,6 +26,7 @@ import org.mockito.Mockito;
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
 import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConsumer;
+import com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueWaitStrategy;
 
 /**
  * Test case for {@link EmitterRuntimeEnvironment}
@@ -87,9 +88,11 @@ public class EmitterRuntimeEnvironmentTest {
 	@Test
 	public void testEmitterEnvironment_withValidInput() throws RequiredInputMissingException, InterruptedException {
 		Emitter emitter = Mockito.mock(Emitter.class);
-		StreamingMessageQueueConsumer queueConsumer = Mockito.mock(StreamingMessageQueueConsumer.class);
 		StreamingDataMessage message = new StreamingDataMessage("test".getBytes(), System.currentTimeMillis());
-		Mockito.when(queueConsumer.next()).thenReturn(message);
+		StreamingMessageQueueConsumer queueConsumer = Mockito.mock(StreamingMessageQueueConsumer.class);
+		StreamingMessageQueueWaitStrategy queueConsumerWaitStrategy = Mockito.mock(StreamingMessageQueueWaitStrategy.class);
+		Mockito.when(queueConsumer.getWaitStrategy()).thenReturn(queueConsumerWaitStrategy);
+		Mockito.when(queueConsumerWaitStrategy.waitFor(queueConsumer)).thenReturn(message);
 				
 		EmitterRuntimeEnvironment env = new EmitterRuntimeEnvironment(emitter, queueConsumer);
 		executorService.submit(env);
@@ -98,8 +101,9 @@ public class EmitterRuntimeEnvironmentTest {
 
 		Assert.assertTrue("Must return true", env.isRunning());
 
-		Mockito.verify(queueConsumer, Mockito.atLeast(1)).next();
-		Mockito.verify(emitter, Mockito.atLeast(1)).onMessage(message);
+		Mockito.verify(queueConsumerWaitStrategy, Mockito.atLeastOnce()).waitFor(queueConsumer);
+		Mockito.verify(queueConsumer, Mockito.atLeastOnce()).getWaitStrategy();
+		Mockito.verify(emitter, Mockito.atLeastOnce()).onMessage(message);
 	}
 	
 	/**
@@ -115,13 +119,19 @@ public class EmitterRuntimeEnvironmentTest {
 		Mockito.when(queueConsumer.next()).thenReturn(message);
 		Mockito.when(emitter.onMessage(message)).thenThrow(new NullPointerException("error"));
 				
+		StreamingMessageQueueWaitStrategy queueConsumerWaitStrategy = Mockito.mock(StreamingMessageQueueWaitStrategy.class);
+		Mockito.when(queueConsumer.getWaitStrategy()).thenReturn(queueConsumerWaitStrategy);
+		Mockito.when(queueConsumerWaitStrategy.waitFor(queueConsumer)).thenReturn(message);
+
+		
 		EmitterRuntimeEnvironment env = new EmitterRuntimeEnvironment(emitter, queueConsumer);
 		executorService.submit(env);
 		Thread.sleep(100);
 		Assert.assertTrue("Must return true", env.isRunning());
 
-		Mockito.verify(queueConsumer, Mockito.atLeast(1)).next();
-		Mockito.verify(emitter, Mockito.atLeast(1)).onMessage(message);
+		Mockito.verify(queueConsumerWaitStrategy, Mockito.atLeastOnce()).waitFor(queueConsumer);
+		Mockito.verify(queueConsumer, Mockito.atLeastOnce()).getWaitStrategy();
+		Mockito.verify(emitter, Mockito.atLeastOnce()).onMessage(message);
 	}
 	
 }

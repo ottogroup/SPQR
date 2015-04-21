@@ -22,8 +22,6 @@ import javax.ws.rs.Produces;
 import com.codahale.metrics.annotation.Timed;
 import com.ottogroup.bi.spqr.node.resource.pipeline.MicroPipelineInstantiationResponse;
 import com.ottogroup.bi.spqr.pipeline.MicroPipelineConfiguration;
-import com.ottogroup.bi.spqr.pipeline.MicroPipelineValidationResult;
-import com.ottogroup.bi.spqr.pipeline.MicroPipelineValidator;
 
 
 /**

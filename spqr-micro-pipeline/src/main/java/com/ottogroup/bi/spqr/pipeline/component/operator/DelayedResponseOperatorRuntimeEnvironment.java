@@ -24,6 +24,7 @@ import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
 import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConsumer;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueProducer;
+import com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueWaitStrategy;
 
 /**
  * Provides a runtime environment for {@link DelayedResponseOperator} instances. The environment polls
@@ -53,6 +54,10 @@ public class DelayedResponseOperatorRuntimeEnvironment implements Runnable, Dela
 	private final ExecutorService executorService;
 	/** local executor service? - must be shut down as well, otherwise the provider must take care of it */
 	private boolean localExecutorService = false;
+	/** consumer queue wait strategy */
+	private final StreamingMessageQueueWaitStrategy consumerQueueWaitStrategy;
+	/** destination queue wait strategy */
+	private final StreamingMessageQueueWaitStrategy destinationQueueWaitStrategy;
 
 	/**
 	 * Initializes the runtime environment using the provied input
@@ -101,6 +106,8 @@ public class DelayedResponseOperatorRuntimeEnvironment implements Runnable, Dela
 		this.executorService = executorService;		
 		this.executorService.submit(this.responseWaitStrategy);
 		this.running = true;
+		this.consumerQueueWaitStrategy = queueConsumer.getWaitStrategy();
+		this.destinationQueueWaitStrategy = queueProducer.getWaitStrategy();
 		
 		if(logger.isDebugEnabled())
 			logger.debug("delayed response operator runtime environment initialized [id="+delayedResponseOperator.getId()+"]");
@@ -110,16 +117,21 @@ public class DelayedResponseOperatorRuntimeEnvironment implements Runnable, Dela
 	 * @see java.lang.Runnable#run()
 	 */
 	public void run() {
-
-		while(running) {			
-			StreamingDataMessage message = this.queueConsumer.next();
-			if(message != null) {
-				// forward retrieved message to operator for further processing
-				this.delayedResponseOperator.onMessage(message);
-				// notify response wait strategy on retrieved message
-				this.responseWaitStrategy.onMessage(message);
-			} else {
-				// TODO implement wait strategy
+		
+		while(running) {
+			try {
+				StreamingDataMessage message = this.consumerQueueWaitStrategy.waitFor(this.queueConsumer); // this.queueConsumer.next();
+				if(message != null) {
+					// forward retrieved message to operator for further processing
+					this.delayedResponseOperator.onMessage(message);
+					// notify response wait strategy on retrieved message
+					this.responseWaitStrategy.onMessage(message);
+				}
+			} catch(InterruptedException e) {
+				// do nothing - waiting was interrupted				
+			} catch(Exception e) {
+				logger.error("Failed to process message with attached operator. Reason: " + e.getMessage());
+				// TODO add handler for responding to errors 
 			}
 		}
 	}
@@ -128,20 +140,21 @@ public class DelayedResponseOperatorRuntimeEnvironment implements Runnable, Dela
 	 * @see com.ottogroup.bi.spqr.pipeline.component.operator.DelayedResponseCollector#retrieveMessages()
 	 */
 	public void retrieveMessages() {		
-		StreamingDataMessage[] retrievedMessages = null;
-		try {
+		try {		
 			// try to fetch messages from underlying operator
-			retrievedMessages = this.delayedResponseOperator.getResult();
+			StreamingDataMessage[] retrievedMessages = this.delayedResponseOperator.getResult();
+
+			System.out.println("retri: " + retrievedMessages);
+			// forward messages to assigned queue if any messages are available 
+			if(retrievedMessages != null) {
+				for(StreamingDataMessage rm : retrievedMessages)
+					this.queueProducer.insert(rm);
+				this.destinationQueueWaitStrategy.forceLockRelease();
+			}
 		} catch(Exception e) {
-			logger.error("Failed to retrieve and forward messages from underlying delayed response operator. Error: " + e.getMessage());
+			logger.error("Failed to retrieve and forward messages from underlying delayed response operator. Reason: " + e.getMessage());
+			// TODO add handler for responding to errors 
 		}
-
-		// forward messages to assigned queue if any messages are available 
-		if(retrievedMessages != null) {
-			for(StreamingDataMessage rm : retrievedMessages)
-				this.queueProducer.insert(rm);
-		}
-
 	}
 
 	/**

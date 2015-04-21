@@ -21,6 +21,7 @@ import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
 import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConsumer;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueProducer;
+import com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueWaitStrategy;
 
 /**
  * Provides a runtime environment for {@link DirectResponseOperator} instances. The environment polls
@@ -44,6 +45,10 @@ public class DirectResponseOperatorRuntimeEnvironment implements Runnable {
 	private final StreamingMessageQueueProducer queueProducer;	
 	/** indicates whether the operator runtime is still running or not */
 	private boolean running = false;
+	/** consumer queue wait strategy */
+	private final StreamingMessageQueueWaitStrategy consumerQueueWaitStrategy;
+	/** destination queue wait strategy */
+	private final StreamingMessageQueueWaitStrategy destinationQueueWaitStrategy;
 
 	/**
 	 * Initializes the operator runtime environment using the provided input
@@ -69,7 +74,9 @@ public class DirectResponseOperatorRuntimeEnvironment implements Runnable {
 		this.queueConsumer = queueConsumer;
 		this.queueProducer = queueProducer;
 		this.running = true;
-		
+		this.consumerQueueWaitStrategy = queueConsumer.getWaitStrategy();
+		this.destinationQueueWaitStrategy = queueProducer.getWaitStrategy();
+
 		if(logger.isDebugEnabled())
 			logger.debug("direct response operator runtime environment initialized [id="+directResponseOperator.getId()+"]");
 	}
@@ -80,22 +87,24 @@ public class DirectResponseOperatorRuntimeEnvironment implements Runnable {
 	 */
 	public void run() {
 		
-		while(running) {			
-			StreamingDataMessage message = this.queueConsumer.next();
-			if(message != null) {
-				StreamingDataMessage[] responseMessages = null;
-				try {
-					responseMessages = this.directResponseOperator.onMessage(message);
-				} catch(Exception e) {
-					logger.error("Failed to process message with direct response operator. Error: " + e.getMessage());
+		while(running) {
+			try {
+				StreamingDataMessage message = this.consumerQueueWaitStrategy.waitFor(this.queueConsumer);
+				if(message != null) {
+					StreamingDataMessage[] responseMessages = this.directResponseOperator.onMessage(message);
+					
+					if(responseMessages != null && responseMessages.length > 0) {
+						for(final StreamingDataMessage responseMessage : responseMessages) {
+							this.queueProducer.insert(responseMessage);
+						}
+						this.destinationQueueWaitStrategy.forceLockRelease();
+					}
 				}
-				
-				if(responseMessages != null && responseMessages.length > 0) {
-					for(StreamingDataMessage rm : responseMessages)
-						this.queueProducer.insert(rm);
-				}
-			} else {
-				// TODO implement wait strategy
+			} catch(InterruptedException e) {
+				// do nothing - waiting was interrupted				
+			} catch(Exception e) {
+				logger.error("Failed to process message with attached operator. Reason: " + e.getMessage());
+				// TODO add handler for responding to errors 
 			}
 		}		
 	}

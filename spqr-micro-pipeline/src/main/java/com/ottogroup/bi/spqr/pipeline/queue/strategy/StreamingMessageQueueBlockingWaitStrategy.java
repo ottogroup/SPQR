@@ -22,7 +22,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
-import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueue;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConsumer;
 
 /**

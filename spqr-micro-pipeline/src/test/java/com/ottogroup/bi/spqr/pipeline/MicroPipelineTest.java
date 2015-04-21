@@ -61,6 +61,7 @@ public class MicroPipelineTest {
 		if(true)
 			return;
 		
+		@SuppressWarnings("unused")
 		MicroPipelineConfiguration cfg = new ObjectMapper().readValue(new File("/home/mnxfst/projects/spqr/twitter-to-kafka.json"), MicroPipelineConfiguration.class);
 		final int numGeneratedMessages = 10000000;
 		final String msg = "";new ObjectMapper().writeValueAsString(cfg);
