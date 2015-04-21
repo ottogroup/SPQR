@@ -91,10 +91,6 @@ public class SourceRuntimeEnvironment implements Runnable, IncomingMessageCallba
 	 */
 	public void run() {
 		this.running = true;
-		while(running) {
-			// TODO thread notification on each incoming messages as it leads otherwise to active waiting
-			// TODO implement wait strategy
-		}
 	}
 
 	/**
