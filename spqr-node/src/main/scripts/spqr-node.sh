@@ -9,26 +9,6 @@ if [ -z "$1" ]; then
 	exit 1
 fi
 
-if [ -z "$2" ]; then
-	# write error message
-	echo "usage: spqr-node.sh {start|stop} <configuration file>"
-	exit 1
-fi
-
-if [ "$1" = "start" ]; then
-	
-	# check for running service 
-	if [ -f "$PIDFILE" ]; then
-   		echo "spqr node server is running!"
-   		exit 1
-	fi
-	
-	CLASSPATH=.:$BASEDIR/../lib/*
-    java -d64 -server -XX:MaxPermSize=512M -XX:MaxGCPauseMillis=500 -XX:+UseG1GC -Xms1G -cp $CLASSPATH com.ottogroup.bi.spqr.node.server.SPQRNodeServer server $2 &	
-	echo $! > $PIDFILE
-	echo "spqr node server running. process id: `cat $PIDFILE`"
-fi
-
 if [ "$1" = "stop" ]; then
 
 	# check for running service
@@ -40,6 +20,28 @@ if [ "$1" = "stop" ]; then
 	kill -9 `cat $PIDFILE`
 	rm $PIDFILE
 	echo "spqr node server shut down!"
+	exit 0
+fi
+
+if [ -z "$2" ]; then
+	# write error message
+	echo "usage: spqr-node.sh {start|stop} <configuration file>"
+	exit 1
+fi
+
+if [ "$1" = "start" ]; then
+	
+	# check for running service 
+	if [ -f "$PIDFILE" ]; then
+   		echo "spqr node server already running! process id: `cat $PIDFILE`"
+   		exit 1
+	fi
+	
+	CLASSPATH=.:$BASEDIR/../lib/*
+    java -d64 -server -XX:MaxPermSize=512M -XX:MaxGCPauseMillis=500 -XX:+UseG1GC -Xms1G -cp $CLASSPATH com.ottogroup.bi.spqr.node.server.SPQRNodeServer server $2 &	
+	echo $! > $PIDFILE
+	echo "spqr node server running. process id: `cat $PIDFILE`"
+	exit 0
 fi
 
 if [ "$1" = "restart" ]; then
@@ -54,13 +56,5 @@ if [ "$1" = "restart" ]; then
     java -d64 -server -XX:MaxPermSize=512M -XX:MaxGCPauseMillis=500 -XX:+UseG1GC -Xms1G -cp $CLASSPATH com.ottogroup.bi.spqr.node.server.SPQRNodeServer server $2 &	
 	echo $! > $PIDFILE
 	echo "spqr node server running. process id: `cat $PIDFILE`"
+	exit 0
 fi
-
-
-
-
-
-
-
-
-
