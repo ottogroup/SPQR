@@ -57,7 +57,7 @@ public class RandomNumberTestSource implements Source {
 		this.content = (properties.containsKey(CFG_CONTENT) ? properties.getProperty(CFG_CONTENT).getBytes() : new byte[0]);
 				
 		this.running = true;
-		System.out.println("seed: " + seed);
+	
 	}
 
 

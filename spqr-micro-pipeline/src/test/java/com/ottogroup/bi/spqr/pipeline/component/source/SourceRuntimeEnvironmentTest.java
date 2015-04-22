@@ -114,7 +114,7 @@ public class SourceRuntimeEnvironmentTest {
 									
 						}
 					}
-					System.out.println("Received " + count + " messages in " + (System.currentTimeMillis()-s1)+"ms");
+//					System.out.println("Received " + count + " messages in " + (System.currentTimeMillis()-s1)+"ms");
 				}
 			});
 			
