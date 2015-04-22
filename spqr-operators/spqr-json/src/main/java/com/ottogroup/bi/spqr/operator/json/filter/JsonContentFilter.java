@@ -32,6 +32,7 @@ import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
 import com.ottogroup.bi.spqr.operator.json.JsonContentType;
 import com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponent;
 import com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponentType;
+import com.ottogroup.bi.spqr.pipeline.component.annotation.SPQRComponent;
 import com.ottogroup.bi.spqr.pipeline.component.operator.DirectResponseOperator;
 import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
 
@@ -48,6 +49,7 @@ import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
  * @author mnxfst
  * @since Apr 8, 2015
  */
+@SPQRComponent(type=MicroPipelineComponentType.DIRECT_RESPONSE_OPERATOR, name="jsonContentFilter", version="0.0.1", description="Filters arbitrary JSON content")
 public class JsonContentFilter implements DirectResponseOperator {
 
 	/** our faithful logging facility .... ;-) */ 
