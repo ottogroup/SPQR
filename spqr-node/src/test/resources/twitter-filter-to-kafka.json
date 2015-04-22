@@ -1,0 +1,51 @@
+{
+  "id" : "twitter-filter-to-kafka",
+  "queues" : [ 
+    { "id" : "twitter-content", "queueSettings" : null },
+    { "id" : "filtered-content", "queueSettings" : null } 
+  ],
+  "components" : [ {
+    "id" : "twitter-stream-reader",
+    "type" : "SOURCE",
+    "name" : "twitterSource",
+    "version" : "0.0.1",
+    "settings" : {
+      "twitter.consumer.key" : "<your_consumer_key>",
+      "twitter.consumer.secret" : "<your_consumer_secret>",
+      "twitter.token.key" : "<your_token_key>",
+      "twitter.token.secret" : "<your_token_secret>",
+      "twitter.tweet.terms" : "fifa,uefa,soccer"
+    },
+    "fromQueue" : "",
+    "toQueue" : "twitter-content"
+  },  
+  {
+    "id" : "twitter-content-filter",
+    "type" : "DIRECT_RESPONSE_OPERATOR",
+    "name" : "jsonContentFilter",
+    "version" : "0.0.1",
+    "settings" : {
+      "field.1.path": "text",
+      "field.1.expression": "(?i).*soccer.*",
+      "field.1.type": "STRING"
+    },
+    "fromQueue": "twitter-content",
+    "toQueue": "filtered-content"
+  }, 
+  {
+    "id" : "kafka-topic-emitter",
+    "type" : "EMITTER",
+    "name" : "kafkaEmitter",
+    "version" : "0.0.1",
+    "settings" : {
+      "clientId" : "twitterToKafka",
+      "topic" : "twitter",
+      "metadataBrokerList" : "localhost:9092",
+      "zookeeperConnect" : "localhost:2181",
+      "messageAcking" : "false",
+      "charset" : "UTF-8"
+    },
+    "fromQueue" : "filtered-content",
+    "toQueue" : ""
+  } ]
+}
