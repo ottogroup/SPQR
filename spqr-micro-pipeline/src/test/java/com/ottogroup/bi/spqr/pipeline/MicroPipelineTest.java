@@ -57,7 +57,7 @@ public class MicroPipelineTest {
 	@Test
 	public void test_performance1() throws Exception {
 	
-		if(false)
+		if(true)
 			return;
 		
 		@SuppressWarnings("unused")
