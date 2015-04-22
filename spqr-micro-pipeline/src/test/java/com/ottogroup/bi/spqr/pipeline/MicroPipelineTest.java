@@ -15,7 +15,6 @@
  */
 package com.ottogroup.bi.spqr.pipeline;
 
-import java.io.File;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -58,13 +57,13 @@ public class MicroPipelineTest {
 	@Test
 	public void test_performance1() throws Exception {
 	
-		if(true)
+		if(false)
 			return;
 		
 		@SuppressWarnings("unused")
-		MicroPipelineConfiguration cfg = new ObjectMapper().readValue(new File("/home/mnxfst/projects/spqr/twitter-to-kafka.json"), MicroPipelineConfiguration.class);
-		final int numGeneratedMessages = 10000000;
-		final String msg = "";new ObjectMapper().writeValueAsString(cfg);
+		MicroPipelineConfiguration cfg = null; //new ObjectMapper().readValue(new File("/home/mnxfst/projects/spqr/twitter-to-kafka.json"), MicroPipelineConfiguration.class);
+		final int numGeneratedMessages = 20000000;
+		final String msg = "What the fuck";new ObjectMapper().writeValueAsString(cfg);
 		
 		System.out.println(msg);
 		final CountDownLatch latch = new CountDownLatch(numGeneratedMessages);
@@ -74,6 +73,7 @@ public class MicroPipelineTest {
 		Properties queueProps = new Properties();
 		queueProps.setProperty(DefaultStreamingMessageQueue.CFG_CHRONICLE_QUEUE_DELETE_ON_EXIT, "true");
 		queueProps.setProperty(DefaultStreamingMessageQueue.CFG_CHRONICLE_QUEUE_PATH, "/mnt/ramdisk");
+//		queueProps.setProperty(DefaultStreamingMessageQueue.CFG_CHRONICLE_QUEUE_PATH, "/tmp");
 		DefaultStreamingMessageQueue queue = new DefaultStreamingMessageQueue();
 		queue.setId("test_performance1_queue");
 		queue.initialize(queueProps);
@@ -116,74 +116,5 @@ public class MicroPipelineTest {
 		
 		System.out.println(numGeneratedMessages + " messages transferred in " + duration + "ms");
 		
-		/*
-		 * 2015-03-17 14:06:24 INFO  RandomNumberTestSource:84 - 2000000 numbers generated in: 5528ms
-Received 2000000 messages. Min: 5ms, Max: 5000ms
-2000000 messages transferred in 10527ms
-
----
-2000000 messages transferred in 928ms
-Received 2000000 messages. Min: 0ms, Max: 18ms
-		 */
 	}
-	
-	/*
-	 * 
-	 * 	
-	public void testRun_withFullyFunctionalSource() throws RequiredInputMissingException, IOException, InterruptedException, ComponentInitializationFailedException {
-		
-		final int numGenerated = 10000;
-		final CountDownLatch latch = new CountDownLatch(numGenerated);
-		
-		ExecutorService svc = Executors.newCachedThreadPool();
-		Properties queueProps = new Properties();
-		queueProps.setProperty(DefaultStreamingMessageQueue.CFG_CHRONICLE_QUEUE_DELETE_ON_EXIT, "true");
-		queueProps.setProperty(DefaultStreamingMessageQueue.CFG_CHRONICLE_QUEUE_PATH, System.getProperty("java.io.tmpdir"));
-
-		Properties rndGenProps = new Properties();		
-		rndGenProps.setProperty(RandomNumberTestSource.CFG_MAX_NUM_GENERATED, String.valueOf(numGenerated));		
-
-		RandomNumberTestSource source = new RandomNumberTestSource();
-		source.initialize(rndGenProps);
-		source.setId("testRun_withFullyFunctionalSource");
-		
-		DefaultStreamingMessageQueue queue = new DefaultStreamingMessageQueue();
-		queue.setId("testRun_withFullyFunctionalSource");
-		queue.initialize(queueProps);
-	
-		final StreamingMessageQueueConsumer consumer = queue.getConsumer();
-		
-		SourceRuntimeEnvironment env = null;
-		try {
-			env = new SourceRuntimeEnvironment(source, queue.getProducer());			
-			svc.submit(env);
-			svc.submit(new Runnable() {
-				
-				public void run() {
-					int count = 0;
-					long s1 = System.currentTimeMillis();
-					int numElements = numGenerated;
-					while(numElements > 0) {
-						if(consumer.next() != null) {
-							count++;
-							numElements--;
-							latch.countDown();
-									
-						}
-					}
-					System.out.println("Received " + count + " messages in " + (System.currentTimeMillis()-s1)+"ms");
-				}
-			});
-			
-			
-			Assert.assertTrue(latch.await(10, TimeUnit.SECONDS));
-		} finally {
-			env.shutdown();
-			svc.shutdownNow();
-		}
-		
-		
-	}
-
-	 */
 }
