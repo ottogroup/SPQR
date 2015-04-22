@@ -1,0 +1,42 @@
+{
+  "id" : "webtrends-to-kafka",
+  "queues" : [ {
+    "id" : "webtrends-content",
+    "queueSettings" : null
+  } ],
+  "components" : [ {
+    "id" : "webtrends-stream-reader",
+    "type" : "SOURCE",
+    "name" : "webtrendsSource",
+    "version" : "0.0.1",
+    "settings" : {
+      "webtrends.stream.version" : "2.1",
+      "webtrends.auth.audience" : "auth.webtrends.com",
+      "webtrends.stream.type" : "return_all",
+      "webtrends.schema.version" : "2.1",
+      "webtrends.auth.scope" : "sapi.webtrends.com",
+      "webtrends.stream.url" : "ws://sapi.webtrends.com/streaming",
+      "webtrends.auth.url" : "https://sauth.webtrends.com/v1/token",
+      "webtrends.client.id" : "<your_client_id>",
+      "webtrends.client.secret" : "<your_client_secret>",
+      "webtrends.stream.query" : "select *"
+    },
+    "fromQueue" : "",
+    "toQueue" : "webtrends-content"
+  }, {
+    "id" : "kafka-topic-emitter",
+    "type" : "EMITTER",
+    "name" : "kafkaEmitter",
+    "version" : "0.0.1",
+    "settings" : {
+      "clientId" : "webtrendsToKafka",
+      "topic" : "webtrends",
+      "metadataBrokerList" : "localhost:9092",
+      "zookeeperConnect" : "localhost:2181",
+      "messageAcking" : "false",
+      "charset" : "UTF-8"
+    },
+    "fromQueue" : "webtrends-content",
+    "toQueue" : ""
+  } ]
+}
