@@ -101,6 +101,7 @@ public class DelayedResponseOperatorRuntimeEnvironment implements Runnable, Dela
 		this.delayedResponseOperator = delayedResponseOperator;
 		this.responseWaitStrategy = responseWaitStrategy;
 		this.responseWaitStrategy.setDelayedResponseCollector(this);
+		this.delayedResponseOperator.setWaitStrategy(this.responseWaitStrategy);
 		this.queueConsumer = queueConsumer;
 		this.queueProducer = queueProducer;
 		this.executorService = executorService;		

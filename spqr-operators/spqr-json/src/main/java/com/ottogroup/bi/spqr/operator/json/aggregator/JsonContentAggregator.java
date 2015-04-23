@@ -34,6 +34,7 @@ import com.ottogroup.bi.spqr.operator.json.JsonContentType;
 import com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponentType;
 import com.ottogroup.bi.spqr.pipeline.component.annotation.SPQRComponent;
 import com.ottogroup.bi.spqr.pipeline.component.operator.DelayedResponseOperator;
+import com.ottogroup.bi.spqr.pipeline.component.operator.DelayedResponseOperatorWaitStrategy;
 import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
 
 /**
@@ -245,6 +246,13 @@ public class JsonContentAggregator implements DelayedResponseOperator {
 		return contentNode.asLong();
 	}
 	
+	/**
+	 * @see com.ottogroup.bi.spqr.pipeline.component.operator.DelayedResponseOperator#setWaitStrategy(com.ottogroup.bi.spqr.pipeline.component.operator.DelayedResponseOperatorWaitStrategy)
+	 */
+	public void setWaitStrategy(DelayedResponseOperatorWaitStrategy waitStrategy) {
+		// do nothing as the reference is not required
+	}
+
 	/**
 	 * @see com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponent#shutdown()
 	 */

@@ -51,5 +51,10 @@ public interface DelayedResponseOperator extends Operator {
 	 * @return
 	 */
 	public long getNumberOfMessagesSinceLastResult();
-
+	
+	/**
+	 * Assigns the {@link DelayedResponseOperatorWaitStrategy} used for triggering result retrieval 
+	 * @param waitStrategy
+	 */
+	public void setWaitStrategy(final DelayedResponseOperatorWaitStrategy waitStrategy);
 }

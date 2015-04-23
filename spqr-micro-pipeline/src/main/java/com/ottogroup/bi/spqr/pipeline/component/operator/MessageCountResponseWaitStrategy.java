@@ -33,7 +33,6 @@ public class MessageCountResponseWaitStrategy implements DelayedResponseOperator
 	public static final String CFG_MAX_MESSAGE_COUNT_KEY = "maxMessages";
 	
 	private DelayedResponseCollector delayedResponseCollector = null;
-	private boolean running = false;
 	/** holds the max number of message after which the strategy signals the collector to collect results. default is set to 50 */
 	private int maxMessageCount = DEFAULT_MAX_MESSAGE_COUNT; 
 	/** counts the number of messages seen after last value collection or since start - reset to 0 after each collection run */
@@ -49,18 +48,15 @@ public class MessageCountResponseWaitStrategy implements DelayedResponseOperator
 				this.maxMessageCount = DEFAULT_MAX_MESSAGE_COUNT;
 		} catch(Exception e) {
 			this.maxMessageCount = DEFAULT_MAX_MESSAGE_COUNT;
-		}		
+		}
+		this.messageCount = 0;
 	}
 
 	/**
 	 * @see java.lang.Runnable#run()
 	 */
 	public void run() {
-		this.running = true;
-		this.messageCount = 0;
-		while(this.running) {
-			// TODO replace active waiting 
-		}
+		// no code as it is triggered directly on each message by runtime environment  ... no need for async behavior here 
 	}
 
 	/**
@@ -85,7 +81,6 @@ public class MessageCountResponseWaitStrategy implements DelayedResponseOperator
 	 * @see com.ottogroup.bi.spqr.pipeline.component.operator.DelayedResponseOperatorWaitStrategy#shutdown()
 	 */
 	public void shutdown() {
-		this.running = false;
 	}
 
 	/**

@@ -38,6 +38,7 @@ import com.ottogroup.bi.spqr.pipeline.component.operator.DelayedResponseOperator
 import com.ottogroup.bi.spqr.pipeline.component.operator.DirectResponseOperator;
 import com.ottogroup.bi.spqr.pipeline.component.operator.DirectResponseOperatorRuntimeEnvironment;
 import com.ottogroup.bi.spqr.pipeline.component.operator.MessageCountResponseWaitStrategy;
+import com.ottogroup.bi.spqr.pipeline.component.operator.OperatorTriggeredWaitStrategy;
 import com.ottogroup.bi.spqr.pipeline.component.operator.TimerBasedResponseWaitStrategy;
 import com.ottogroup.bi.spqr.pipeline.component.source.Source;
 import com.ottogroup.bi.spqr.pipeline.component.source.SourceRuntimeEnvironment;
@@ -384,6 +385,10 @@ public class MicroPipelineFactory {
 			return strategy;
 		} else if(StringUtils.equalsIgnoreCase(strategyName, TimerBasedResponseWaitStrategy.WAIT_STRATEGY_NAME)) {
 			TimerBasedResponseWaitStrategy strategy = new TimerBasedResponseWaitStrategy();
+			strategy.initialize(strategyProperties);
+			return strategy;
+		} else if(StringUtils.equalsIgnoreCase(strategyName, OperatorTriggeredWaitStrategy.WAIT_STRATEGY_NAME)) {
+			OperatorTriggeredWaitStrategy strategy = new OperatorTriggeredWaitStrategy();
 			strategy.initialize(strategyProperties);
 			return strategy;
 		}
