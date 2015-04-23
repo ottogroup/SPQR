@@ -103,8 +103,8 @@ cp $SRC_FOLDER/spqr-operators/spqr-twitter/target/lib/* $DEST_FOLDER/spqr-resman
 # spqr-webtrends operator
 mkdir -p $DEST_FOLDER/spqr-node/repo/spqr-webtrends
 mkdir -p $DEST_FOLDER/spqr-resman/repo/spqr-webtrends
-cp $SRC_FOLDER/spqr-operators/spqr-webtrends/target/lib/* $DEST_FOLDER/spqr-node/repo/spqr-twitter/
-cp $SRC_FOLDER/spqr-operators/spqr-webtrends/target/lib/* $DEST_FOLDER/spqr-resman/repo/spqr-twitter/
+cp $SRC_FOLDER/spqr-operators/spqr-webtrends/target/lib/* $DEST_FOLDER/spqr-node/repo/spqr-webtrends/
+cp $SRC_FOLDER/spqr-operators/spqr-webtrends/target/lib/* $DEST_FOLDER/spqr-resman/repo/spqr-webtrends/
 
 #######################################################################
 
