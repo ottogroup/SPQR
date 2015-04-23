@@ -144,7 +144,6 @@ public class DelayedResponseOperatorRuntimeEnvironment implements Runnable, Dela
 			// try to fetch messages from underlying operator
 			StreamingDataMessage[] retrievedMessages = this.delayedResponseOperator.getResult();
 
-			System.out.println("retri: " + retrievedMessages);
 			// forward messages to assigned queue if any messages are available 
 			if(retrievedMessages != null) {
 				for(StreamingDataMessage rm : retrievedMessages)
