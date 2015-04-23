@@ -56,6 +56,7 @@ public class SPQRWebSocketServerHandler extends SimpleChannelInboundHandler<Obje
 
     private static final String WEBSOCKET_PATH = "/pipeline";
     
+    
     private final ObjectMapper jsonMapper = new ObjectMapper();
     private KafkaTopicWebSocketEmitter emitter = null;
     private WebSocketServerHandshaker handshaker = null;
