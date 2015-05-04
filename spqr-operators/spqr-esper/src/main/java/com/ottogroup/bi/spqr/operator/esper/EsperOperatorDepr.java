@@ -23,6 +23,9 @@ import com.espertech.esper.client.Configuration;
 import com.espertech.esper.client.EPServiceProvider;
 import com.espertech.esper.client.EPServiceProviderManager;
 import com.espertech.esper.client.EPStatement;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
 
 /**
  * @author mnxfst
@@ -35,7 +38,9 @@ public class EsperOperatorDepr {
 	
 	public void test() throws Exception  {
 		Configuration cfg = new Configuration();
-		cfg.addEventType("hash", HashMap.class);
+		
+		ObjectMapper m = new ObjectMapper();
+		
 
 		Map<String, Object> nestedDef = new HashMap<String, Object>();
 		nestedDef.put("text", String.class);
@@ -43,8 +48,11 @@ public class EsperOperatorDepr {
 		Map<String, Object> def = new HashMap<String, Object>();
 		def.put("id", int.class);
 		def.put("timestamp", Date.class);
-		def.put("content", nestedDef);
+		def.put("content", Map.class);
+		def.put("message", JsonNode.class);
 		cfg.addEventType("json", def);
+		
+		
 		
 		this.provider = EPServiceProviderManager.getDefaultProvider(cfg);
 		this.provider.initialize();
@@ -53,7 +61,7 @@ public class EsperOperatorDepr {
 		this.statement = this.provider.getEPAdministrator().createEPL(this.getStatement());
 		this.statement.setSubscriber(this);
 		
-
+		
 		Map<String, Object> content = new HashMap<String, Object>();
 		content.put("text", "test-content");
 		
@@ -62,7 +70,7 @@ public class EsperOperatorDepr {
 			event.put("id", i);
 			event.put("timestamp", new Date());
 			event.put("content", content);
-			
+			event.put("message", new ObjectMapper().readTree("{\"key\":\"value\"}".getBytes()));			
 			
 			this.provider.getEPRuntime().sendEvent(event, "json");
 		}
@@ -82,7 +90,7 @@ public class EsperOperatorDepr {
 	
 	public String getStatement() {
 //        return "select content.text from json";
-		return "select * from json.win:time_batch(5 sec)";
+		return "select message from json.win:time_batch(5 sec)";
 		
 	}
 	
