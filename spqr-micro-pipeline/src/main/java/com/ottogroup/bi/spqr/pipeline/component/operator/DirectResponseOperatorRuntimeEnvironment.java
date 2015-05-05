@@ -80,8 +80,7 @@ public class DirectResponseOperatorRuntimeEnvironment implements Runnable {
 		if(logger.isDebugEnabled())
 			logger.debug("direct response operator runtime environment initialized [id="+directResponseOperator.getId()+"]");
 	}
-	
-	
+		
 	/**
 	 * @see java.lang.Runnable#run()
 	 */

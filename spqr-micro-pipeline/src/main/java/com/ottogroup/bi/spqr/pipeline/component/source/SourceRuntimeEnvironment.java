@@ -38,8 +38,6 @@ public class SourceRuntimeEnvironment implements Runnable, IncomingMessageCallba
 	private final Source source;
 	/** attached queue producer which receives incoming messages */
 	private final StreamingMessageQueueProducer queueProducer;
-	/** indicator whether the environment is still running or issued to shutdown */
-	private boolean running = false;
 	/** executor service that will run the source instance */
 	private final ExecutorService executorService;
 	/** local executor service? - must be shut down as well, otherwise the provider must take care of it */
@@ -90,7 +88,6 @@ public class SourceRuntimeEnvironment implements Runnable, IncomingMessageCallba
 	 * @see java.lang.Runnable#run()
 	 */
 	public void run() {
-		this.running = true;
 	}
 
 	/**
@@ -105,7 +102,6 @@ public class SourceRuntimeEnvironment implements Runnable, IncomingMessageCallba
 	 * Shuts down the runtime environment as well as the attached {@link Source}
 	 */
 	public void shutdown() {
-		this.running = false;
 		
 		try {
 			this.source.shutdown();
