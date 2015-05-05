@@ -15,18 +15,24 @@
  */
 package com.ottogroup.bi.spqr.operator.esper;
 
-import java.util.Date;
+import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 
 import com.espertech.esper.client.Configuration;
+import com.espertech.esper.client.EPRuntime;
 import com.espertech.esper.client.EPServiceProvider;
 import com.espertech.esper.client.EPServiceProviderManager;
 import com.espertech.esper.client.EPStatement;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.espertech.esper.client.EPStatementException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ottogroup.bi.spqr.exception.ComponentInitializationFailedException;
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
@@ -43,69 +49,117 @@ import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
  */
 @SPQRComponent(type=MicroPipelineComponentType.DELAYED_RESPONSE_OPERATOR, name="esperOperator", version="0.0.1", description="ESPER integration operator")
 public class EsperOperator implements DelayedResponseOperator {
-
-	/** body content will be copied as raw byte array into esper data structure */ 
-	public static final String MESSAGE_BODY_TYPE_RAW = "raw";
-	/** body content will be converted to JSON and copied into esper data structure */ 
-	public static final String MESSAGE_BODY_TYPE_JSON = "json";	
 	
-	public static final String CFG_ESPER_STATEMENT = "esper.statement";
-	public static final String CFG_MESSAGE_BODY_TYPE = "esper.message.bodyType";
+	/** our faithful logging facility ... ;-) */
+	private static final Logger logger = Logger.getLogger(EsperOperator.class);
 	
-	private enum MessageBodyType {
-		RAW, JSON;
-	}
+	public static final String SPQR_EVENT_TIMESTAMP_FIELD = "timestamp";
+	public static final String SPQR_EVENT_BODY_FIELD = "body";
+	public static final String DEFAULT_INPUT_EVENT = "spqrIn";
+	public static final String DEFAULT_OUTPUT_EVENT = "spqrOut";
+	public static final String CFG_ESPER_STATEMENT_PREFIX = "esper.statement.";
+	public static final String CFG_ESPER_TYPE_DEF_PREFIX = "esper.typeDef.";
+	public static final String CFG_ESPER_TYPE_DEF_EVENT_SUFFIX = ".event";
+	public static final String CFG_ESPER_TYPE_DEF_NAME_SUFFIX = ".name";
+	public static final String CFG_ESPER_TYPE_DEF_TYPE_SUFFIX = ".type";
 	
 	private String id = null;
 	private long totalNumOfMessages = 0;
 	private long numOfMessagesSinceLastResult = 0;
 	private DelayedResponseOperatorWaitStrategy waitStrategy = null;
 	
-	private String esperStatementString = null;
 	private EPServiceProvider esperServiceProvider = null;
-	private EPStatement esperStatement = null;
-	private MessageBodyType messageBodyType = MessageBodyType.RAW;
+	private EPRuntime esperRuntime = null;
 	private final ObjectMapper mapper = new ObjectMapper();
 
+	private StreamingDataMessage[] result = null;
+	
 	/**
 	 * @see com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponent#initialize(java.util.Properties)
 	 */
 	public void initialize(Properties properties) throws RequiredInputMissingException, ComponentInitializationFailedException {
 		
+		if(properties == null)
+			throw new RequiredInputMissingException("Missing required properties");
+		
 		/////////////////////////////////////////////////////////////////////////////////
 		// fetch an validate properties
-		this.esperStatementString = properties.getProperty(CFG_ESPER_STATEMENT);
-		if(StringUtils.isBlank(this.esperStatementString))
-			throw new RequiredInputMissingException("Missing required ESPER statement");
-
-		String bodyTypeStr = StringUtils.lowerCase(StringUtils.trim(properties.getProperty(CFG_MESSAGE_BODY_TYPE)));
-		if(StringUtils.equals(MESSAGE_BODY_TYPE_RAW, bodyTypeStr))
-			this.messageBodyType = MessageBodyType.RAW;
-		else if(StringUtils.equals(MESSAGE_BODY_TYPE_JSON, bodyTypeStr))
-			this.messageBodyType = MessageBodyType.JSON;
-		else
-			throw new ComponentInitializationFailedException("Unexpected message body type found: " + bodyTypeStr);
-				
+		Set<String> esperQueryStrings = new HashSet<>();
+		for(int i = 1; i < Integer.MAX_VALUE; i++) {
+			String tmpStr = properties.getProperty(CFG_ESPER_STATEMENT_PREFIX+i);
+			if(StringUtils.isBlank(tmpStr))
+				break;
+			esperQueryStrings.add(StringUtils.trim(tmpStr));
+		}
+		if(esperQueryStrings.isEmpty())
+			throw new RequiredInputMissingException("Missing required ESPER statement(s)");
 		/////////////////////////////////////////////////////////////////////////////////
 		
-		Configuration esperConfiguration = new Configuration();
-		Map<String, Object> jsonTypeDefinition = new HashMap<>();
-		jsonTypeDefinition.put("timestamp", Long.class);
-		jsonTypeDefinition.put("body", JsonNode.class);
-		esperConfiguration.addEventType("json", jsonTypeDefinition);
+		/////////////////////////////////////////////////////////////////////////////////
+		// fetch event configuration
+		Map<String, Map<String, String>> eventConfiguration = new HashMap<>();
+		for(int i = 1; i < Integer.MAX_VALUE; i++) {
+			final String typeDefEvent = StringUtils.trim(properties.getProperty(CFG_ESPER_TYPE_DEF_PREFIX + i + CFG_ESPER_TYPE_DEF_EVENT_SUFFIX));
+			if(StringUtils.isBlank(typeDefEvent))
+				break;
+			final String typeDefName = StringUtils.trim(properties.getProperty(CFG_ESPER_TYPE_DEF_PREFIX + i + CFG_ESPER_TYPE_DEF_NAME_SUFFIX));
+			final String typeDefType = StringUtils.trim(properties.getProperty(CFG_ESPER_TYPE_DEF_PREFIX + i + CFG_ESPER_TYPE_DEF_TYPE_SUFFIX));
+			
+			if(StringUtils.isBlank(typeDefName) || StringUtils.isBlank(typeDefType))
+				throw new RequiredInputMissingException("Missing type def name or type for event '"+typeDefEvent+"' at position " + i);
+			
+			Map<String, String> ec = eventConfiguration.get(typeDefEvent);
+			if(ec == null)
+				ec = new HashMap<>();
+			ec.put(typeDefName, typeDefType);
+			eventConfiguration.put(typeDefEvent, ec);
+			
+		}
+		///////////////////////////////////////////////////////////////////////////////////
 		
-		
-		Map<String, Object> rawTypeDefinition = new HashMap<>();
-		rawTypeDefinition.put("timestamp", Long.class);
-		rawTypeDefinition.put("body", Object.class);
-		esperConfiguration.addEventType("raw", rawTypeDefinition);
+		///////////////////////////////////////////////////////////////////////////////////
+		// create esper configuration
 
+		Configuration esperConfiguration = new Configuration();
+		for(final String event : eventConfiguration.keySet()) {
+			Map<String, String> ec = eventConfiguration.get(event);
+			if(ec != null && !ec.isEmpty()) {
+				Map<String, Object> typeDefinition = new HashMap<>();
+				for(final String typeDefName : ec.keySet()) {
+					final String typeDefType = ec.get(typeDefName);					
+					try {
+						typeDefinition.put(typeDefName, Class.forName(typeDefType));
+					} catch(ClassNotFoundException e) {
+						throw new ComponentInitializationFailedException("Failed to lookup provided type '"+typeDefType+"' for event '"+event+"'. Error: " + e.getMessage());
+					}
+				}
+				esperConfiguration.addEventType(event, typeDefinition);			
+			}			
+		}
+
+		Map<String, Object> spqrDefaultTypeDefinition = new HashMap<>();
+		spqrDefaultTypeDefinition.put(SPQR_EVENT_TIMESTAMP_FIELD, Long.class);
+		spqrDefaultTypeDefinition.put(SPQR_EVENT_BODY_FIELD, Map.class);
+		esperConfiguration.addEventType(DEFAULT_INPUT_EVENT, spqrDefaultTypeDefinition);
+		esperConfiguration.addEventType(DEFAULT_OUTPUT_EVENT, spqrDefaultTypeDefinition);
+		///////////////////////////////////////////////////////////////////////////////////
+
+		///////////////////////////////////////////////////////////////////////////////////
+		// initialize service provider, submit statements and retrieve runtime 
 		this.esperServiceProvider = EPServiceProviderManager.getDefaultProvider(esperConfiguration);
 		this.esperServiceProvider.initialize();
 
-		this.esperStatement = this.esperServiceProvider.getEPAdministrator().createEPL(this.esperStatementString);
-		this.esperStatement.setSubscriber(this);				
+		for(final String qs : esperQueryStrings) {
+			try {
+				EPStatement esperStatement = this.esperServiceProvider.getEPAdministrator().createEPL(qs);
+				esperStatement.setSubscriber(this);
+			} catch(EPStatementException e) {
+				throw new ComponentInitializationFailedException("Failed to parse query into ESPER statement. Error: " + e.getMessage(), e);
+			}
+		}
 		
+		this.esperRuntime = this.esperServiceProvider.getEPRuntime();
+		///////////////////////////////////////////////////////////////////////////////////
 	}
 
 	/**
@@ -126,38 +180,53 @@ public class EsperOperator implements DelayedResponseOperator {
 	 * @see com.ottogroup.bi.spqr.pipeline.component.operator.DelayedResponseOperator#onMessage(com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage)
 	 */
 	public void onMessage(StreamingDataMessage message) {
-	
-		switch(this.messageBodyType) {
-			case JSON: {
-				mapper.readTree(message.getBody());
-				break;
-			}
-			case RAW: {
-				break;
-			}
+		
+		if(message == null || message.getBody() == null)
+			return;
+		
+		Map<String, Object> event = new HashMap<String, Object>();
+		event.put("timestamp", message.getTimestamp());
+		try {
+			event.put("body", mapper.readValue(message.getBody(), new TypeReference<Map<String, Object>>() {}));
+		} catch(IOException e) {
+			logger.error("Failed to parse incoming message to structured JSON map. Error: " + e.getMessage());
+			event.put("body", Collections.emptyMap());
 		}
 		
-		if(this.messageBodyType == MessageBodyType.JSON) {
-			mapper.readTree(message.getBody());
-		} else
-		
-		this.provider.getEPRuntime().sendEvent(event, "json");
-		
+		this.esperRuntime.sendEvent(event, DEFAULT_INPUT_EVENT);
+		this.numOfMessagesSinceLastResult++;
+		this.totalNumOfMessages++;
 	}
 
 	/**
 	 * @see com.ottogroup.bi.spqr.pipeline.component.operator.DelayedResponseOperator#getResult()
 	 */
 	public StreamingDataMessage[] getResult() {
-		return null;
+		this.numOfMessagesSinceLastResult = 0;
+		return result;
 	}
 
+	/**
+	 * Callback invoked by ESPER for nay result  
+	 * @param eventMap
+	 */
 	public void update(Map<String, Object> eventMap) {
 		
-		// TODO
-        for(String s : eventMap.keySet()) {
-        	System.out.println(s + " --> " + eventMap.get(s));
-        }
+		@SuppressWarnings("unchecked")
+		Map<String, Object> body = (Map<String, Object>)eventMap.get(SPQR_EVENT_BODY_FIELD);
+		Long timestamp = (Long)eventMap.get(SPQR_EVENT_TIMESTAMP_FIELD);
+
+		if(body != null) {
+			try {
+				byte[] messageBody = mapper.writeValueAsBytes(body);
+				if(messageBody != null && messageBody.length > 0) {
+					result = new StreamingDataMessage[]{new StreamingDataMessage(messageBody, (timestamp != null ? timestamp.longValue() : System.currentTimeMillis()))};
+					this.waitStrategy.release();
+				}
+			} catch(IOException e) {
+				logger.error("Failed to parse ESPER result to JSON representation. Error: " + e.getMessage(), e);
+			}
+		}
     }
 	
 	/**
