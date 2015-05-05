@@ -32,6 +32,7 @@ import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueue;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConsumer;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueProducer;
 import com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueBlockingWaitStrategy;
+import com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueDirectPassStrategy;
 import com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueWaitStrategy;
 
 /**
@@ -89,10 +90,7 @@ public class DefaultStreamingMessageQueue implements StreamingMessageQueue {
 			pathToChronicle = pathToChronicle + File.separator;
 		pathToChronicle = pathToChronicle + id;
 		
-		String waitStrategyClass = StringUtils.trim(properties.getProperty(CFG_QUEUE_MESSAGE_WAIT_STRATEGY));
-		if(StringUtils.isBlank(waitStrategyClass))
-			waitStrategyClass = StreamingMessageQueueBlockingWaitStrategy.class.getName(); //StreamingMessageQueueDirectPassStrategy.class.getName(); // default strategy: active waiting
-		this.queueWaitStrategy = getWaitStrategy(waitStrategyClass);
+		this.queueWaitStrategy = getWaitStrategy(StringUtils.trim(properties.getProperty(CFG_QUEUE_MESSAGE_WAIT_STRATEGY)));
 		
 		//
 		////////////////////////////////////////////////////////////////////////////////
@@ -113,17 +111,14 @@ public class DefaultStreamingMessageQueue implements StreamingMessageQueue {
 	}
 
 	/**
-	 * Return an instance of the referenced {@link StreamingMessageQueueWaitStrategy wait strategy class}
-	 * @param waitStrategyClass
+	 * Return an instance of the referenced {@link StreamingMessageQueueWaitStrategy}
+	 * @param waitStrategyName name of strategy to instantiate (eg. {@link StreamingMessageQueueBlockingWaitStrategy#STRATEGY_NAME} (default))
 	 * @return
 	 */
-	protected StreamingMessageQueueWaitStrategy getWaitStrategy(final String waitStrategyClass) {
-		try {
-			Class<?> clazz = Class.forName(waitStrategyClass);
-			return (StreamingMessageQueueWaitStrategy)clazz.newInstance();
-		} catch(Exception e) {
-			throw new RuntimeException("Failed to instantiate wait strategy class '"+waitStrategyClass+"'. Error: " + e.getMessage());
-		}
+	protected StreamingMessageQueueWaitStrategy getWaitStrategy(final String waitStrategyName) {			
+		if(StringUtils.equalsIgnoreCase(waitStrategyName, StreamingMessageQueueDirectPassStrategy.STRATEGY_NAME))
+			return new StreamingMessageQueueDirectPassStrategy();
+		return new StreamingMessageQueueBlockingWaitStrategy();
 	}
 	
 	/**

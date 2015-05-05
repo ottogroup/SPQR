@@ -28,6 +28,7 @@
 		<module>spqr-operators/spqr-twitter</module>
 		<module>spqr-operators/spqr-webtrends</module>
 		<module>spqr-operators/spqr-json</module>
+		<module>spqr-operators/spqr-esper</module>
   	</modules>
 
 	<!-- application owner -->

@@ -29,6 +29,8 @@ import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConsumer;
  */
 public class StreamingMessageQueueDirectPassStrategy implements StreamingMessageQueueWaitStrategy {
 
+	public static final String STRATEGY_NAME = "directPass";
+	
 	/**
 	 * @see com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueWaitStrategy#waitFor(com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConsumer)
 	 */

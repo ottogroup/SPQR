@@ -106,6 +106,12 @@ mkdir -p $DEST_FOLDER/spqr-resman/repo/spqr-webtrends
 cp $SRC_FOLDER/spqr-operators/spqr-webtrends/target/lib/* $DEST_FOLDER/spqr-node/repo/spqr-webtrends/
 cp $SRC_FOLDER/spqr-operators/spqr-webtrends/target/lib/* $DEST_FOLDER/spqr-resman/repo/spqr-webtrends/
 
+# spqr-esper operator
+mkdir -p $DEST_FOLDER/spqr-node/repo/spqr-esper
+mkdir -p $DEST_FOLDER/spqr-resman/repo/spqr-esper
+cp $SRC_FOLDER/spqr-operators/spqr-esper/target/lib/* $DEST_FOLDER/spqr-node/repo/spqr-esper/
+cp $SRC_FOLDER/spqr-operators/spqr-esper/target/lib/* $DEST_FOLDER/spqr-resman/repo/spqr-esper/
+
 #######################################################################
 
 #######################################################################
