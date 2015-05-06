@@ -23,6 +23,7 @@ import org.apache.log4j.Logger;
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
 import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueProducer;
+import com.ottogroup.bi.spqr.pipeline.stats.ComponentStatisticsCollector;
 
 /**
  * Runtime environment for {@link Source} instances
@@ -101,8 +102,12 @@ public class SourceRuntimeEnvironment implements Runnable, IncomingMessageCallba
 	 * @see com.ottogroup.bi.spqr.pipeline.component.source.IncomingMessageCallback#onMessage(com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage)
 	 */
 	public void onMessage(StreamingDataMessage message) {
+		int size = (message != null && message.getBody() != null ? message.getBody().length : 0);
+		long start = System.currentTimeMillis();
 		this.queueProducer.insert(message);
+		long end = System.currentTimeMillis();
 		this.queueProducer.getWaitStrategy().forceLockRelease();
+
 	}
 	
 	/**

@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.ottogroup.bi.spqr.pipeline.statistics;
+package com.ottogroup.bi.spqr.pipeline.stats;
 
 import java.io.Serializable;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Holds statistical information about a single pipeline. Values tracked are:
+ * Holds statistical information about a single pipeline component. Values tracked are:
  * <ul>
- *   <li>pipeline identifier</li>
+ *   <li>component identifier</li>
  *   <li>number of messages processed for specified time frame</li>
  *   <li>start time</li>
  *   <li>end time</li>
@@ -35,18 +35,15 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  *   <li>errors</li>
  * </ul>
  * @author mnxfst
- * @since Apr 14, 2015
+ * @since May 6, 2015
  */
-public class MicroPipelineStatistics implements Serializable {
+public class MicroPipelineComponentStatistics implements Serializable {
 
-	private static final long serialVersionUID = -2458412374912750561L;
-
-	/** identifier of host running the pipeline the stats belong to */
-	@JsonProperty(value="hid", required=true)
-	private String processingNodeId = null;
-	/** identifier of pipeline which generated the stats */ 
-	@JsonProperty(value="pid", required=true)
-	private String pipelineId = null;
+	private static final long serialVersionUID = 3548413649029481410L;
+	
+	/** identifier of pipeline component which generated the stats */
+	@JsonProperty(value="cid", required=true)
+	private String componentId = null;
 	/** number of messages processed since last event */
 	@JsonProperty(value="numMsg", required=true)
 	private int numOfMessages = 0;	
@@ -58,65 +55,68 @@ public class MicroPipelineStatistics implements Serializable {
 	private long endTime = 0;
 	/** min. duration required for processing a single message */
 	@JsonProperty(value="minDur")
-	private int minDuration = 0;
+	private int minDuration = Integer.MAX_VALUE;
 	/** max. duration required for processing a single message */
 	@JsonProperty(value="maxDur")
-	private int maxDuration = 0;
+	private int maxDuration = Integer.MIN_VALUE;
 	/** avg. duration required for processing a single message */
 	@JsonProperty(value="avgDur")
 	private int avgDuration = 0;
 	/** min. message size */
 	@JsonProperty(value="minSize")
-	private int minSize = 0;
+	private int minSize = Integer.MAX_VALUE;
 	/** max. message size */
 	@JsonProperty(value="maxSize")
-	private int maxSize = 0;
+	private int maxSize = Integer.MIN_VALUE;
 	/** avg. message size */
 	@JsonProperty(value="avgSize")
 	private int avgSize = 0;
 	/** error rate */
 	@JsonProperty(value="err", required=true)
 	private int errors = 0;
-		
-	public MicroPipelineStatistics() {		
+	
+	/**
+	 * Default constructor
+	 */
+	public MicroPipelineComponentStatistics() {		
 	}
 	
-	public MicroPipelineStatistics(final String processingNodeId, final String pipelineId, final int numOfMessages,
-			final int minDuration, final int maxDuration, final int avgDuration,
-			final int minSize, final int maxSize, final int avgSize) {
-		this.processingNodeId = processingNodeId;
-		this.pipelineId = pipelineId;
+	/**
+	 * Initializes the component stats using the provided input 
+	 * @param componentId
+	 * @param numOfMessages
+	 * @param startTime
+	 * @param endTime
+	 * @param minDuration
+	 * @param maxDuration
+	 * @param avgDuration
+	 * @param minSize
+	 * @param maxSize
+	 * @param avgSize
+	 * @param errors
+	 */
+	public MicroPipelineComponentStatistics(final String componentId, final int numOfMessages, final long startTime, final long endTime, 
+			final int minDuration, final int maxDuration, final int avgDuration, final int minSize, final int maxSize, final int avgSize,
+			final int errors) {
+		this.componentId = componentId;
 		this.numOfMessages = numOfMessages;
+		this.startTime = startTime;
+		this.endTime = endTime;
 		this.minDuration = minDuration;
 		this.maxDuration = maxDuration;
 		this.avgDuration = avgDuration;
 		this.minSize = minSize;
 		this.maxSize = maxSize;
 		this.avgSize = avgSize;
-	}
-
-	public void incNumOfMessages() {
-		this.numOfMessages++;
-	}
-
-	public void incNumOfMessages(int v) {
-		this.numOfMessages = this.numOfMessages + v;
+		this.errors = errors;
 	}
 	
-	public String getProcessingNodeId() {
-		return processingNodeId;
+	public String getComponentId() {
+		return componentId;
 	}
 
-	public void setProcessingNodeId(String processingNodeId) {
-		this.processingNodeId = processingNodeId;
-	}
-
-	public String getPipelineId() {
-		return pipelineId;
-	}
-
-	public void setPipelineId(String pipelineId) {
-		this.pipelineId = pipelineId;
+	public void setComponentId(String componentId) {
+		this.componentId = componentId;
 	}
 
 	public int getNumOfMessages() {
@@ -125,6 +125,22 @@ public class MicroPipelineStatistics implements Serializable {
 
 	public void setNumOfMessages(int numOfMessages) {
 		this.numOfMessages = numOfMessages;
+	}
+
+	public long getStartTime() {
+		return startTime;
+	}
+
+	public void setStartTime(long startTime) {
+		this.startTime = startTime;
+	}
+
+	public long getEndTime() {
+		return endTime;
+	}
+
+	public void setEndTime(long endTime) {
+		this.endTime = endTime;
 	}
 
 	public int getMinDuration() {
@@ -174,7 +190,14 @@ public class MicroPipelineStatistics implements Serializable {
 	public void setAvgSize(int avgSize) {
 		this.avgSize = avgSize;
 	}
-	
+
+	public int getErrors() {
+		return errors;
+	}
+
+	public void setErrors(int errors) {
+		this.errors = errors;
+	}
 	
 	
 }
