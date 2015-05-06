@@ -28,15 +28,18 @@ import com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueWaitSt
  */
 public class DefaultStreamingMessageQueueConsumer implements StreamingMessageQueueConsumer {
 
+	private final String queueId;
 	private final ExcerptTailer queueReader;
 	private final StreamingMessageQueueWaitStrategy waitStrategy;
 	
 	/**
 	 * Initializes the consumer using the provided input
+	 * @param queueId
 	 * @param queueReader
 	 * @param waitStrategy
 	 */
-	public DefaultStreamingMessageQueueConsumer(final ExcerptTailer queueReader, final StreamingMessageQueueWaitStrategy waitStrategy) {
+	public DefaultStreamingMessageQueueConsumer(final String queueId, final ExcerptTailer queueReader, final StreamingMessageQueueWaitStrategy waitStrategy) {
+		this.queueId = queueId;
 		this.queueReader = queueReader;
 		this.waitStrategy = waitStrategy;
 	}
@@ -66,6 +69,10 @@ public class DefaultStreamingMessageQueueConsumer implements StreamingMessageQue
 	 */
 	public StreamingMessageQueueWaitStrategy getWaitStrategy() {
 		return this.waitStrategy;
+	}
+
+	public String getQueueId() {
+		return queueId;
 	}
 
 	

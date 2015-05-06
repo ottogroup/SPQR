@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
 import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConsumer;
+import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueProducer;
 import com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueWaitStrategy;
 
 /**
@@ -38,6 +39,8 @@ public class EmitterRuntimeEnvironment implements Runnable {
 	private final Emitter emitter;
 	/** provides read access to assigned source queue */
 	private final StreamingMessageQueueConsumer queueConsumer;
+	/** attached statistics queue producer */
+	private final StreamingMessageQueueProducer statsQueueProducer;
 	/** indicates whether the environment is still running */
 	private boolean running = false;
 
@@ -47,7 +50,7 @@ public class EmitterRuntimeEnvironment implements Runnable {
 	 * @param queueConsumer
 	 * @throws RequiredInputMissingException
 	 */
-	public EmitterRuntimeEnvironment(final Emitter emitter, final StreamingMessageQueueConsumer queueConsumer) throws RequiredInputMissingException {
+	public EmitterRuntimeEnvironment(final Emitter emitter, final StreamingMessageQueueConsumer queueConsumer, final StreamingMessageQueueProducer statsQueueProducer) throws RequiredInputMissingException {
 		
 		///////////////////////////////////////////////////////////////////
 		// validate input
@@ -55,10 +58,13 @@ public class EmitterRuntimeEnvironment implements Runnable {
 			throw new RequiredInputMissingException("Missing required emitter");
 		if(queueConsumer == null)
 			throw new RequiredInputMissingException("Missing required input queue consumer");
+		if(statsQueueProducer == null) 
+			throw new RequiredInputMissingException("Missing required stats queue producer");
 		//
 		///////////////////////////////////////////////////////////////////
 		this.emitter = emitter;
 		this.queueConsumer = queueConsumer;
+		this.statsQueueProducer = statsQueueProducer;
 		
 		this.running = true;
 		

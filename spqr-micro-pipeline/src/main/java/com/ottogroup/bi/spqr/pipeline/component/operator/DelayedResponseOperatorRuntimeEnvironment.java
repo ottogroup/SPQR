@@ -48,6 +48,8 @@ public class DelayedResponseOperatorRuntimeEnvironment implements Runnable, Dela
 	private final StreamingMessageQueueConsumer queueConsumer;
 	/** provides write access to assigned destination queue */
 	private final StreamingMessageQueueProducer queueProducer;	
+	/** provides write access to assigned stats queue */
+	private final StreamingMessageQueueProducer statsQueueProducer;
 	/** indicates whether the operator runtime is still running or not */
 	private boolean running = false;
 	/** executor environment used to run the response wait strategy */
@@ -65,11 +67,12 @@ public class DelayedResponseOperatorRuntimeEnvironment implements Runnable, Dela
 	 * @param responseWaitStrategy
 	 * @param queueConsumer
 	 * @param queueProducer
+	 * @param statsQueueProducer
 	 * @throws RequiredInputMissingException
 	 */
 	public DelayedResponseOperatorRuntimeEnvironment(final DelayedResponseOperator delayedResponseOperator, final DelayedResponseOperatorWaitStrategy responseWaitStrategy,
-			final StreamingMessageQueueConsumer queueConsumer, final StreamingMessageQueueProducer queueProducer) throws RequiredInputMissingException {
-		this(delayedResponseOperator, responseWaitStrategy, queueConsumer, queueProducer, Executors.newCachedThreadPool());
+			final StreamingMessageQueueConsumer queueConsumer, final StreamingMessageQueueProducer queueProducer, final StreamingMessageQueueProducer statsQueueProducer) throws RequiredInputMissingException {
+		this(delayedResponseOperator, responseWaitStrategy, queueConsumer, queueProducer, statsQueueProducer, Executors.newCachedThreadPool());
 		this.localExecutorService = true;
 	}
 	
@@ -79,11 +82,12 @@ public class DelayedResponseOperatorRuntimeEnvironment implements Runnable, Dela
 	 * @param responseWaitStrategy
 	 * @param queueConsumer
 	 * @param queueProducer
+	 * @param statsQueueProducer
 	 * @param executorService
 	 * @throws RequiredInputMissingException
 	 */
 	public DelayedResponseOperatorRuntimeEnvironment(final DelayedResponseOperator delayedResponseOperator, final DelayedResponseOperatorWaitStrategy responseWaitStrategy,
-			final StreamingMessageQueueConsumer queueConsumer, final StreamingMessageQueueProducer queueProducer, final ExecutorService executorService) throws RequiredInputMissingException {
+			final StreamingMessageQueueConsumer queueConsumer, final StreamingMessageQueueProducer queueProducer, final StreamingMessageQueueProducer statsQueueProducer, final ExecutorService executorService) throws RequiredInputMissingException {
 		
 		/////////////////////////////////////////////////////////////
 		// input validation
@@ -95,6 +99,8 @@ public class DelayedResponseOperatorRuntimeEnvironment implements Runnable, Dela
 			throw new RequiredInputMissingException("Missing required queue consumer");
 		if(queueProducer == null)
 			throw new RequiredInputMissingException("Missing required queue producer");
+		if(statsQueueProducer == null)
+			throw new RequiredInputMissingException("Missing required stats queue producer");
 		//
 		/////////////////////////////////////////////////////////////
 		
@@ -104,6 +110,7 @@ public class DelayedResponseOperatorRuntimeEnvironment implements Runnable, Dela
 		this.delayedResponseOperator.setWaitStrategy(this.responseWaitStrategy);
 		this.queueConsumer = queueConsumer;
 		this.queueProducer = queueProducer;
+		this.statsQueueProducer = statsQueueProducer;
 		this.executorService = executorService;		
 		this.executorService.submit(this.responseWaitStrategy);
 		this.running = true;

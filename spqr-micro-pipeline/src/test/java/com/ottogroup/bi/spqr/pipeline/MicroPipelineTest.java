@@ -62,22 +62,28 @@ public class MicroPipelineTest {
 		
 		@SuppressWarnings("unused")
 		MicroPipelineConfiguration cfg = null; //new ObjectMapper().readValue(new File("/home/mnxfst/projects/spqr/twitter-to-kafka.json"), MicroPipelineConfiguration.class);
-		final int numGeneratedMessages = 20000000;
-		final String msg = "What the fuck";new ObjectMapper().writeValueAsString(cfg);
+		final int numGeneratedMessages = 10000000;
+		final String msg = "test message";new ObjectMapper().writeValueAsString(cfg);
 		
-		System.out.println(msg);
 		final CountDownLatch latch = new CountDownLatch(numGeneratedMessages);
 
 		///////////////////////////////////////////////////////////////////////
 		// queue
 		Properties queueProps = new Properties();
 		queueProps.setProperty(DefaultStreamingMessageQueue.CFG_CHRONICLE_QUEUE_DELETE_ON_EXIT, "true");
-		queueProps.setProperty(DefaultStreamingMessageQueue.CFG_CHRONICLE_QUEUE_PATH, "/mnt/ramdisk");
-//		queueProps.setProperty(DefaultStreamingMessageQueue.CFG_CHRONICLE_QUEUE_PATH, "/tmp");
+//		queueProps.setProperty(DefaultStreamingMessageQueue.CFG_CHRONICLE_QUEUE_PATH, "/mnt/ramdisk");
+		queueProps.setProperty(DefaultStreamingMessageQueue.CFG_CHRONICLE_QUEUE_PATH, "/tmp");
 		DefaultStreamingMessageQueue queue = new DefaultStreamingMessageQueue();
 		queue.setId("test_performance1_queue");
 		queue.initialize(queueProps);
 
+		Properties statsQueueProps = new Properties();
+		queueProps.setProperty(DefaultStreamingMessageQueue.CFG_CHRONICLE_QUEUE_DELETE_ON_EXIT, "true");
+		queueProps.setProperty(DefaultStreamingMessageQueue.CFG_CHRONICLE_QUEUE_PATH, "/tmp");
+		DefaultStreamingMessageQueue statsQueue = new DefaultStreamingMessageQueue();
+		statsQueue.setId(MicroPipeline.STATISTICS_QUEUE_NAME);
+		statsQueue.initialize(statsQueueProps);
+		
 		///////////////////////////////////////////////////////////////////////
 		// source
 		Properties rndGenProps = new Properties();
@@ -88,7 +94,7 @@ public class MicroPipelineTest {
 		source.initialize(rndGenProps);
 		source.setId("test_performance1_source");
 		
-		SourceRuntimeEnvironment srcEnv = new SourceRuntimeEnvironment(source, queue.getProducer());
+		SourceRuntimeEnvironment srcEnv = new SourceRuntimeEnvironment(source, queue.getProducer(), statsQueue.getProducer());
 
 		///////////////////////////////////////////////////////////////////////
 		// emitter
@@ -100,7 +106,7 @@ public class MicroPipelineTest {
 		emitter.setId("test_performance1_emitter");
 		emitter.initialize(emitterProps);
 		
-		EmitterRuntimeEnvironment emitterEnv = new EmitterRuntimeEnvironment(emitter, queue.getConsumer());
+		EmitterRuntimeEnvironment emitterEnv = new EmitterRuntimeEnvironment(emitter, queue.getConsumer(), statsQueue.getProducer());
 		
 		MicroPipeline pipeline = new MicroPipeline("test_performance1");
 		pipeline.addQueue(queue.getId(), queue);		

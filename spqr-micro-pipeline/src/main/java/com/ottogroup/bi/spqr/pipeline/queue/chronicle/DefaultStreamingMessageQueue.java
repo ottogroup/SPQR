@@ -101,8 +101,8 @@ public class DefaultStreamingMessageQueue implements StreamingMessageQueue {
 		
         try {
 			this.chronicle = ChronicleQueueBuilder.indexed(pathToChronicle).build();
-			this.queueConsumer = new DefaultStreamingMessageQueueConsumer(this.chronicle.createTailer(), this.queueWaitStrategy);
-			this.queueProducer = new DefaultStreamingMessageQueueProducer(this.chronicle.createAppender(), this.queueWaitStrategy);
+			this.queueConsumer = new DefaultStreamingMessageQueueConsumer(this.getId(), this.chronicle.createTailer(), this.queueWaitStrategy);
+			this.queueProducer = new DefaultStreamingMessageQueueProducer(this.getId(), this.chronicle.createAppender(), this.queueWaitStrategy);
 		} catch (IOException e) {
 			throw new RuntimeException("Failed to initialize chronicle at '"+pathToChronicle+"'. Error: " + e.getMessage());
 		}

@@ -30,15 +30,18 @@ import com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueWaitSt
 public class DefaultStreamingMessageQueueProducer implements
 		StreamingMessageQueueProducer {
 
+	private final String queueId;
 	private final ExcerptAppender queueProducer;
 	private final StreamingMessageQueueWaitStrategy waitStrategy;
 	
 	/**
 	 * Initializes the producer using the provided input
+	 * @param queueId
 	 * @param queueProducer
 	 * @param waitStrategy
 	 */
-	public DefaultStreamingMessageQueueProducer(final ExcerptAppender queueProducer, final StreamingMessageQueueWaitStrategy waitStrategy) {
+	public DefaultStreamingMessageQueueProducer(final String queueId, final ExcerptAppender queueProducer, final StreamingMessageQueueWaitStrategy waitStrategy) {
+		this.queueId = queueId;
 		this.queueProducer = queueProducer;
 		this.waitStrategy = waitStrategy;
 	}
@@ -65,6 +68,10 @@ public class DefaultStreamingMessageQueueProducer implements
 	 */
 	public StreamingMessageQueueWaitStrategy getWaitStrategy() {
 		return this.waitStrategy;
+	}
+
+	public String getQueueId() {
+		return queueId;
 	}
 
 }

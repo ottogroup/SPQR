@@ -38,6 +38,8 @@ public class SourceRuntimeEnvironment implements Runnable, IncomingMessageCallba
 	private final Source source;
 	/** attached queue producer which receives incoming messages */
 	private final StreamingMessageQueueProducer queueProducer;
+	/** attached statistics queue producer */
+	private final StreamingMessageQueueProducer statsQueueProducer;
 	/** executor service that will run the source instance */
 	private final ExecutorService executorService;
 	/** local executor service? - must be shut down as well, otherwise the provider must take care of it */
@@ -47,10 +49,11 @@ public class SourceRuntimeEnvironment implements Runnable, IncomingMessageCallba
 	 * Initializes the runtime environment using the provided input
 	 * @param source
 	 * @param queueProducer
+	 * @param statsQueueProducer
 	 * @throws RequiredInputMissingException
 	 */
-	public SourceRuntimeEnvironment(final Source source, final StreamingMessageQueueProducer queueProducer) throws RequiredInputMissingException {
-		this(source, queueProducer, Executors.newCachedThreadPool());
+	public SourceRuntimeEnvironment(final Source source, final StreamingMessageQueueProducer queueProducer, final StreamingMessageQueueProducer statsQueueProducer) throws RequiredInputMissingException {
+		this(source, queueProducer, statsQueueProducer, Executors.newCachedThreadPool());
 		this.localExecutorService = true;
 	}
 	
@@ -58,10 +61,11 @@ public class SourceRuntimeEnvironment implements Runnable, IncomingMessageCallba
 	 * Initializes the runtime environment using the provided input
 	 * @param source
 	 * @param queueProducer
+	 * @param statsQueueProducer
 	 * @param executorService
 	 * @throws RequiredInputMissingException
 	 */
-	public SourceRuntimeEnvironment(final Source source, final StreamingMessageQueueProducer queueProducer, final ExecutorService executorService) throws RequiredInputMissingException {
+	public SourceRuntimeEnvironment(final Source source, final StreamingMessageQueueProducer queueProducer, final StreamingMessageQueueProducer statsQueueProducer, final ExecutorService executorService) throws RequiredInputMissingException {
 		
 		///////////////////////////////////////////////////////////////
 		// validate input
@@ -69,6 +73,8 @@ public class SourceRuntimeEnvironment implements Runnable, IncomingMessageCallba
 			throw new RequiredInputMissingException("Missing required source");
 		if(queueProducer == null)
 			throw new RequiredInputMissingException("Missing required queue producer");
+		if(statsQueueProducer == null)
+			throw new RequiredInputMissingException("Missing required stats queue producer");
 		if(executorService == null)
 			throw new RequiredInputMissingException("Missing required executor service");
 		//
@@ -77,6 +83,7 @@ public class SourceRuntimeEnvironment implements Runnable, IncomingMessageCallba
 		this.source = source;
 		this.source.setIncomingMessageCallback(this);
 		this.queueProducer = queueProducer;
+		this.statsQueueProducer = statsQueueProducer;
 		this.executorService = executorService;
 		
 		this.executorService.submit(source);

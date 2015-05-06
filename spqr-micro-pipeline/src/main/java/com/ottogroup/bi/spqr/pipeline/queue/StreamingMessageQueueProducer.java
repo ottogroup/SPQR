@@ -26,6 +26,12 @@ import com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueWaitSt
 public interface StreamingMessageQueueProducer {
 
 	/**
+	 * Returns the identifier of the queue this producer is attached to
+	 * @return
+	 */
+	public String getQueueId();
+
+	/**
 	 * Inserts the given {@link StreamingDataMessage} into the underlying queue
 	 * @param message
 	 * @return

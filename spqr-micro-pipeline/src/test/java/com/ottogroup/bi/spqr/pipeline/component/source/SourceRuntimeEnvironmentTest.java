@@ -46,8 +46,9 @@ public class SourceRuntimeEnvironmentTest {
 	@Test
 	public void testConstructor_withNullSource() {
 		StreamingMessageQueueProducer mockProducer = Mockito.mock(StreamingMessageQueueProducer.class);
+		StreamingMessageQueueProducer mockStatsProducer = Mockito.mock(StreamingMessageQueueProducer.class);
 		try {			
-			new SourceRuntimeEnvironment(null, mockProducer);
+			new SourceRuntimeEnvironment(null, mockProducer, mockStatsProducer);
 			Assert.fail("Missing required input");
 		} catch(RequiredInputMissingException e) {
 			// expected
@@ -59,10 +60,27 @@ public class SourceRuntimeEnvironmentTest {
 	 * provided null as input to queue producer parameter which must lead to an exception
 	 */
 	@Test
-	public void testConstructor_withNullQueueProducers() {
+	public void testConstructor_withNullQueueProducer() {
 		Source mockSource = Mockito.mock(Source.class);
+		StreamingMessageQueueProducer mockStatsProducer = Mockito.mock(StreamingMessageQueueProducer.class);
 		try {			
-			new SourceRuntimeEnvironment(mockSource, null);
+			new SourceRuntimeEnvironment(mockSource, null, mockStatsProducer);
+			Assert.fail("Missing required input");
+		} catch(RequiredInputMissingException e) {
+			// expected
+		}
+	}
+	
+	/**
+	 * Test case for {@link SourceRuntimeEnvironment#SourceRuntimeEnvironment(Source, java.util.Map)} being
+	 * provided null as input to stats queue producer parameter which must lead to an exception
+	 */
+	@Test
+	public void testConstructor_withNullStatsQueueProducer() {
+		Source mockSource = Mockito.mock(Source.class);
+		StreamingMessageQueueProducer mockProducer = Mockito.mock(StreamingMessageQueueProducer.class);
+		try {			
+			new SourceRuntimeEnvironment(mockSource, mockProducer, null);
 			Assert.fail("Missing required input");
 		} catch(RequiredInputMissingException e) {
 			// expected
@@ -77,6 +95,8 @@ public class SourceRuntimeEnvironmentTest {
 		
 		final int numGenerated = 10000;
 		final CountDownLatch latch = new CountDownLatch(numGenerated);
+		
+		StreamingMessageQueueProducer statsQueueProducer = Mockito.mock(StreamingMessageQueueProducer.class);
 		
 		ExecutorService svc = Executors.newCachedThreadPool();
 		Properties queueProps = new Properties();
@@ -98,7 +118,7 @@ public class SourceRuntimeEnvironmentTest {
 		
 		SourceRuntimeEnvironment env = null;
 		try {
-			env = new SourceRuntimeEnvironment(source, queue.getProducer());			
+			env = new SourceRuntimeEnvironment(source, queue.getProducer(), statsQueueProducer);			
 			svc.submit(env);
 			svc.submit(new Runnable() {
 				

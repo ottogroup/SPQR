@@ -42,7 +42,9 @@ public class DirectResponseOperatorRuntimeEnvironment implements Runnable {
 	/** provides read access to assigned source queue */
 	private final StreamingMessageQueueConsumer queueConsumer;
 	/** provides write access to assigned destination queue */
-	private final StreamingMessageQueueProducer queueProducer;	
+	private final StreamingMessageQueueProducer queueProducer;
+	/** provides write access to stats queue */
+	private final StreamingMessageQueueProducer statsQueueProducer;
 	/** indicates whether the operator runtime is still running or not */
 	private boolean running = false;
 	/** consumer queue wait strategy */
@@ -55,9 +57,10 @@ public class DirectResponseOperatorRuntimeEnvironment implements Runnable {
 	 * @param directResponseOperator
 	 * @param queueConsumer
 	 * @param queueProducer
+	 * @param statsQueueProducer
 	 */
 	public DirectResponseOperatorRuntimeEnvironment(final DirectResponseOperator directResponseOperator, final StreamingMessageQueueConsumer queueConsumer, 
-			final StreamingMessageQueueProducer queueProducer) throws RequiredInputMissingException {
+			final StreamingMessageQueueProducer queueProducer, final StreamingMessageQueueProducer statsQueueProducer) throws RequiredInputMissingException {
 		
 		/////////////////////////////////////////////////////////////
 		// input validation
@@ -67,12 +70,15 @@ public class DirectResponseOperatorRuntimeEnvironment implements Runnable {
 			throw new RequiredInputMissingException("Missing required queue consumer");
 		if(queueProducer == null)
 			throw new RequiredInputMissingException("Missing required queue producer");
+		if(statsQueueProducer == null)
+			throw new RequiredInputMissingException("Missing required stats queue producer");
 		//
 		/////////////////////////////////////////////////////////////
 		
 		this.directResponseOperator = directResponseOperator;
 		this.queueConsumer = queueConsumer;
 		this.queueProducer = queueProducer;
+		this.statsQueueProducer = statsQueueProducer;
 		this.running = true;
 		this.consumerQueueWaitStrategy = queueConsumer.getWaitStrategy();
 		this.destinationQueueWaitStrategy = queueProducer.getWaitStrategy();

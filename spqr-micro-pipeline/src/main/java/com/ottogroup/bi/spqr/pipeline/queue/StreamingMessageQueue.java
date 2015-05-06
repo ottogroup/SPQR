@@ -32,7 +32,6 @@ import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
  */
 public interface StreamingMessageQueue  {
 
-
 	/**
 	 * Sets the component identifier
 	 * @param id

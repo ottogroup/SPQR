@@ -54,11 +54,12 @@ import com.ottogroup.bi.spqr.repository.ComponentRepository;
  * @since Mar 6, 2015
  */
 public class MicroPipelineFactory {
-
+	
 	/** our faithful logging service ... ;-) */
 	private static final Logger logger = Logger.getLogger(MicroPipelineFactory.class);
 	/** reference towards component repository */
 	private final ComponentRepository componentRepository;
+	
 	
 	/**
 	 * Initializes the factory using the provided input
@@ -101,6 +102,14 @@ public class MicroPipelineFactory {
 		MicroPipeline microPipeline = new MicroPipeline(StringUtils.lowerCase(StringUtils.trim(cfg.getId())));
 		for(final StreamingMessageQueueConfiguration queueConfig : cfg.getQueues()) {
 			String id = StringUtils.lowerCase(StringUtils.trim(queueConfig.getId()));
+			
+			// ensure that the identifier differs from the statistics queue name
+			if(StringUtils.equalsIgnoreCase(id, MicroPipeline.STATISTICS_QUEUE_NAME)) {
+				logger.error("queue initialization failed [id="+id+"]. Queue found with reserved stats queue name. Forcing shutdown of all queues.");
+				microPipeline.shutdown();
+				throw new QueueInitializationFailedException("Reserved queue identifier found [id="+id+"]");
+			}
+			
 			// a queue for that identifier already exists: kill the pipeline and tell the caller about it
 			if(microPipeline.hasQueue(id)) {
 				logger.error("queue initialization failed [id="+id+"]. Forcing shutdown of all queues.");
@@ -118,10 +127,21 @@ public class MicroPipelineFactory {
 				throw new QueueInitializationFailedException("Failed to initialize queue [id="+id+"]. Reason: " + e.getMessage(), e);
 			}
 		}
+		
+		try {
+			microPipeline.addQueue(MicroPipeline.STATISTICS_QUEUE_NAME, initializeQueue(new StreamingMessageQueueConfiguration(MicroPipeline.STATISTICS_QUEUE_NAME)));
+			logger.info("statistics queue initialized");			
+		} catch(Exception e) {
+			logger.error("statistics queue initialization failed [id="+MicroPipeline.STATISTICS_QUEUE_NAME+"]. Forcing shutdown of all queues.");
+			microPipeline.shutdown();
+			throw new QueueInitializationFailedException("Failed to initialize queue [id="+MicroPipeline.STATISTICS_QUEUE_NAME+"]. Reason: " + e.getMessage(), e);
+		}
+		
 		///////////////////////////////////////////////////////////////////////////////////
 
 		///////////////////////////////////////////////////////////////////////////////////
 		// (2) initialize components
+		final StreamingMessageQueue statisticsQueue = microPipeline.getQueue(MicroPipeline.STATISTICS_QUEUE_NAME);
 		final Map<String, MicroPipelineComponent> components = new HashMap<>();
 		boolean sourceComponentFound = false;
 		boolean emitterComponentFound = false;
@@ -149,22 +169,22 @@ public class MicroPipelineFactory {
 				
 				switch(component.getType()) {
 					case SOURCE: {
-						microPipeline.addSource(id, new SourceRuntimeEnvironment((Source)component, toQueue.getProducer()));
+						microPipeline.addSource(id, new SourceRuntimeEnvironment((Source)component, toQueue.getProducer(), statisticsQueue.getProducer()));
 						sourceComponentFound = true;
 						break;
 					}
 					case DIRECT_RESPONSE_OPERATOR: {
 						microPipeline.addOperator(id, new DirectResponseOperatorRuntimeEnvironment((DirectResponseOperator)component, 
-								fromQueue.getConsumer(), toQueue.getProducer()));
+								fromQueue.getConsumer(), toQueue.getProducer(), statisticsQueue.getProducer()));
 						break;
 					}
 					case DELAYED_RESPONSE_OPERATOR: {						
 						microPipeline.addOperator(id, new DelayedResponseOperatorRuntimeEnvironment((DelayedResponseOperator)component, getResponseWaitStrategy(componentCfg), 
-								fromQueue.getConsumer(), toQueue.getProducer(), executorService));
+								fromQueue.getConsumer(), toQueue.getProducer(), statisticsQueue.getProducer(), executorService));
 						break;
 					}
 					case EMITTER: {
-						microPipeline.addEmitter(id, new EmitterRuntimeEnvironment((Emitter)component, fromQueue.getConsumer()));
+						microPipeline.addEmitter(id, new EmitterRuntimeEnvironment((Emitter)component, fromQueue.getConsumer(), statisticsQueue.getProducer()));
 						emitterComponentFound = true;
 						break;
 					}
