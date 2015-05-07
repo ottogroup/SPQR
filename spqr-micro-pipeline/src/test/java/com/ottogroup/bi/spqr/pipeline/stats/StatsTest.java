@@ -52,7 +52,7 @@ public class StatsTest {
 	@Test
 	public void testDirect() throws IOException {
 		
-		final int items = 50000000;
+		final int items = 13000000;
 		final String path = "/mnt/ramdisk/direct-instance"; //System.getProperty("java.io.tmpdir") + "/direct-instance";
 		
 		ChronicleTools.deleteOnExit(path);
