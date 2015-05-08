@@ -142,10 +142,9 @@ public class EmitterRuntimeEnvironmentTest {
 		
 		EmitterRuntimeEnvironment env = new EmitterRuntimeEnvironment(emitter, queueConsumer, statsQueueProducer);
 		executorService.submit(env);
-		Thread.sleep(100);
 		Assert.assertTrue("Must return true", env.isRunning());
 
-		Mockito.verify(queueConsumerWaitStrategy, Mockito.atLeastOnce()).waitFor(queueConsumer);
+		Mockito.verify(queueConsumerWaitStrategy, Mockito.after(500).atLeastOnce()).waitFor(queueConsumer);
 		Mockito.verify(queueConsumer, Mockito.atLeastOnce()).getWaitStrategy();
 		Mockito.verify(emitter, Mockito.atLeastOnce()).onMessage(message);
 	}
