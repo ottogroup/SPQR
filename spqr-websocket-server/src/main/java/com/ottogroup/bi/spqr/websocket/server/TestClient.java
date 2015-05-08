@@ -14,7 +14,6 @@ import org.eclipse.jetty.websocket.client.ClientUpgradeRequest;
 import org.eclipse.jetty.websocket.client.WebSocketClient;
 
 @WebSocket
-
 public final class TestClient {
 
     static final String URL = System.getProperty("url", "ws://127.0.0.1:9090/pipeline");
