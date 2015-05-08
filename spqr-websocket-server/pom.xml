@@ -50,7 +50,6 @@
 			<version>${websocket.client.version}</version>
 		</dependency>
 
-
 		<!-- junit -->
 		<dependency>
 			<groupId>junit</groupId>
