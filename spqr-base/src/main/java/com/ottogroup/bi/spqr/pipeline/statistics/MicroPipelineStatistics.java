@@ -16,6 +16,7 @@
 package com.ottogroup.bi.spqr.pipeline.statistics;
 
 import java.io.Serializable;
+import java.nio.ByteBuffer;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -41,12 +42,18 @@ public class MicroPipelineStatistics implements Serializable {
 
 	private static final long serialVersionUID = -2458412374912750561L;
 
+	public static final int SIZE_OF_INT = Integer.SIZE / Byte.SIZE;
+	public static final int SIZE_OF_LONG = Long.SIZE / Byte.SIZE;
+	
 	/** identifier of host running the pipeline the stats belong to */
 	@JsonProperty(value="hid", required=true)
 	private String processingNodeId = null;
 	/** identifier of pipeline which generated the stats */ 
 	@JsonProperty(value="pid", required=true)
 	private String pipelineId = null;
+	/** identifier of pipeline component which generated the stats */
+	@JsonProperty(value="cid", required=true)
+	private String componentId = null;
 	/** number of messages processed since last event */
 	@JsonProperty(value="numMsg", required=true)
 	private int numOfMessages = 0;	
@@ -81,9 +88,11 @@ public class MicroPipelineStatistics implements Serializable {
 	public MicroPipelineStatistics() {		
 	}
 	
-	public MicroPipelineStatistics(final String processingNodeId, final String pipelineId, final int numOfMessages,
+	public MicroPipelineStatistics(final String processingNodeId, final String pipelineId, final String componentId, final long startTime, final int numOfMessages,
 			final int minDuration, final int maxDuration, final int avgDuration,
 			final int minSize, final int maxSize, final int avgSize) {
+		this.startTime = startTime;
+		this.componentId = componentId;
 		this.processingNodeId = processingNodeId;
 		this.pipelineId = pipelineId;
 		this.numOfMessages = numOfMessages;
@@ -93,6 +102,155 @@ public class MicroPipelineStatistics implements Serializable {
 		this.minSize = minSize;
 		this.maxSize = maxSize;
 		this.avgSize = avgSize;
+	}
+	
+	/**
+	 * Converts the provided byte array into a {@link MicroPipelineStatistics} representation
+	 * @param statsContent
+	 * @return
+	 */
+	public static MicroPipelineStatistics fromByteArray(final byte[] statsContent) {
+		
+		MicroPipelineStatistics stats = new MicroPipelineStatistics();
+		ByteBuffer buf = ByteBuffer.wrap(statsContent);
+		
+		// ensure that the order is the same as when populating the array 
+		stats.setNumOfMessages(buf.getInt());
+		stats.setStartTime(buf.getLong());
+		stats.setEndTime(buf.getLong());
+		stats.setMinDuration(buf.getInt());
+		stats.setMaxDuration(buf.getInt());
+		stats.setAvgDuration(buf.getInt());
+		stats.setMinSize(buf.getInt());
+		stats.setMaxSize(buf.getInt());
+		stats.setAvgSize(buf.getInt());
+		stats.setErrors(buf.getInt());
+		
+		byte[] procNodeId = new byte[buf.getInt()];
+		buf.get(procNodeId);
+		
+		byte[] pipelineId = new byte[buf.getInt()];
+		buf.get(pipelineId);
+		
+		byte[] componentId = new byte[buf.getInt()];
+		buf.get(componentId);
+		
+		stats.setProcessingNodeId(new String(procNodeId));
+		stats.setPipelineId(new String(pipelineId));
+		stats.setComponentId(new String(componentId));
+		
+		return stats;		
+	}
+	
+	/**
+	 * Convert this {@link MicroPipelineStatistics} instance into its byte array representation 
+	 * @return
+	 */
+	public byte[] toByteArray() {
+
+		/////////////////////////////////////////////////////////
+		// describes how the size of the result array is computed
+		//		SIZE_OF_INT + 
+		//		SIZE_OF_LONG + 
+		//		SIZE_OF_LONG + 
+		//		SIZE_OF_INT + 
+		//		SIZE_OF_INT + 
+		//		SIZE_OF_INT + 
+		//		SIZE_OF_INT + 
+		//		SIZE_OF_INT +
+		//		SIZE_OF_INT +
+		//		SIZE_OF_INT +
+		//		procNodeId.length +
+		//		pid.length +
+		//      cid.length +
+		//		(SIZE_OF_INT * 3)); <-- add extra int's 
+		//           for storing the field sizes of processingNodeId, pipelineId and componentId
+		//           which are required when extracting content from byte array		
+		// >> 11x SIZE_OF_INT 
+		// >>  3x SIZE_OF_LONG
+		//
+		// ByteBuffer buffer = ByteBuffer.allocate(11 * SIZE_OF_INT + 3 * SIZE_OF_LONG + procNodeId.length + pid.length + cid.length);
+		
+		// allocated buffer
+		
+		byte[] procNodeId = (this.processingNodeId != null ? this.processingNodeId.getBytes() : new byte[0]);
+		byte[] pid = (this.pipelineId != null ? this.pipelineId.getBytes() : new byte[0]);
+		byte[] cid = (this.componentId != null ? this.componentId.getBytes() : new byte[0]);
+
+		ByteBuffer buffer = ByteBuffer.allocate(11 * SIZE_OF_INT + 3 * SIZE_OF_LONG + procNodeId.length + pid.length + cid.length);
+
+		buffer.putInt(this.numOfMessages);
+		buffer.putLong(this.startTime);
+		buffer.putLong(this.endTime);
+		buffer.putInt(this.minDuration);
+		buffer.putInt(this.maxDuration);
+		buffer.putInt(this.avgDuration);
+		buffer.putInt(this.minSize);
+		buffer.putInt(this.maxSize);
+		buffer.putInt(this.avgSize);
+		buffer.putInt(this.errors);
+		buffer.putInt(procNodeId.length);
+		buffer.put(procNodeId);
+		buffer.putInt(pid.length);
+		buffer.put(pid);
+		buffer.putInt(cid.length);
+		buffer.put(cid);
+		
+		return buffer.array();		
+	}
+	
+	
+	
+	public static void main(String[] args) {
+		MicroPipelineStatistics stats = new MicroPipelineStatistics("procNodeId-1", "--", "component-123", System.currentTimeMillis(), 1234, 2, 432, 56, 67890, 98765, 45678);
+		stats.setErrors(9383);
+		stats.setEndTime(System.currentTimeMillis()+ 1000);
+		
+		long n1 = System.nanoTime();
+		byte[] converted = stats.toByteArray();
+		long n2 = System.nanoTime();
+		
+		System.out.println("length: " + converted.length + ", conversion: " +(n2-n1)+"ns");
+		
+		long s1 = System.nanoTime();
+		MicroPipelineStatistics reStats = MicroPipelineStatistics.fromByteArray(converted);
+		long s2 = System.nanoTime();
+		System.out.println("length: " + converted.length + ", conversion: " +(s2-s1)+"ns");
+		System.out.println(stats);
+		System.out.println(reStats);
+		
+	}
+
+	public String getComponentId() {
+		return componentId;
+	}
+
+	public void setComponentId(String componentId) {
+		this.componentId = componentId;
+	}
+
+	public long getStartTime() {
+		return startTime;
+	}
+
+	public void setStartTime(long startTime) {
+		this.startTime = startTime;
+	}
+
+	public long getEndTime() {
+		return endTime;
+	}
+
+	public void setEndTime(long endTime) {
+		this.endTime = endTime;
+	}
+
+	public int getErrors() {
+		return errors;
+	}
+
+	public void setErrors(int errors) {
+		this.errors = errors;
 	}
 
 	public void incNumOfMessages() {
@@ -173,6 +331,20 @@ public class MicroPipelineStatistics implements Serializable {
 
 	public void setAvgSize(int avgSize) {
 		this.avgSize = avgSize;
+	}
+
+	/**
+	 * @see java.lang.Object#toString()
+	 */
+	public String toString() {
+		return "MicroPipelineStatistics [processingNodeId=" + processingNodeId
+				+ ", pipelineId=" + pipelineId + ", componentId=" + componentId
+				+ ", numOfMessages=" + numOfMessages + ", startTime="
+				+ startTime + ", endTime=" + endTime + ", minDuration="
+				+ minDuration + ", maxDuration=" + maxDuration
+				+ ", avgDuration=" + avgDuration + ", minSize=" + minSize
+				+ ", maxSize=" + maxSize + ", avgSize=" + avgSize + ", errors="
+				+ errors + "]";
 	}
 	
 	
