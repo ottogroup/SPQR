@@ -47,23 +47,29 @@ public class MicroPipelineManager {
 	private final ExecutorService executorService;
 	/** micro pipeline factory */
 	private final MicroPipelineFactory microPipelineFactory;
-	
+	/** identifier of processing node this factory lives on */
+	private final String processingNodeId;
+
 	/**
 	 * Initializes the micro pipeline manager
+	 * @param processingNodeId identifier of node this manager lives on
 	 * @param componentRepository reference to {@link ComponentRepository} which provides access to all {@link MicroPipelineComponent}
 	 * @param maxNumberOfThreads max. number of threads assigned to {@link ExecutorService} (1 = single threaded, n = fixed number of threads, other = cached thread pool)
 	 * @throws RequiredInputMissingException   
 	 */
-	public MicroPipelineManager(final ComponentRepository componentRepository, final int maxNumberOfThreads) throws RequiredInputMissingException {
+	public MicroPipelineManager(final String processingNodeId, final ComponentRepository componentRepository, final int maxNumberOfThreads) throws RequiredInputMissingException {
 
 		//////////////////////////////////////////////////////////////////////////////
 		// validate provided input
 		if(componentRepository == null)
 			throw new RequiredInputMissingException("Missing required component repository");
+		if(StringUtils.isBlank(processingNodeId))
+			throw new RequiredInputMissingException("Missing required processing node identifier");
 		//
 		//////////////////////////////////////////////////////////////////////////////
 
-		this.microPipelineFactory = new MicroPipelineFactory(componentRepository);
+		this.processingNodeId = StringUtils.lowerCase(StringUtils.trim(processingNodeId));
+		this.microPipelineFactory = new MicroPipelineFactory(this.processingNodeId, componentRepository);
 		
 		if(maxNumberOfThreads == 1)
 			this.executorService = Executors.newSingleThreadExecutor();
@@ -76,11 +82,12 @@ public class MicroPipelineManager {
 	
 	/**
 	 * Initializes the micro pipeline manager - <b>used for testing purpose only</b>
+	 * @param processingNodeId identifier of node this manager lives on
 	 * @param factory
 	 * @param executorService
 	 * @throws RequiredInputMissingException   
 	 */
-	protected MicroPipelineManager(final MicroPipelineFactory factory, final ExecutorService executorService) throws RequiredInputMissingException {
+	protected MicroPipelineManager(final String processingNodeId, final MicroPipelineFactory factory, final ExecutorService executorService) throws RequiredInputMissingException {
 
 		//////////////////////////////////////////////////////////////////////////////
 		// validate provided input
@@ -88,9 +95,12 @@ public class MicroPipelineManager {
 			throw new RequiredInputMissingException("Missing required component repository");
 		if(executorService == null)
 			throw new RequiredInputMissingException("Missing required executor service");
+		if(StringUtils.isBlank(processingNodeId))
+			throw new RequiredInputMissingException("Missing required processing node identifier");
 		//
 		//////////////////////////////////////////////////////////////////////////////
 
+		this.processingNodeId = StringUtils.lowerCase(StringUtils.trim(processingNodeId));
 		this.microPipelineFactory = factory;
 		this.executorService = executorService;
 	}

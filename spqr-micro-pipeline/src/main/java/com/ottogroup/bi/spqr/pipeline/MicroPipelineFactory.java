@@ -59,13 +59,17 @@ public class MicroPipelineFactory {
 	private static final Logger logger = Logger.getLogger(MicroPipelineFactory.class);
 	/** reference towards component repository */
 	private final ComponentRepository componentRepository;
+	/** identifier of processing node this factory lives on */
+	private final String processingNodeId;
 	
 	
 	/**
 	 * Initializes the factory using the provided input
+	 * @param processingNodeId
 	 * @param componentRepository
 	 */
-	public MicroPipelineFactory(final ComponentRepository componentRepository) {
+	public MicroPipelineFactory(final String processingNodeId, final ComponentRepository componentRepository) {
+		this.processingNodeId = processingNodeId;
 		this.componentRepository = componentRepository;
 	}
 	
@@ -174,12 +178,12 @@ public class MicroPipelineFactory {
 						break;
 					}
 					case DIRECT_RESPONSE_OPERATOR: {
-						microPipeline.addOperator(id, new DirectResponseOperatorRuntimeEnvironment((DirectResponseOperator)component, 
+						microPipeline.addOperator(id, new DirectResponseOperatorRuntimeEnvironment(this.processingNodeId, cfg.getId(), (DirectResponseOperator)component, 
 								fromQueue.getConsumer(), toQueue.getProducer(), statisticsQueue.getProducer()));
 						break;
 					}
 					case DELAYED_RESPONSE_OPERATOR: {						
-						microPipeline.addOperator(id, new DelayedResponseOperatorRuntimeEnvironment((DelayedResponseOperator)component, getResponseWaitStrategy(componentCfg), 
+						microPipeline.addOperator(id, new DelayedResponseOperatorRuntimeEnvironment(this.processingNodeId, cfg.getId(), (DelayedResponseOperator)component, getResponseWaitStrategy(componentCfg), 
 								fromQueue.getConsumer(), toQueue.getProducer(), statisticsQueue.getProducer(), executorService));
 						break;
 					}

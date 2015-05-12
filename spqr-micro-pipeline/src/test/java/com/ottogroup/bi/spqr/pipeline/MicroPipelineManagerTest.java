@@ -48,13 +48,28 @@ public class MicroPipelineManagerTest {
 	
 	/**
 	 * Test case for {@link MicroPipelineManager#MicroPipelineManager(com.ottogroup.bi.spqr.repository.ComponentRepository, int)} being
+	 * provided null as input to processing node id which must lead to a {@link RequiredInputMissingException}
+	 */
+	@Test
+	public void testConstructor_withNullProcessingNodeId() {
+		ComponentRepository repo = Mockito.mock(ComponentRepository.class);
+		try {
+			new MicroPipelineManager(null, repo, 10);
+			Assert.fail("Invalid input");
+		} catch(RequiredInputMissingException e) {
+			// expected
+		}
+	}
+	
+	/**
+	 * Test case for {@link MicroPipelineManager#MicroPipelineManager(com.ottogroup.bi.spqr.repository.ComponentRepository, int)} being
 	 * provided null as input which must lead to a {@link RequiredInputMissingException}
 	 */
 	@Test
 	public void testConstructor_withNullRepository() {
 		ComponentRepository repo = null;
 		try {
-			new MicroPipelineManager(repo, 10);
+			new MicroPipelineManager("id", repo, 10);
 			Assert.fail("Invalid input");
 		} catch(RequiredInputMissingException e) {
 			// expected
@@ -68,7 +83,7 @@ public class MicroPipelineManagerTest {
 	@Test
 	public void testExecutePipeline_withNullInput() throws RequiredInputMissingException, QueueInitializationFailedException, ComponentInitializationFailedException, PipelineInstantiationFailedException, NonUniqueIdentifierException {		
 		MicroPipelineFactory factory = Mockito.mock(MicroPipelineFactory.class);
-		MicroPipelineManager manager = new MicroPipelineManager(factory, executorService);
+		MicroPipelineManager manager = new MicroPipelineManager("id", factory, executorService);
 		try {
 			manager.executePipeline(null);
 			Assert.fail("Invalid input");
@@ -89,7 +104,7 @@ public class MicroPipelineManagerTest {
 		MicroPipelineFactory factory = Mockito.mock(MicroPipelineFactory.class);
 		Mockito.when(factory.instantiatePipeline(cfg, executorService)).thenThrow(new ComponentInitializationFailedException("Failed to initialize component"));
 		
-		MicroPipelineManager manager = new MicroPipelineManager(factory, executorService);
+		MicroPipelineManager manager = new MicroPipelineManager("id", factory, executorService);
 		
 		try {
 			manager.executePipeline(cfg);
@@ -113,7 +128,7 @@ public class MicroPipelineManagerTest {
 		MicroPipelineFactory factory = Mockito.mock(MicroPipelineFactory.class);
 		Mockito.when(factory.instantiatePipeline(cfg, executorService)).thenReturn(null);
 		
-		MicroPipelineManager manager = new MicroPipelineManager(factory, executorService);
+		MicroPipelineManager manager = new MicroPipelineManager("id", factory, executorService);
 		
 		try {
 			manager.executePipeline(cfg);
@@ -140,7 +155,7 @@ public class MicroPipelineManagerTest {
 		MicroPipelineFactory factory = Mockito.mock(MicroPipelineFactory.class);
 		Mockito.when(factory.instantiatePipeline(cfg, executorService)).thenReturn(pipeline);
 		
-		MicroPipelineManager manager = new MicroPipelineManager(factory, executorService);
+		MicroPipelineManager manager = new MicroPipelineManager("id", factory, executorService);
 		
 		Assert.assertEquals("Values must be equal", StringUtils.lowerCase(StringUtils.trim(cfg.getId())), manager.executePipeline(cfg));
 		Assert.assertEquals("Values must be equal", 1, manager.getNumOfRegisteredPipelines());
@@ -170,7 +185,7 @@ public class MicroPipelineManagerTest {
 		MicroPipelineFactory factory = Mockito.mock(MicroPipelineFactory.class);
 		Mockito.when(factory.instantiatePipeline(cfg, executorService)).thenReturn(pipeline);
 		
-		MicroPipelineManager manager = new MicroPipelineManager(factory, executorService);
+		MicroPipelineManager manager = new MicroPipelineManager("id", factory, executorService);
 		
 		Assert.assertEquals("Values must be equal", StringUtils.lowerCase(StringUtils.trim(cfg.getId())), manager.executePipeline(cfg));
 		Assert.assertEquals("Values must be equal", 1, manager.getNumOfRegisteredPipelines());
@@ -192,7 +207,7 @@ public class MicroPipelineManagerTest {
 		MicroPipelineFactory factory = Mockito.mock(MicroPipelineFactory.class);
 		Mockito.when(factory.instantiatePipeline(cfg, executorService)).thenReturn(pipeline);
 		
-		MicroPipelineManager manager = new MicroPipelineManager(factory, executorService);
+		MicroPipelineManager manager = new MicroPipelineManager("id", factory, executorService);
 		
 		Assert.assertEquals("Values must be equal", StringUtils.lowerCase(StringUtils.trim(cfg.getId())), manager.executePipeline(cfg));
 		Assert.assertEquals("Values must be equal", 1, manager.getNumOfRegisteredPipelines());
@@ -210,7 +225,7 @@ public class MicroPipelineManagerTest {
 	public void testHasPipeline_withNonExistingId() throws Exception {
 		MicroPipelineFactory factory = Mockito.mock(MicroPipelineFactory.class);
 		
-		Assert.assertFalse("Pipeline does not exist", new MicroPipelineManager(factory, executorService).hasPipeline("unknown-id"));
+		Assert.assertFalse("Pipeline does not exist", new MicroPipelineManager("id", factory, executorService).hasPipeline("unknown-id"));
 	}
 	
 	/**
@@ -228,7 +243,7 @@ public class MicroPipelineManagerTest {
 		MicroPipelineFactory factory = Mockito.mock(MicroPipelineFactory.class);
 		Mockito.when(factory.instantiatePipeline(cfg, executorService)).thenReturn(pipeline);
 		
-		MicroPipelineManager manager = new MicroPipelineManager(factory, executorService);
+		MicroPipelineManager manager = new MicroPipelineManager("id", factory, executorService);
 		
 		Assert.assertEquals("Values must be equal", StringUtils.lowerCase(StringUtils.trim(cfg.getId())), manager.executePipeline(cfg));
 		Assert.assertEquals("Values must be equal", 1, manager.getNumOfRegisteredPipelines());
@@ -255,7 +270,7 @@ public class MicroPipelineManagerTest {
 		MicroPipelineFactory factory = Mockito.mock(MicroPipelineFactory.class);
 		Mockito.when(factory.instantiatePipeline(cfg, executorService)).thenReturn(pipeline);
 		
-		MicroPipelineManager manager = new MicroPipelineManager(factory, executorService);
+		MicroPipelineManager manager = new MicroPipelineManager("id", factory, executorService);
 		
 		Assert.assertEquals("Values must be equal", StringUtils.lowerCase(StringUtils.trim(cfg.getId())), manager.executePipeline(cfg));
 		Assert.assertEquals("Values must be equal", 1, manager.getNumOfRegisteredPipelines());

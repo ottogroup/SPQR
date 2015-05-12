@@ -15,6 +15,7 @@
  */
 package com.ottogroup.bi.spqr.pipeline.component.operator;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
@@ -22,6 +23,7 @@ import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConsumer;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueProducer;
 import com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueWaitStrategy;
+import com.ottogroup.bi.spqr.pipeline.statistics.MicroPipelineStatistics;
 
 /**
  * Provides a runtime environment for {@link DirectResponseOperator} instances. The environment polls
@@ -37,6 +39,12 @@ public class DirectResponseOperatorRuntimeEnvironment implements Runnable {
 	/** our faithful logging facility ... ;-) */ 
 	private static final Logger logger = Logger.getLogger(DirectResponseOperatorRuntimeEnvironment.class);
 
+	/** identifier of processing node the runtime environment belongs to*/
+	private final String processingNodeId;
+	/** identifier of pipeline the runtime environment belongs to */
+	private final String pipelineId;
+	/** identifier of operator assigned to this runtime environment */
+	private final String operatorId; 
 	/** operator instance executed by this runtime environment */
 	private final DirectResponseOperator directResponseOperator;
 	/** provides read access to assigned source queue */
@@ -54,16 +62,22 @@ public class DirectResponseOperatorRuntimeEnvironment implements Runnable {
 
 	/**
 	 * Initializes the operator runtime environment using the provided input
+	 * @param processingNodeId
+	 * @param pipelineId
 	 * @param directResponseOperator
 	 * @param queueConsumer
 	 * @param queueProducer
 	 * @param statsQueueProducer
 	 */
-	public DirectResponseOperatorRuntimeEnvironment(final DirectResponseOperator directResponseOperator, final StreamingMessageQueueConsumer queueConsumer, 
+	public DirectResponseOperatorRuntimeEnvironment(final String processingNodeId, final String pipelineId, final DirectResponseOperator directResponseOperator, final StreamingMessageQueueConsumer queueConsumer, 
 			final StreamingMessageQueueProducer queueProducer, final StreamingMessageQueueProducer statsQueueProducer) throws RequiredInputMissingException {
 		
 		/////////////////////////////////////////////////////////////
 		// input validation
+		if(StringUtils.isBlank(processingNodeId))
+			throw new RequiredInputMissingException("Missing required processing node identifier");
+		if(StringUtils.isBlank(pipelineId))
+			throw new RequiredInputMissingException("Missing required pipeline identifier");
 		if(directResponseOperator == null)
 			throw new RequiredInputMissingException("Missing required direct response operator");
 		if(queueConsumer == null)
@@ -75,6 +89,9 @@ public class DirectResponseOperatorRuntimeEnvironment implements Runnable {
 		//
 		/////////////////////////////////////////////////////////////
 		
+		this.processingNodeId = StringUtils.lowerCase(StringUtils.trim(processingNodeId));
+		this.pipelineId = StringUtils.lowerCase(StringUtils.trim(pipelineId));
+		this.operatorId = StringUtils.lowerCase(StringUtils.trim(directResponseOperator.getId()));
 		this.directResponseOperator = directResponseOperator;
 		this.queueConsumer = queueConsumer;
 		this.queueProducer = queueProducer;
@@ -91,24 +108,76 @@ public class DirectResponseOperatorRuntimeEnvironment implements Runnable {
 	 * @see java.lang.Runnable#run()
 	 */
 	public void run() {
+
+		// initialize stats counter and timer
+		final MicroPipelineStatistics stats = new MicroPipelineStatistics(
+				this.processingNodeId, this.pipelineId, this.operatorId, 0, 0, 0, 0, 0, 0, 0, 0);
+		
+		long start = 0;
+		long end = 0;
+		int duration = 0;
+		int size = 0;
 		
 		while(running) {
+			
+			// reset stats counter and timer
+			start = 0;
+			end = 0;
+			duration = 0;
+			size = 0;
+
 			try {
+				
 				StreamingDataMessage message = this.consumerQueueWaitStrategy.waitFor(this.queueConsumer);
-				if(message != null) {
+				start = System.currentTimeMillis();
+				if(message != null && message.getBody() != null) {
+					size = message.getBody().length;
 					StreamingDataMessage[] responseMessages = this.directResponseOperator.onMessage(message);
-					
 					if(responseMessages != null && responseMessages.length > 0) {
 						for(final StreamingDataMessage responseMessage : responseMessages) {
 							this.queueProducer.insert(responseMessage);
 						}
 						this.destinationQueueWaitStrategy.forceLockRelease();
 					}
+					end = System.currentTimeMillis();
+					duration = (int)(end-start);
+
+					////////////////////////////////////////////////////////
+					// prepare and export stats message
+					stats.setStartTime(start);
+					stats.setEndTime(end);
+					stats.setMinSize(size);
+					stats.setMaxSize(size);
+					stats.setAvgSize(size);
+					stats.setMinDuration(duration);
+					stats.setMaxDuration(duration);
+					stats.setAvgDuration(duration);
+					stats.setNumOfMessages(1);
+					stats.setErrors(0);
+					this.statsQueueProducer.insert(new StreamingDataMessage(stats.toByteArray(), System.currentTimeMillis()));
+					////////////////////////////////////////////////////////
 				}
+				
 			} catch(InterruptedException e) {
 				// do nothing - waiting was interrupted				
 			} catch(Exception e) {
 				logger.error("Failed to process message with attached operator. Reason: " + e.getMessage());
+				
+				////////////////////////////////////////////////////////
+				// prepare and export stats message
+				stats.setStartTime(start);
+				stats.setEndTime(end);
+				stats.setMinSize(size);
+				stats.setMaxSize(size);
+				stats.setAvgSize(size);
+				stats.setMinDuration(duration);
+				stats.setMaxDuration(duration);
+				stats.setAvgDuration(duration);
+				stats.setNumOfMessages(1);
+				stats.setErrors(1);
+				this.statsQueueProducer.insert(new StreamingDataMessage(stats.toByteArray(), System.currentTimeMillis()));
+				////////////////////////////////////////////////////////
+
 				// TODO add handler for responding to errors 
 			}
 		}		
@@ -137,4 +206,5 @@ public class DirectResponseOperatorRuntimeEnvironment implements Runnable {
 		return running;
 	}
 	
+
 }

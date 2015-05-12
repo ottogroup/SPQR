@@ -45,55 +45,13 @@ public class DirectResponseOperatorRuntimeEnvironmentTest {
 	}
 	
 	/**
-	 * Test case for {@link DirectResponseOperatorRuntimeEnvironment#DirectResponseOperatorRuntimeEnvironment(DirectResponseOperator, StreamingMessageQueueConsumer, StreamingMessageQueueProducer)}
-	 * being provided null as input to operator parameter which must lead to a {@link RequiredInputMissingException}
+	 * Test case for {@link DirectResponseOperatorRuntimeEnvironment#DirectResponseOperatorRuntimeEnvironment("proc-id", "pipe-id",DirectResponseOperator, StreamingMessageQueueConsumer, StreamingMessageQueueProducer)}
+	 * being provided null as input to processing node id parameter 
 	 */
 	@Test
-	public void testConstructor_withNullOperatorInput() {
+	public void testConstructor_withNullProcessingNodeIdInput() {
 		try {
-			new DirectResponseOperatorRuntimeEnvironment(null, Mockito.mock(StreamingMessageQueueConsumer.class), Mockito.mock(StreamingMessageQueueProducer.class), Mockito.mock(StreamingMessageQueueProducer.class));
-			Assert.fail("Missing required input");
-		} catch(RequiredInputMissingException e) {
-			// expected
-		}
-	}
-
-	/**
-	 * Test case for {@link DirectResponseOperatorRuntimeEnvironment#DirectResponseOperatorRuntimeEnvironment(DirectResponseOperator, StreamingMessageQueueConsumer, StreamingMessageQueueProducer)}
-	 * being provided null as input to queue consumer parameter which must lead to a {@link RequiredInputMissingException}
-	 */
-	@Test
-	public void testConstructor_withNullConsumerInput() {
-		try {
-			new DirectResponseOperatorRuntimeEnvironment(Mockito.mock(DirectResponseOperator.class), null, Mockito.mock(StreamingMessageQueueProducer.class), Mockito.mock(StreamingMessageQueueProducer.class));
-			Assert.fail("Missing required input");
-		} catch(RequiredInputMissingException e) {
-			// expected
-		}
-	}
-
-	/**
-	 * Test case for {@link DirectResponseOperatorRuntimeEnvironment#DirectResponseOperatorRuntimeEnvironment(DirectResponseOperator, StreamingMessageQueueConsumer, StreamingMessageQueueProducer)}
-	 * being provided null as input to queue producer parameter which must lead to a {@link RequiredInputMissingException}
-	 */
-	@Test
-	public void testConstructor_withNullProducerInput() {
-		try {
-			new DirectResponseOperatorRuntimeEnvironment(Mockito.mock(DirectResponseOperator.class), Mockito.mock(StreamingMessageQueueConsumer.class), null, Mockito.mock(StreamingMessageQueueProducer.class));
-			Assert.fail("Missing required input");
-		} catch(RequiredInputMissingException e) {
-			// expected
-		}
-	}
-
-	/**
-	 * Test case for {@link DirectResponseOperatorRuntimeEnvironment#DirectResponseOperatorRuntimeEnvironment(DirectResponseOperator, StreamingMessageQueueConsumer, StreamingMessageQueueProducer)}
-	 * being provided null as input to stats queue producer parameter which must lead to a {@link RequiredInputMissingException}
-	 */
-	@Test
-	public void testConstructor_withNullStatsProducerInput() {
-		try {
-			new DirectResponseOperatorRuntimeEnvironment(Mockito.mock(DirectResponseOperator.class), Mockito.mock(StreamingMessageQueueConsumer.class), Mockito.mock(StreamingMessageQueueProducer.class), null);
+			new DirectResponseOperatorRuntimeEnvironment(null, "pipe-id",  Mockito.mock(DirectResponseOperator.class), Mockito.mock(StreamingMessageQueueConsumer.class), Mockito.mock(StreamingMessageQueueProducer.class), Mockito.mock(StreamingMessageQueueProducer.class));
 			Assert.fail("Missing required input");
 		} catch(RequiredInputMissingException e) {
 			// expected
@@ -101,12 +59,82 @@ public class DirectResponseOperatorRuntimeEnvironmentTest {
 	}
 	
 	/**
-	 * Test case for {@link DirectResponseOperatorRuntimeEnvironment#DirectResponseOperatorRuntimeEnvironment(DirectResponseOperator, StreamingMessageQueueConsumer, StreamingMessageQueueProducer)}
+	 * Test case for {@link DirectResponseOperatorRuntimeEnvironment#DirectResponseOperatorRuntimeEnvironment("proc-id", "pipe-id",DirectResponseOperator, StreamingMessageQueueConsumer, StreamingMessageQueueProducer)}
+	 * being provided null as input to pipeline id parameter 
+	 */
+	@Test
+	public void testConstructor_withNullPipelineIdInput() {
+		try {
+			new DirectResponseOperatorRuntimeEnvironment("proc-id", null, Mockito.mock(DirectResponseOperator.class), Mockito.mock(StreamingMessageQueueConsumer.class), Mockito.mock(StreamingMessageQueueProducer.class), Mockito.mock(StreamingMessageQueueProducer.class));
+			Assert.fail("Missing required input");
+		} catch(RequiredInputMissingException e) {
+			// expected
+		}
+	}
+	
+	/**
+	 * Test case for {@link DirectResponseOperatorRuntimeEnvironment#DirectResponseOperatorRuntimeEnvironment("proc-id", "pipe-id",DirectResponseOperator, StreamingMessageQueueConsumer, StreamingMessageQueueProducer)}
+	 * being provided null as input to operator parameter which must lead to a {@link RequiredInputMissingException}
+	 */
+	@Test
+	public void testConstructor_withNullOperatorInput() {
+		try {
+			new DirectResponseOperatorRuntimeEnvironment("proc-id", "pipe-id", null, Mockito.mock(StreamingMessageQueueConsumer.class), Mockito.mock(StreamingMessageQueueProducer.class), Mockito.mock(StreamingMessageQueueProducer.class));
+			Assert.fail("Missing required input");
+		} catch(RequiredInputMissingException e) {
+			// expected
+		}
+	}
+
+	/**
+	 * Test case for {@link DirectResponseOperatorRuntimeEnvironment#DirectResponseOperatorRuntimeEnvironment("proc-id", "pipe-id",DirectResponseOperator, StreamingMessageQueueConsumer, StreamingMessageQueueProducer)}
+	 * being provided null as input to queue consumer parameter which must lead to a {@link RequiredInputMissingException}
+	 */
+	@Test
+	public void testConstructor_withNullConsumerInput() {
+		try {
+			new DirectResponseOperatorRuntimeEnvironment("proc-id", "pipe-id",Mockito.mock(DirectResponseOperator.class), null, Mockito.mock(StreamingMessageQueueProducer.class), Mockito.mock(StreamingMessageQueueProducer.class));
+			Assert.fail("Missing required input");
+		} catch(RequiredInputMissingException e) {
+			// expected
+		}
+	}
+
+	/**
+	 * Test case for {@link DirectResponseOperatorRuntimeEnvironment#DirectResponseOperatorRuntimeEnvironment("proc-id", "pipe-id",DirectResponseOperator, StreamingMessageQueueConsumer, StreamingMessageQueueProducer)}
+	 * being provided null as input to queue producer parameter which must lead to a {@link RequiredInputMissingException}
+	 */
+	@Test
+	public void testConstructor_withNullProducerInput() {
+		try {
+			new DirectResponseOperatorRuntimeEnvironment("proc-id", "pipe-id",Mockito.mock(DirectResponseOperator.class), Mockito.mock(StreamingMessageQueueConsumer.class), null, Mockito.mock(StreamingMessageQueueProducer.class));
+			Assert.fail("Missing required input");
+		} catch(RequiredInputMissingException e) {
+			// expected
+		}
+	}
+
+	/**
+	 * Test case for {@link DirectResponseOperatorRuntimeEnvironment#DirectResponseOperatorRuntimeEnvironment("proc-id", "pipe-id",DirectResponseOperator, StreamingMessageQueueConsumer, StreamingMessageQueueProducer)}
+	 * being provided null as input to stats queue producer parameter which must lead to a {@link RequiredInputMissingException}
+	 */
+	@Test
+	public void testConstructor_withNullStatsProducerInput() {
+		try {
+			new DirectResponseOperatorRuntimeEnvironment("proc-id", "pipe-id",Mockito.mock(DirectResponseOperator.class), Mockito.mock(StreamingMessageQueueConsumer.class), Mockito.mock(StreamingMessageQueueProducer.class), null);
+			Assert.fail("Missing required input");
+		} catch(RequiredInputMissingException e) {
+			// expected
+		}
+	}
+	
+	/**
+	 * Test case for {@link DirectResponseOperatorRuntimeEnvironment#DirectResponseOperatorRuntimeEnvironment("proc-id", "pipe-id",DirectResponseOperator, StreamingMessageQueueConsumer, StreamingMessageQueueProducer)}
 	 * being provided valid input. The {@link DirectResponseOperatorRuntimeEnvironment#isRunning()} method must show true now
 	 */
 	@Test
 	public void testConstructor_withValidInput() throws RequiredInputMissingException  {
-		DirectResponseOperatorRuntimeEnvironment env = new DirectResponseOperatorRuntimeEnvironment(Mockito.mock(DirectResponseOperator.class), Mockito.mock(StreamingMessageQueueConsumer.class), Mockito.mock(StreamingMessageQueueProducer.class), Mockito.mock(StreamingMessageQueueProducer.class));
+		DirectResponseOperatorRuntimeEnvironment env = new DirectResponseOperatorRuntimeEnvironment("proc-id", "pipe-id",Mockito.mock(DirectResponseOperator.class), Mockito.mock(StreamingMessageQueueConsumer.class), Mockito.mock(StreamingMessageQueueProducer.class), Mockito.mock(StreamingMessageQueueProducer.class));
 		Assert.assertTrue("The environment must be running", env.isRunning());
 	}
 	
@@ -129,7 +157,7 @@ public class DirectResponseOperatorRuntimeEnvironmentTest {
 		StreamingMessageQueueWaitStrategy queueProducerStrategy = Mockito.mock(StreamingMessageQueueWaitStrategy.class);
 		Mockito.when(queueProducer.getWaitStrategy()).thenReturn(queueProducerStrategy);
 		
-		DirectResponseOperatorRuntimeEnvironment env = new DirectResponseOperatorRuntimeEnvironment(operator, queueConsumer, queueProducer, statsQueueProducer);
+		DirectResponseOperatorRuntimeEnvironment env = new DirectResponseOperatorRuntimeEnvironment("proc-id", "pipe-id",operator, queueConsumer, queueProducer, statsQueueProducer);
 		executorService.submit(env);
 		Thread.sleep(100);
 
@@ -163,7 +191,7 @@ public class DirectResponseOperatorRuntimeEnvironmentTest {
 		StreamingMessageQueueWaitStrategy queueProducerStrategy = Mockito.mock(StreamingMessageQueueWaitStrategy.class);
 		Mockito.when(queueProducer.getWaitStrategy()).thenReturn(queueProducerStrategy);
 		
-		DirectResponseOperatorRuntimeEnvironment env = new DirectResponseOperatorRuntimeEnvironment(operator, queueConsumer, queueProducer, statsQueueProducer);
+		DirectResponseOperatorRuntimeEnvironment env = new DirectResponseOperatorRuntimeEnvironment("proc-id", "pipe-id",operator, queueConsumer, queueProducer, statsQueueProducer);
 		executorService.submit(env);
 		Thread.sleep(50);
 		
@@ -173,6 +201,7 @@ public class DirectResponseOperatorRuntimeEnvironmentTest {
 		Mockito.verify(queueProducer, Mockito.atLeastOnce()).getWaitStrategy();
 		Mockito.verify(queueProducerStrategy, Mockito.atLeastOnce()).forceLockRelease();
 		Mockito.verify(queueProducer, Mockito.atLeastOnce()).insert(inputMessage);		
+		Mockito.verify(statsQueueProducer, Mockito.atLeastOnce()).insert(Mockito.any(StreamingDataMessage.class));
 		Assert.assertTrue("The environment must be running", env.isRunning());
 	}
 	
@@ -191,7 +220,7 @@ public class DirectResponseOperatorRuntimeEnvironmentTest {
 		Mockito.when(queueConsumer.next()).thenReturn(inputMessage);
 		StreamingMessageQueueProducer queueProducer = Mockito.mock(StreamingMessageQueueProducer.class);
 		
-		DirectResponseOperatorRuntimeEnvironment env = new DirectResponseOperatorRuntimeEnvironment(operator, queueConsumer, queueProducer, statsQueueProducer);		
+		DirectResponseOperatorRuntimeEnvironment env = new DirectResponseOperatorRuntimeEnvironment("proc-id", "pipe-id",operator, queueConsumer, queueProducer, statsQueueProducer);		
 		Assert.assertTrue("The environment must be running", env.isRunning());
 		env.shutdown();
 		
