@@ -159,13 +159,12 @@ public class DirectResponseOperatorRuntimeEnvironmentTest {
 		
 		DirectResponseOperatorRuntimeEnvironment env = new DirectResponseOperatorRuntimeEnvironment("proc-id", "pipe-id",operator, queueConsumer, queueProducer, statsQueueProducer);
 		executorService.submit(env);
-		Thread.sleep(100);
 
-		
-		Mockito.verify(operator, Mockito.atLeast(1)).onMessage(inputMessage);
-		Mockito.verify(queueConsumer, Mockito.atLeastOnce()).getWaitStrategy();
-		Mockito.verify(queueConsumerStrategy, Mockito.atLeastOnce()).waitFor(queueConsumer);
-		Mockito.verify(queueProducer, Mockito.atLeastOnce()).getWaitStrategy();
+		Mockito.verify(queueProducer).getWaitStrategy();
+		Mockito.verify(queueConsumer).getWaitStrategy();
+
+		Mockito.verify(operator, Mockito.timeout(500).atLeastOnce()).onMessage(inputMessage);
+		Mockito.verify(queueConsumerStrategy, Mockito.timeout(500).atLeastOnce()).waitFor(queueConsumer);
 		Mockito.verify(queueProducerStrategy, Mockito.never()).forceLockRelease();
 		Mockito.verify(queueProducer, Mockito.never()).insert(inputMessage);
 		
@@ -193,15 +192,15 @@ public class DirectResponseOperatorRuntimeEnvironmentTest {
 		
 		DirectResponseOperatorRuntimeEnvironment env = new DirectResponseOperatorRuntimeEnvironment("proc-id", "pipe-id",operator, queueConsumer, queueProducer, statsQueueProducer);
 		executorService.submit(env);
-		Thread.sleep(50);
+
+		Mockito.verify(queueProducer).getWaitStrategy();
+		Mockito.verify(queueConsumer).getWaitStrategy();
 		
-		Mockito.verify(operator, Mockito.atLeast(1)).onMessage(inputMessage);
-		Mockito.verify(queueConsumer, Mockito.atLeastOnce()).getWaitStrategy();
-		Mockito.verify(queueConsumerStrategy, Mockito.atLeastOnce()).waitFor(queueConsumer);
-		Mockito.verify(queueProducer, Mockito.atLeastOnce()).getWaitStrategy();
-		Mockito.verify(queueProducerStrategy, Mockito.atLeastOnce()).forceLockRelease();
-		Mockito.verify(queueProducer, Mockito.atLeastOnce()).insert(inputMessage);		
-		Mockito.verify(statsQueueProducer, Mockito.atLeastOnce()).insert(Mockito.any(StreamingDataMessage.class));
+		Mockito.verify(operator, Mockito.timeout(500).atLeastOnce()).onMessage(inputMessage);
+		Mockito.verify(queueConsumerStrategy, Mockito.timeout(500).atLeastOnce()).waitFor(queueConsumer);
+		Mockito.verify(queueProducerStrategy, Mockito.timeout(500).atLeastOnce()).forceLockRelease();
+		Mockito.verify(queueProducer, Mockito.timeout(500).atLeastOnce()).insert(inputMessage);		
+		Mockito.verify(statsQueueProducer, Mockito.timeout(500).atLeastOnce()).insert(Mockito.any(StreamingDataMessage.class));
 		Assert.assertTrue("The environment must be running", env.isRunning());
 	}
 	
@@ -224,7 +223,7 @@ public class DirectResponseOperatorRuntimeEnvironmentTest {
 		Assert.assertTrue("The environment must be running", env.isRunning());
 		env.shutdown();
 		
-		Mockito.verify(operator).shutdown();
+		Mockito.verify(operator, Mockito.timeout(500)).shutdown();
 
 	}
 	

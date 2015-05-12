@@ -64,10 +64,6 @@ public class SPQRNodeServer extends Application<SPQRNodeServerConfiguration> {
 		// initialize log4j environment using the settings provided via node configuration 
 		initializeLog4j(configuration.getSpqrNode().getLog4jConfiguration());
 		
-		// initialize the micro pipeline manager
-		this.microPipelineManager = new MicroPipelineManager(loadAndDeployApplicationRepository(configuration.getSpqrNode().getComponentRepositoryFolder()), configuration.getSpqrNode().getNumOfThreads());
-		logger.info("pipeline manager initialized [threads="+configuration.getSpqrNode().getNumOfThreads()+", repo="+configuration.getSpqrNode().getComponentRepositoryFolder()+"]");
-		
 		// check which type of resource management is requested via configuration 
 		if(configuration.getResourceManagerConfiguration().getMode() == ResourceManagerMode.REMOTE) {
 
@@ -88,7 +84,11 @@ public class SPQRNodeServer extends Application<SPQRNodeServerConfiguration> {
 			this.resourceManagerClient = null;
 			logger.info("resource manager [mode="+ResourceManagerMode.LOCAL+"]");
 		}
-		
+
+		// initialize the micro pipeline manager
+		this.microPipelineManager = new MicroPipelineManager(this.nodeId, loadAndDeployApplicationRepository(configuration.getSpqrNode().getComponentRepositoryFolder()), configuration.getSpqrNode().getNumOfThreads());
+		logger.info("pipeline manager initialized [threads="+configuration.getSpqrNode().getNumOfThreads()+", repo="+configuration.getSpqrNode().getComponentRepositoryFolder()+"]");
+
 		// register exposed resources
 		environment.jersey().register(new MicroPipelineResource(this.microPipelineManager));
 		

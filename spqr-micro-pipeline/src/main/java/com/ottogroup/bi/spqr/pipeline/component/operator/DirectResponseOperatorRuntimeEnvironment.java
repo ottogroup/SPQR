@@ -23,7 +23,7 @@ import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConsumer;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueProducer;
 import com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueWaitStrategy;
-import com.ottogroup.bi.spqr.pipeline.statistics.MicroPipelineStatistics;
+import com.ottogroup.bi.spqr.pipeline.statistics.ComponentMessageProcessingEvent;
 
 /**
  * Provides a runtime environment for {@link DirectResponseOperator} instances. The environment polls
@@ -101,7 +101,7 @@ public class DirectResponseOperatorRuntimeEnvironment implements Runnable {
 		this.destinationQueueWaitStrategy = queueProducer.getWaitStrategy();
 
 		if(logger.isDebugEnabled())
-			logger.debug("direct response operator runtime environment initialized [id="+directResponseOperator.getId()+"]");
+			logger.debug("direct response operator init [node="+this.processingNodeId+", pipeline="+this.pipelineId+", operator="+this.operatorId+"]");
 	}
 		
 	/**
@@ -110,28 +110,21 @@ public class DirectResponseOperatorRuntimeEnvironment implements Runnable {
 	public void run() {
 
 		// initialize stats counter and timer
-		final MicroPipelineStatistics stats = new MicroPipelineStatistics(
-				this.processingNodeId, this.pipelineId, this.operatorId, 0, 0, 0, 0, 0, 0, 0, 0);
-		
+		final ComponentMessageProcessingEvent statsEvent = new ComponentMessageProcessingEvent(this.operatorId, false, 0, 0, 0);
+
 		long start = 0;
-		long end = 0;
-		int duration = 0;
-		int size = 0;
+		int bodySize = 0;
 		
 		while(running) {
 			
 			// reset stats counter and timer
 			start = 0;
-			end = 0;
-			duration = 0;
-			size = 0;
+			bodySize = 0;
 
-			try {
-				
+			try {				
 				StreamingDataMessage message = this.consumerQueueWaitStrategy.waitFor(this.queueConsumer);
 				start = System.currentTimeMillis();
 				if(message != null && message.getBody() != null) {
-					size = message.getBody().length;
 					StreamingDataMessage[] responseMessages = this.directResponseOperator.onMessage(message);
 					if(responseMessages != null && responseMessages.length > 0) {
 						for(final StreamingDataMessage responseMessage : responseMessages) {
@@ -139,43 +132,30 @@ public class DirectResponseOperatorRuntimeEnvironment implements Runnable {
 						}
 						this.destinationQueueWaitStrategy.forceLockRelease();
 					}
-					end = System.currentTimeMillis();
-					duration = (int)(end-start);
-
-					////////////////////////////////////////////////////////
-					// prepare and export stats message
-					stats.setStartTime(start);
-					stats.setEndTime(end);
-					stats.setMinSize(size);
-					stats.setMaxSize(size);
-					stats.setAvgSize(size);
-					stats.setMinDuration(duration);
-					stats.setMaxDuration(duration);
-					stats.setAvgDuration(duration);
-					stats.setNumOfMessages(1);
-					stats.setErrors(0);
-					this.statsQueueProducer.insert(new StreamingDataMessage(stats.toByteArray(), System.currentTimeMillis()));
-					////////////////////////////////////////////////////////
+					bodySize = message.getBody().length;
 				}
+
+				////////////////////////////////////////////////////////
+				// prepare and export stats message
+				statsEvent.setDuration((int)(System.currentTimeMillis()-start));
+				statsEvent.setError(false);
+				statsEvent.setSize(bodySize);
+				statsEvent.setTimestamp(System.currentTimeMillis());
+				this.statsQueueProducer.insert(new StreamingDataMessage(statsEvent.toBytes(), System.currentTimeMillis()));
+				////////////////////////////////////////////////////////
 				
 			} catch(InterruptedException e) {
 				// do nothing - waiting was interrupted				
 			} catch(Exception e) {
-				logger.error("Failed to process message with attached operator. Reason: " + e.getMessage());
+				logger.error("processing error [node="+this.processingNodeId+", pipeline="+this.pipelineId+", operator="+this.operatorId+"]: " + e.getMessage(), e);
 				
 				////////////////////////////////////////////////////////
 				// prepare and export stats message
-				stats.setStartTime(start);
-				stats.setEndTime(end);
-				stats.setMinSize(size);
-				stats.setMaxSize(size);
-				stats.setAvgSize(size);
-				stats.setMinDuration(duration);
-				stats.setMaxDuration(duration);
-				stats.setAvgDuration(duration);
-				stats.setNumOfMessages(1);
-				stats.setErrors(1);
-				this.statsQueueProducer.insert(new StreamingDataMessage(stats.toByteArray(), System.currentTimeMillis()));
+				statsEvent.setDuration(0);
+				statsEvent.setError(true);
+				statsEvent.setSize(bodySize);
+				statsEvent.setTimestamp(System.currentTimeMillis());
+				this.statsQueueProducer.insert(new StreamingDataMessage(statsEvent.toBytes(), System.currentTimeMillis()));
 				////////////////////////////////////////////////////////
 
 				// TODO add handler for responding to errors 
@@ -191,11 +171,11 @@ public class DirectResponseOperatorRuntimeEnvironment implements Runnable {
 		try {
 			this.directResponseOperator.shutdown();
 		} catch(Exception e) {
-			logger.error("Failed to shut down direct response operator. Error: " + e.getMessage());
+			logger.error("operator shutdown error [node="+this.processingNodeId+", pipeline="+this.pipelineId+", operator="+this.operatorId+"]: " + e.getMessage(), e);
 		}
 
 		if(logger.isDebugEnabled())
-			logger.debug("direct response operator runtime environment shutdown [id="+this.directResponseOperator.getId()+"]");
+			logger.debug("shutdown success [node="+this.processingNodeId+", pipeline="+this.pipelineId+", operator="+this.operatorId+"]");
 
 	}
 

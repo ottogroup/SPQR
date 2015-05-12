@@ -46,12 +46,40 @@ public class EmitterRuntimeEnvironmentTest {
 	
 	/**
 	 * Test case for {@link EmitterRuntimeEnvironment#EmitterRuntimeEnvironment(Emitter, com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConsumer)}
+	 * being provided null as input to node id parameter which must lead to {@link RequiredInputMissingException} 
+	 */
+	@Test
+	public void testConstructor_withNullNodeId() {
+		try {
+			new EmitterRuntimeEnvironment(null, "pipe-1", Mockito.mock(Emitter.class), Mockito.mock(StreamingMessageQueueConsumer.class), Mockito.mock(StreamingMessageQueueProducer.class));
+			Assert.fail("Invalid input");
+		} catch(RequiredInputMissingException e) {
+			// expected
+		}
+	}
+	
+	/**
+	 * Test case for {@link EmitterRuntimeEnvironment#EmitterRuntimeEnvironment(Emitter, com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConsumer)}
+	 * being provided null as input to pipeline id parameter which must lead to {@link RequiredInputMissingException} 
+	 */
+	@Test
+	public void testConstructor_withNullPipelineId() {
+		try {
+			new EmitterRuntimeEnvironment("node-1", null, Mockito.mock(Emitter.class), Mockito.mock(StreamingMessageQueueConsumer.class), Mockito.mock(StreamingMessageQueueProducer.class));
+			Assert.fail("Invalid input");
+		} catch(RequiredInputMissingException e) {
+			// expected
+		}
+	}
+	
+	/**
+	 * Test case for {@link EmitterRuntimeEnvironment#EmitterRuntimeEnvironment(Emitter, com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConsumer)}
 	 * being provided null as input to emitter parameter which must lead to {@link RequiredInputMissingException} 
 	 */
 	@Test
 	public void testConstructor_withNullEmitter() {
 		try {
-			new EmitterRuntimeEnvironment(null, Mockito.mock(StreamingMessageQueueConsumer.class), Mockito.mock(StreamingMessageQueueProducer.class));
+			new EmitterRuntimeEnvironment("node-1", "pipe-1", null, Mockito.mock(StreamingMessageQueueConsumer.class), Mockito.mock(StreamingMessageQueueProducer.class));
 			Assert.fail("Invalid input");
 		} catch(RequiredInputMissingException e) {
 			// expected
@@ -65,7 +93,7 @@ public class EmitterRuntimeEnvironmentTest {
 	@Test
 	public void testConstructor_withNullQueueConsumer() {
 		try {
-			new EmitterRuntimeEnvironment(Mockito.mock(Emitter.class), null, Mockito.mock(StreamingMessageQueueProducer.class));
+			new EmitterRuntimeEnvironment("node-1", "pipe-1", Mockito.mock(Emitter.class), null, Mockito.mock(StreamingMessageQueueProducer.class));
 			Assert.fail("Invalid input");
 		} catch(RequiredInputMissingException e) {
 			// expected
@@ -78,7 +106,7 @@ public class EmitterRuntimeEnvironmentTest {
 	@Test
 	public void testConstructor_withNullStatsQueueProducer() {
 		try {
-			new EmitterRuntimeEnvironment(Mockito.mock(Emitter.class), Mockito.mock(StreamingMessageQueueConsumer.class), null);
+			new EmitterRuntimeEnvironment("node-1", "pipe-1", Mockito.mock(Emitter.class), Mockito.mock(StreamingMessageQueueConsumer.class), null);
 			Assert.fail("Invalid input");
 		} catch(RequiredInputMissingException e) {
 			// expected
@@ -91,7 +119,7 @@ public class EmitterRuntimeEnvironmentTest {
 	 */
 	@Test
 	public void testConstructor_withValidInput() throws RequiredInputMissingException {
-		EmitterRuntimeEnvironment env = new EmitterRuntimeEnvironment(Mockito.mock(Emitter.class), Mockito.mock(StreamingMessageQueueConsumer.class), Mockito.mock(StreamingMessageQueueProducer.class));
+		EmitterRuntimeEnvironment env = new EmitterRuntimeEnvironment("node-1", "pipe-1", Mockito.mock(Emitter.class), Mockito.mock(StreamingMessageQueueConsumer.class), Mockito.mock(StreamingMessageQueueProducer.class));
 		Assert.assertTrue("Must return true", env.isRunning());
 	}
 
@@ -109,16 +137,14 @@ public class EmitterRuntimeEnvironmentTest {
 		Mockito.when(queueConsumer.getWaitStrategy()).thenReturn(queueConsumerWaitStrategy);
 		Mockito.when(queueConsumerWaitStrategy.waitFor(queueConsumer)).thenReturn(message);
 				
-		EmitterRuntimeEnvironment env = new EmitterRuntimeEnvironment(emitter, queueConsumer, statsQueueProducer);
+		EmitterRuntimeEnvironment env = new EmitterRuntimeEnvironment("node-1", "pipe-1", emitter, queueConsumer, statsQueueProducer);
 		executorService.submit(env);
-		
-		Thread.sleep(100);
-
 		Assert.assertTrue("Must return true", env.isRunning());
 
-		Mockito.verify(queueConsumerWaitStrategy, Mockito.atLeastOnce()).waitFor(queueConsumer);
+		Mockito.verify(queueConsumerWaitStrategy, Mockito.timeout(500).atLeastOnce()).waitFor(queueConsumer);
 		Mockito.verify(queueConsumer, Mockito.atLeastOnce()).getWaitStrategy();
 		Mockito.verify(emitter, Mockito.atLeastOnce()).onMessage(message);
+		Mockito.verify(statsQueueProducer, Mockito.atLeastOnce()).insert(Mockito.any(StreamingDataMessage.class));
 	}
 	
 	/**
@@ -140,13 +166,14 @@ public class EmitterRuntimeEnvironmentTest {
 		Mockito.when(queueConsumerWaitStrategy.waitFor(queueConsumer)).thenReturn(message);
 
 		
-		EmitterRuntimeEnvironment env = new EmitterRuntimeEnvironment(emitter, queueConsumer, statsQueueProducer);
+		EmitterRuntimeEnvironment env = new EmitterRuntimeEnvironment("node-1", "pipe-1", emitter, queueConsumer, statsQueueProducer);
 		executorService.submit(env);
 		Assert.assertTrue("Must return true", env.isRunning());
 
-		Mockito.verify(queueConsumerWaitStrategy, Mockito.after(500).atLeastOnce()).waitFor(queueConsumer);
+		Mockito.verify(queueConsumerWaitStrategy, Mockito.timeout(500).atLeastOnce()).waitFor(queueConsumer);
 		Mockito.verify(queueConsumer, Mockito.atLeastOnce()).getWaitStrategy();
 		Mockito.verify(emitter, Mockito.atLeastOnce()).onMessage(message);
+		Mockito.verify(statsQueueProducer, Mockito.atLeastOnce()).insert(Mockito.any(StreamingDataMessage.class));
 	}
 	
 }

@@ -26,7 +26,7 @@ import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConsumer;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueProducer;
 import com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueWaitStrategy;
-import com.ottogroup.bi.spqr.pipeline.statistics.MicroPipelineStatistics;
+import com.ottogroup.bi.spqr.pipeline.statistics.ComponentMessageProcessingEvent;
 
 /**
  * Provides a runtime environment for {@link DelayedResponseOperator} instances. The environment polls
@@ -138,7 +138,7 @@ public class DelayedResponseOperatorRuntimeEnvironment implements Runnable, Dela
 		this.destinationQueueWaitStrategy = queueProducer.getWaitStrategy();
 		
 		if(logger.isDebugEnabled())
-			logger.debug("delayed response operator runtime environment initialized [id="+delayedResponseOperator.getId()+"]");
+			logger.debug("delayed response operator init [node="+this.processingNodeId+", pipeline="+this.pipelineId+", operator="+this.operatorId+"]");
 	}
 	
 	/**
@@ -147,69 +147,48 @@ public class DelayedResponseOperatorRuntimeEnvironment implements Runnable, Dela
 	public void run() {
 		
 		// initialize stats counter and timer
-		final MicroPipelineStatistics stats = new MicroPipelineStatistics(
-				this.processingNodeId, this.pipelineId, this.operatorId, 0, 0, 0, 0, 0, 0, 0, 0);
+		final ComponentMessageProcessingEvent statsEvent = new ComponentMessageProcessingEvent(this.operatorId, false, 0, 0, 0);
 
 		long start = 0;
-		long end = 0;
-		int duration = 0;
-		int size = 0;
-
+		int bodySize = 0;
 		while(running) {
 
 			// reset stats counter and timer
 			start = 0;
-			end = 0;
-			duration = 0;
-			size = 0;
+			bodySize = 0;
 
 			try {
 				StreamingDataMessage message = this.consumerQueueWaitStrategy.waitFor(this.queueConsumer); // this.queueConsumer.next();
-				start = System.currentTimeMillis();
-				if(message != null) {
-					size = message.getBody().length;
+				start = System.currentTimeMillis();				
+				if(message != null && message.getBody() != null) {
 					// forward retrieved message to operator for further processing
 					this.delayedResponseOperator.onMessage(message);
 					// notify response wait strategy on retrieved message
 					this.responseWaitStrategy.onMessage(message);
-					end = System.currentTimeMillis();
-					duration = (int)(end-start);
-					
-					////////////////////////////////////////////////////////
-					// prepare and export stats message
-					stats.setStartTime(start);
-					stats.setEndTime(end);
-					stats.setMinSize(size);
-					stats.setMaxSize(size);
-					stats.setAvgSize(size);
-					stats.setMinDuration(duration);
-					stats.setMaxDuration(duration);
-					stats.setAvgDuration(duration);
-					stats.setNumOfMessages(1);
-					stats.setErrors(0);
-					this.statsQueueProducer.insert(new StreamingDataMessage(stats.toByteArray(), System.currentTimeMillis()));
-					////////////////////////////////////////////////////////
-					
+					bodySize = message.getBody().length;
 				}
+				
+				////////////////////////////////////////////////////////
+				// prepare and export stats message
+				statsEvent.setDuration((int)(System.currentTimeMillis()-start));
+				statsEvent.setError(false);
+				statsEvent.setSize(bodySize);
+				statsEvent.setTimestamp(System.currentTimeMillis());
+				this.statsQueueProducer.insert(new StreamingDataMessage(statsEvent.toBytes(), System.currentTimeMillis()));
+				////////////////////////////////////////////////////////
 			} catch(InterruptedException e) {
 				// do nothing - waiting was interrupted				
 			} catch(Exception e) {
-				logger.error("Failed to process message with attached operator. Reason: " + e.getMessage());
+				logger.error("processing error [node="+this.processingNodeId+", pipeline="+this.pipelineId+", operator="+this.operatorId+"]: " + e.getMessage(), e);
 				// TODO add handler for responding to errors
 				
 				////////////////////////////////////////////////////////
 				// prepare and export stats message
-				stats.setStartTime(start);
-				stats.setEndTime(end);
-				stats.setMinSize(size);
-				stats.setMaxSize(size);
-				stats.setAvgSize(size);
-				stats.setMinDuration(duration);
-				stats.setMaxDuration(duration);
-				stats.setAvgDuration(duration);
-				stats.setNumOfMessages(1);
-				stats.setErrors(1);
-				this.statsQueueProducer.insert(new StreamingDataMessage(stats.toByteArray(), System.currentTimeMillis()));
+				statsEvent.setDuration(0);
+				statsEvent.setError(true);
+				statsEvent.setSize(bodySize);
+				statsEvent.setTimestamp(System.currentTimeMillis());
+				this.statsQueueProducer.insert(new StreamingDataMessage(statsEvent.toBytes(), System.currentTimeMillis()));
 				////////////////////////////////////////////////////////
 
 			}
@@ -231,7 +210,7 @@ public class DelayedResponseOperatorRuntimeEnvironment implements Runnable, Dela
 				this.destinationQueueWaitStrategy.forceLockRelease();
 			}
 		} catch(Exception e) {
-			logger.error("Failed to retrieve and forward messages from underlying delayed response operator. Reason: " + e.getMessage());
+			logger.error("message retrieval error [node="+this.processingNodeId+", pipeline="+this.pipelineId+", operator="+this.operatorId+"]: " + e.getMessage(), e);
 			// TODO add handler for responding to errors 
 		}
 	}
@@ -244,25 +223,25 @@ public class DelayedResponseOperatorRuntimeEnvironment implements Runnable, Dela
 		try {
 			this.delayedResponseOperator.shutdown();
 		} catch(Exception e) {
-			logger.error("Failed to shut down delayed response operator. Error: " + e.getMessage());
+			logger.error("operator shutdown error [node="+this.processingNodeId+", pipeline="+this.pipelineId+", operator="+this.operatorId+"]: " + e.getMessage(), e);
 		}
 		try {
 			this.responseWaitStrategy.shutdown();
 		} catch(Exception e) {
-			logger.error("Failed to shut down response wait strategy. Error: " + e.getMessage());
+			logger.error("strategy shutdown error [node="+this.processingNodeId+", pipeline="+this.pipelineId+", operator="+this.operatorId+"]: " + e.getMessage(), e);
 		}
 		if(this.localExecutorService) {
 			try {
 				this.executorService.shutdownNow();
 			} catch(Exception e) {
-				logger.error("Failed to shut down executor service. Error: " + e.getMessage());
+				logger.error("exec service shutdown error [node="+this.processingNodeId+", pipeline="+this.pipelineId+", operator="+this.operatorId+"]: " + e.getMessage(), e);
 			}
 		}
 
 
-		if(logger.isDebugEnabled())
-			logger.debug("delayed response operator runtime environment shutdown [id="+this.delayedResponseOperator.getId()+"]");
-
+		if(logger.isDebugEnabled()) {
+			logger.debug("shutdown success [node="+this.processingNodeId+", pipeline="+this.pipelineId+", operator="+this.operatorId+"]");
+		}
 	}
 
 	/**

@@ -176,17 +176,18 @@ public class DelayedResponseOperatorRuntimeEnvironmentTest {
 		
 		DelayedResponseOperatorRuntimeEnvironment env = new DelayedResponseOperatorRuntimeEnvironment("proc-1", "pipe-1", delayedResponseOperator, responseWaitStrategy, queueConsumer, queueProducer, statsQueueProducer);
 		executorService.submit(env);
-		Thread.sleep(100);
+
 		env.retrieveMessages();
-		
-		Mockito.verify(queueConsumer, Mockito.atLeastOnce()).getWaitStrategy();
-		Mockito.verify(queueConsumerWaitStrategy, Mockito.atLeastOnce()).waitFor(queueConsumer);
-		Mockito.verify(delayedResponseOperator, Mockito.atLeast(1)).onMessage(message);
-		Mockito.verify(responseWaitStrategy, Mockito.atLeast(1)).onMessage(message);
-		Mockito.verify(delayedResponseOperator).getResult();
-		Mockito.verify(queueProducerWaitStrategy).forceLockRelease();
-		Mockito.verify(queueProducer).insert(response);
-		Mockito.verify(statsQueueProducer, Mockito.atLeastOnce()).insert(Mockito.any(StreamingDataMessage.class));
+
+		Mockito.verify(queueConsumer).getWaitStrategy();
+
+		Mockito.verify(queueConsumerWaitStrategy, Mockito.timeout(500).atLeastOnce()).waitFor(queueConsumer);
+		Mockito.verify(delayedResponseOperator, Mockito.timeout(500).atLeast(1)).onMessage(message);
+		Mockito.verify(responseWaitStrategy, Mockito.timeout(500).atLeast(1)).onMessage(message);
+		Mockito.verify(delayedResponseOperator, Mockito.timeout(500)).getResult();
+		Mockito.verify(queueProducerWaitStrategy, Mockito.timeout(500)).forceLockRelease();
+		Mockito.verify(queueProducer, Mockito.timeout(500)).insert(response);
+		Mockito.verify(statsQueueProducer, Mockito.timeout(500).atLeastOnce()).insert(Mockito.any(StreamingDataMessage.class));
 		
 		Assert.assertTrue("The environment must be running", env.isRunning());
 		env.shutdown();

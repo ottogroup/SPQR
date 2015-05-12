@@ -68,15 +68,8 @@ public class CountDownLatchTestEmitter implements Emitter {
 		try {
 		this.latch.countDown();
 		this.messageCount++;
-		
-		int duration = (int)(System.currentTimeMillis()-message.getTimestamp());
-		if(min > duration)
-			min = duration;
-		if(max < duration)
-			max = duration;
-		avg = avg + duration;
 		if(messageCount >= awaitMessages)
-			System.out.println("Received " + messageCount + " messages. Min: " + min + "ms, Max: " + max + "ms, Avg: " + (double)(avg / messageCount)+ "ms");
+			System.out.println("Received " + messageCount + " messages");
 		} catch(Exception e) {
 			e.printStackTrace();
 			throw e;

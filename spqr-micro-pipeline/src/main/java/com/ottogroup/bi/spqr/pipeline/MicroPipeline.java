@@ -38,7 +38,7 @@ public class MicroPipeline {
 	private static final Logger logger = Logger.getLogger(MicroPipeline.class);
 
 	/** default identifier used for statistics queue - must not be assigned to other queues */ 
-	public static final String STATISTICS_QUEUE_NAME = "pipelinestats";
+	public static final String STATISTICS_QUEUE_NAME = "stats";
 	
 	/** unique pipeline identifier - must be unique within the whole cluster */
 	private final String id;

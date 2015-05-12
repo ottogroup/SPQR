@@ -13,19 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.ottogroup.bi.spqr.pipeline.stats.queue;
+package com.ottogroup.bi.spqr.pipeline.statistics;
 
-import net.openhft.chronicle.Chronicle;
-import net.openhft.lang.model.Byteable;
+import com.ottogroup.bi.spqr.pipeline.MicroPipeline;
 
 /**
- * {@link Chronicle} based queue for transporting stats information
+ * Attached to a {@link MicroPipeline} instance this one collects {@link ComponentMessageProcessingEvent} entities,
+ * aggregates their contents into {@link AggregatedComponentStatistics}, generates a {@link MicroPipelineStatistics} instance
+ * which gets emitted to a connected destination, eg. kafka topic
  * @author mnxfst
  * @since May 6, 2015
  */
-public class StatisticsQueue <E extends Byteable>{
+public class ComponentMessageProcessingEventCollector {
 	
-	private Chronicle chronicleQueue = null;
+	public static final String CFG_AGGREGATE_DURATION = "aggregate.duration";
 
 	
 	

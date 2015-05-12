@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.ottogroup.bi.spqr.pipeline.stats;
+package com.ottogroup.bi.spqr.pipeline.statistics;
 
 import org.apache.log4j.Logger;
 

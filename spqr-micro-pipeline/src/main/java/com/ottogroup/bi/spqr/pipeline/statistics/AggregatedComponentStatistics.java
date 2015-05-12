@@ -13,14 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.ottogroup.bi.spqr.pipeline.stats;
+package com.ottogroup.bi.spqr.pipeline.statistics;
 
 import java.io.Serializable;
+import java.nio.ByteBuffer;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Holds statistical information about a single pipeline component. Values tracked are:
+ * Holds aggregated statistical information about a single pipeline component. Values tracked are:
  * <ul>
  *   <li>component identifier</li>
  *   <li>number of messages processed for specified time frame</li>
@@ -37,9 +38,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * @author mnxfst
  * @since May 6, 2015
  */
-public class MicroPipelineComponentStatistics implements Serializable {
+public class AggregatedComponentStatistics implements Serializable {
 
 	private static final long serialVersionUID = 3548413649029481410L;
+	
+	public static final int SIZE_OF_INT = Integer.SIZE / Byte.SIZE;
+	public static final int SIZE_OF_LONG = Long.SIZE / Byte.SIZE;
 	
 	/** identifier of pipeline component which generated the stats */
 	@JsonProperty(value="cid", required=true)
@@ -78,7 +82,7 @@ public class MicroPipelineComponentStatistics implements Serializable {
 	/**
 	 * Default constructor
 	 */
-	public MicroPipelineComponentStatistics() {		
+	public AggregatedComponentStatistics() {		
 	}
 	
 	/**
@@ -95,7 +99,7 @@ public class MicroPipelineComponentStatistics implements Serializable {
 	 * @param avgSize
 	 * @param errors
 	 */
-	public MicroPipelineComponentStatistics(final String componentId, final int numOfMessages, final long startTime, final long endTime, 
+	public AggregatedComponentStatistics(final String componentId, final int numOfMessages, final long startTime, final long endTime, 
 			final int minDuration, final int maxDuration, final int avgDuration, final int minSize, final int maxSize, final int avgSize,
 			final int errors) {
 		this.componentId = componentId;
@@ -110,6 +114,68 @@ public class MicroPipelineComponentStatistics implements Serializable {
 		this.avgSize = avgSize;
 		this.errors = errors;
 	}
+	
+
+	/**
+	 * Converts the provided byte array into a {@link AggregatedComponentStatistics} representation
+	 * @param statsContent
+	 * @return
+	 */
+	public static AggregatedComponentStatistics fromBytes(final byte[] statsContent) {
+		
+		AggregatedComponentStatistics stats = new AggregatedComponentStatistics();
+		ByteBuffer buf = ByteBuffer.wrap(statsContent);
+		
+		// ensure that the order is the same as when populating the array 
+		stats.setNumOfMessages(buf.getInt());
+		stats.setStartTime(buf.getLong());
+		stats.setEndTime(buf.getLong());
+		stats.setMinDuration(buf.getInt());
+		stats.setMaxDuration(buf.getInt());
+		stats.setAvgDuration(buf.getInt());
+		stats.setMinSize(buf.getInt());
+		stats.setMaxSize(buf.getInt());
+		stats.setAvgSize(buf.getInt());
+		stats.setErrors(buf.getInt());
+		
+		byte[] componentId = new byte[buf.getInt()];
+		buf.get(componentId);
+		
+		stats.setComponentId(new String(componentId));
+		
+		return stats;		
+	}
+	
+	/**
+	 * Convert this {@link MicroPipelineStatistics} instance into its byte array representation 
+	 * @return
+	 */
+	public byte[] toBytes() {
+		
+		byte[] cid = (this.componentId != null ? this.componentId.getBytes() : new byte[0]);
+
+		// 9x SIZE_OF_INT: 8 attribute values, 1 size of component identifier representation
+		// 2x SIZE_OF_LONG: start time and end time
+		// 1x length of component identifier representation
+		
+		ByteBuffer buffer = ByteBuffer.allocate(9 * SIZE_OF_INT + 2 * SIZE_OF_LONG  + cid.length);
+
+		buffer.putInt(this.numOfMessages);
+		buffer.putLong(this.startTime);
+		buffer.putLong(this.endTime);
+		buffer.putInt(this.minDuration);
+		buffer.putInt(this.maxDuration);
+		buffer.putInt(this.avgDuration);
+		buffer.putInt(this.minSize);
+		buffer.putInt(this.maxSize);
+		buffer.putInt(this.avgSize);
+		buffer.putInt(this.errors);
+		buffer.putInt(cid.length);
+		buffer.put(cid);
+		
+		return buffer.array();		
+	}
+	
 	
 	public String getComponentId() {
 		return componentId;

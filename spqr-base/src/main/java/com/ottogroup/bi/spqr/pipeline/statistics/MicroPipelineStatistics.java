@@ -177,7 +177,7 @@ public class MicroPipelineStatistics implements Serializable {
 		byte[] pid = (this.pipelineId != null ? this.pipelineId.getBytes() : new byte[0]);
 		byte[] cid = (this.componentId != null ? this.componentId.getBytes() : new byte[0]);
 
-		ByteBuffer buffer = ByteBuffer.allocate(11 * SIZE_OF_INT + 3 * SIZE_OF_LONG + procNodeId.length + pid.length + cid.length);
+		ByteBuffer buffer = ByteBuffer.allocate(11 * SIZE_OF_INT + 2 * SIZE_OF_LONG + procNodeId.length + pid.length + cid.length);
 
 		buffer.putInt(this.numOfMessages);
 		buffer.putLong(this.startTime);

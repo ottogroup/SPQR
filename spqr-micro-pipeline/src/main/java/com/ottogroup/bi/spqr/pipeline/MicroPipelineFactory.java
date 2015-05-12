@@ -173,7 +173,7 @@ public class MicroPipelineFactory {
 				
 				switch(component.getType()) {
 					case SOURCE: {
-						microPipeline.addSource(id, new SourceRuntimeEnvironment((Source)component, toQueue.getProducer(), statisticsQueue.getProducer()));
+						microPipeline.addSource(id, new SourceRuntimeEnvironment(this.processingNodeId, cfg.getId(), (Source)component, toQueue.getProducer(), statisticsQueue.getProducer()));
 						sourceComponentFound = true;
 						break;
 					}
@@ -188,7 +188,7 @@ public class MicroPipelineFactory {
 						break;
 					}
 					case EMITTER: {
-						microPipeline.addEmitter(id, new EmitterRuntimeEnvironment((Emitter)component, fromQueue.getConsumer(), statisticsQueue.getProducer()));
+						microPipeline.addEmitter(id, new EmitterRuntimeEnvironment(this.processingNodeId, cfg.getId(), (Emitter)component, fromQueue.getConsumer(), statisticsQueue.getProducer()));
 						emitterComponentFound = true;
 						break;
 					}
