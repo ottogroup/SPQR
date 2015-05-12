@@ -28,7 +28,7 @@ import com.fasterxml.jackson.annotation.JsonRootName;
  * @since May 12, 2015
  */
 @JsonRootName(value="componentMessageStatisticEvent")
-public class ComponentMessageProcessingEvent implements Serializable {
+public class ComponentMessageStatsEvent implements Serializable {
 
 	private static final long serialVersionUID = -796247355297487130L;
 
@@ -54,7 +54,7 @@ public class ComponentMessageProcessingEvent implements Serializable {
 	/**
 	 * Default constructor
 	 */
-	public ComponentMessageProcessingEvent() {		
+	public ComponentMessageStatsEvent() {		
 	}
 	
 	/**
@@ -66,7 +66,7 @@ public class ComponentMessageProcessingEvent implements Serializable {
 
 	 * @param timestamp
 	 */
-	public ComponentMessageProcessingEvent(final String componentId, final boolean error, final int duration, final int size, final long timestamp) {
+	public ComponentMessageStatsEvent(final String componentId, final boolean error, final int duration, final int size, final long timestamp) {
 		this.componentId = componentId;
 		this.error = error;
 		this.duration = duration;
@@ -93,13 +93,13 @@ public class ComponentMessageProcessingEvent implements Serializable {
 	}
 	
 	/**
-	 * Converts the byte array into a {@link ComponentMessageProcessingEvent} representation
+	 * Converts the byte array into a {@link ComponentMessageStatsEvent} representation
 	 * @param content
 	 * @return
 	 */
-	public static ComponentMessageProcessingEvent fromBytes(final byte[] content) {
+	public static ComponentMessageStatsEvent fromBytes(final byte[] content) {
 
-		ComponentMessageProcessingEvent event = new ComponentMessageProcessingEvent();
+		ComponentMessageStatsEvent event = new ComponentMessageStatsEvent();
 		if(content == null || content.length < 1)
 			return event; 
 		

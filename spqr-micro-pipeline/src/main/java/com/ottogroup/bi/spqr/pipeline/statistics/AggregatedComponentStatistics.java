@@ -263,7 +263,5 @@ public class AggregatedComponentStatistics implements Serializable {
 
 	public void setErrors(int errors) {
 		this.errors = errors;
-	}
-	
-	
+	}	
 }

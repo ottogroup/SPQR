@@ -24,7 +24,7 @@ import org.apache.log4j.Logger;
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
 import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueProducer;
-import com.ottogroup.bi.spqr.pipeline.statistics.ComponentMessageProcessingEvent;
+import com.ottogroup.bi.spqr.pipeline.statistics.ComponentMessageStatsEvent;
 
 /**
  * Runtime environment for {@link Source} instances
@@ -53,7 +53,7 @@ public class SourceRuntimeEnvironment implements Runnable, IncomingMessageCallba
 	/** local executor service? - must be shut down as well, otherwise the provider must take care of it */
 	private boolean localExecutorService = false;
 	/** stats container */
-	private final ComponentMessageProcessingEvent statsEvent;
+	private final ComponentMessageStatsEvent statsEvent;
 
 	/**
 	 * Initializes the runtime environment using the provided input
@@ -107,7 +107,7 @@ public class SourceRuntimeEnvironment implements Runnable, IncomingMessageCallba
 		this.statsQueueProducer = statsQueueProducer;
 		this.executorService = executorService;
 		
-		this.statsEvent = new ComponentMessageProcessingEvent(this.sourceId, false, 0, 0, 0);
+		this.statsEvent = new ComponentMessageStatsEvent(this.sourceId, false, 0, 0, 0);
 		
 		this.executorService.submit(source);
 		if(logger.isDebugEnabled())

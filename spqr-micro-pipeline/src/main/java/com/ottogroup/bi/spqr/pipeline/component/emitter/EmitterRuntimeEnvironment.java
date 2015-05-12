@@ -23,7 +23,7 @@ import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConsumer;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueProducer;
 import com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueWaitStrategy;
-import com.ottogroup.bi.spqr.pipeline.statistics.ComponentMessageProcessingEvent;
+import com.ottogroup.bi.spqr.pipeline.statistics.ComponentMessageStatsEvent;
 
 /**
  * Provides a runtime environment for {@link Emitter} instances. The environment retrieves all
@@ -97,7 +97,7 @@ public class EmitterRuntimeEnvironment implements Runnable {
 	public void run() {
 		
 		// initialize stats counter and timer
-		final ComponentMessageProcessingEvent statsEvent = new ComponentMessageProcessingEvent(this.emitterId, false, 0, 0, 0);
+		final ComponentMessageStatsEvent statsEvent = new ComponentMessageStatsEvent(this.emitterId, false, 0, 0, 0);
 		long start = 0;
 		int bodySize = 0;
 

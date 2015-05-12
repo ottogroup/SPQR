@@ -20,22 +20,22 @@ import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.ottogroup.bi.spqr.pipeline.statistics.ComponentMessageProcessingEvent;
+import com.ottogroup.bi.spqr.pipeline.statistics.ComponentMessageStatsEvent;
 
 /**
- * Test case for {@link ComponentMessageProcessingEvent}
+ * Test case for {@link ComponentMessageStatsEvent}
  * @author mnxfst
  * @since May 12, 2015
  */
-public class ComponentMessageProcessingEventTest {
+public class ComponentMessageStatsEventTest {
 
 	/**
-	 * Test case for {@link ComponentMessageProcessingEvent#fromBytes(byte[])} being provided null
+	 * Test case for {@link ComponentMessageStatsEvent#fromBytes(byte[])} being provided null
 	 * as input
 	 */
 	@Test
 	public void testFromBytes_withNullInput() {
-		ComponentMessageProcessingEvent event = ComponentMessageProcessingEvent.fromBytes(null);
+		ComponentMessageStatsEvent event = ComponentMessageStatsEvent.fromBytes(null);
 		Assert.assertNotNull("The event must not be null", event);
 		Assert.assertTrue("The component id must be empty", StringUtils.isBlank(event.getComponentId()));
 		Assert.assertEquals("Values must be equal", 0, event.getTimestamp());
@@ -45,16 +45,16 @@ public class ComponentMessageProcessingEventTest {
 	}
 	
 	/**
-	 * Test case for {@link ComponentMessageProcessingEvent#fromBytes(byte[])} being provided a 
+	 * Test case for {@link ComponentMessageStatsEvent#fromBytes(byte[])} being provided a 
 	 * valid event 
 	 */
 	@Test
 	public void testFromBytes_withValidEvent() {
 		
-		ComponentMessageProcessingEvent inEvent = new ComponentMessageProcessingEvent("test-id", true, 123, 456, 789);
+		ComponentMessageStatsEvent inEvent = new ComponentMessageStatsEvent("test-id", true, 123, 456, 789);
 		byte[] inEventContent = inEvent.toBytes();
 		
-		ComponentMessageProcessingEvent event = ComponentMessageProcessingEvent.fromBytes(inEventContent);
+		ComponentMessageStatsEvent event = ComponentMessageStatsEvent.fromBytes(inEventContent);
 		Assert.assertNotNull("The event must not be null", event);
 		Assert.assertEquals("Values must be equal", "test-id", event.getComponentId());
 		Assert.assertEquals("Values must be equal", 789, event.getTimestamp());
