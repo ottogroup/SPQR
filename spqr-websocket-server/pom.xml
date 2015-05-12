@@ -27,7 +27,7 @@
 
 	<properties>
 		<websocket.api.version>1.0</websocket.api.version>
-		<websocket.client.version>9.0.7.v20131107</websocket.client.version>
+		<websocket.client.version>9.2.9.v20150224</websocket.client.version>
 	</properties>
   
   	<dependencies>
@@ -42,7 +42,13 @@
         	<groupId>org.eclipse.jetty.websocket</groupId>
             <artifactId>websocket-client</artifactId>
             <version>${websocket.client.version}</version>
-		</dependency>  	
+		</dependency>
+		
+		<dependency>
+			<groupId>org.eclipse.jetty</groupId>
+			<artifactId>jetty-util</artifactId>
+			<version>${websocket.client.version}</version>
+		</dependency>
 
 		<!-- junit -->
 		<dependency>
