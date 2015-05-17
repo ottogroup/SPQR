@@ -15,6 +15,7 @@
  */
 package com.ottogroup.bi.spqr.pipeline.component.source;
 
+import java.util.Timer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -24,14 +25,16 @@ import org.apache.log4j.Logger;
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
 import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueProducer;
-import com.ottogroup.bi.spqr.pipeline.statistics.ComponentMessageStatsEvent;
+import com.ottogroup.bi.spqr.pipeline.statistics.AggregatedComponentStatistics;
+import com.ottogroup.bi.spqr.pipeline.statistics.ComponentStatsSupport;
+import com.ottogroup.bi.spqr.pipeline.statistics.ComponentStatsTriggerTask;
 
 /**
  * Runtime environment for {@link Source} instances
  * @author mnxfst
  * @since Mar 5, 2015
  */
-public class SourceRuntimeEnvironment implements Runnable, IncomingMessageCallback {
+public class SourceRuntimeEnvironment implements Runnable, IncomingMessageCallback, ComponentStatsSupport {
 
 	/** our faithful logging facility ... ;-) */ 
 	private static final Logger logger = Logger.getLogger(SourceRuntimeEnvironment.class);
@@ -53,7 +56,9 @@ public class SourceRuntimeEnvironment implements Runnable, IncomingMessageCallba
 	/** local executor service? - must be shut down as well, otherwise the provider must take care of it */
 	private boolean localExecutorService = false;
 	/** stats container */
-	private final ComponentMessageStatsEvent statsEvent;
+	private final AggregatedComponentStatistics statsEvent;
+	/** timer triggering stats collection */
+	private final Timer statsCollectionTimer;
 
 	/**
 	 * Initializes the runtime environment using the provided input
@@ -79,7 +84,8 @@ public class SourceRuntimeEnvironment implements Runnable, IncomingMessageCallba
 	 * @param executorService
 	 * @throws RequiredInputMissingException
 	 */
-	public SourceRuntimeEnvironment(final String processingNodeId, final String pipelineId, final Source source, final StreamingMessageQueueProducer queueProducer, final StreamingMessageQueueProducer statsQueueProducer, final ExecutorService executorService) throws RequiredInputMissingException {
+	public SourceRuntimeEnvironment(final String processingNodeId, final String pipelineId, final Source source, final StreamingMessageQueueProducer queueProducer, 
+			final StreamingMessageQueueProducer statsQueueProducer, final ExecutorService executorService) throws RequiredInputMissingException {
 		
 		///////////////////////////////////////////////////////////////
 		// validate input
@@ -107,11 +113,15 @@ public class SourceRuntimeEnvironment implements Runnable, IncomingMessageCallba
 		this.statsQueueProducer = statsQueueProducer;
 		this.executorService = executorService;
 		
-		this.statsEvent = new ComponentMessageStatsEvent(this.sourceId, false, 0, 0, 0);
-		
+		this.statsEvent = new AggregatedComponentStatistics(this.sourceId, 0, 0, 
+				0, Integer.MAX_VALUE, Integer.MIN_VALUE, 0, Integer.MAX_VALUE, Integer.MIN_VALUE, 0, 0);
+		this.statsEvent.start();
 		this.executorService.submit(source);
 		if(logger.isDebugEnabled())
 			logger.debug("source runtime environment initialized [id="+source.getId()+"]");
+		
+		this.statsCollectionTimer = new Timer(true);
+		this.statsCollectionTimer.schedule(new ComponentStatsTriggerTask(this), 100, 100);
 	}
 
 	/**
@@ -125,17 +135,12 @@ public class SourceRuntimeEnvironment implements Runnable, IncomingMessageCallba
 	 */
 	public void onMessage(StreamingDataMessage message) {
 		long start = System.currentTimeMillis();
-		int bodySize = (message != null && message.getBody() != null ? message.getBody().length : 0);
 		this.queueProducer.insert(message);
 		this.queueProducer.getWaitStrategy().forceLockRelease();
 
 		////////////////////////////////////////////////////////
-		// prepare and export stats message
-		statsEvent.setDuration((int)(System.currentTimeMillis()-start));
-		statsEvent.setError(false);
-		statsEvent.setSize(bodySize);
-		statsEvent.setTimestamp(System.currentTimeMillis());
-		this.statsQueueProducer.insert(new StreamingDataMessage(statsEvent.toBytes(), System.currentTimeMillis()));
+		// stats handling
+		this.statsEvent.addEvent((int)(System.currentTimeMillis()-start), (message != null && message.getBody() != null ? message.getBody().length : 0), false);
 		////////////////////////////////////////////////////////
 	}
 	
@@ -160,6 +165,15 @@ public class SourceRuntimeEnvironment implements Runnable, IncomingMessageCallba
 		
 		if(logger.isDebugEnabled())
 			logger.debug("source shutdown [node="+this.processingNodeId+", pipeline="+this.pipelineId+", source="+this.sourceId+"]");
+	}
+
+	/**
+	 * @see com.ottogroup.bi.spqr.pipeline.statistics.ComponentStatsSupport#collectAndForwardStats()
+	 */
+	public void collectAndForwardStats() {
+		this.statsEvent.finish();
+		this.statsQueueProducer.insert(new StreamingDataMessage(this.statsEvent.toBytes(), System.currentTimeMillis()));
+		this.statsEvent.start();
 	}
 	
 }

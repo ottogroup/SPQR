@@ -65,6 +65,10 @@ public class DefaultStreamingMessageQueue implements StreamingMessageQueue {
 	/** wait strategy applied on this queue */
 	private StreamingMessageQueueWaitStrategy queueWaitStrategy = null;
 
+	public long getSize() {
+		return chronicle.size();
+	}
+	
 	/**
 	 * @see com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueue#initialize(java.util.Properties)
 	 */

@@ -15,6 +15,8 @@
  */
 package com.ottogroup.bi.spqr.pipeline.component.emitter;
 
+import java.util.Timer;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -23,7 +25,9 @@ import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConsumer;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueProducer;
 import com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueWaitStrategy;
-import com.ottogroup.bi.spqr.pipeline.statistics.ComponentMessageStatsEvent;
+import com.ottogroup.bi.spqr.pipeline.statistics.AggregatedComponentStatistics;
+import com.ottogroup.bi.spqr.pipeline.statistics.ComponentStatsSupport;
+import com.ottogroup.bi.spqr.pipeline.statistics.ComponentStatsTriggerTask;
 
 /**
  * Provides a runtime environment for {@link Emitter} instances. The environment retrieves all
@@ -32,7 +36,7 @@ import com.ottogroup.bi.spqr.pipeline.statistics.ComponentMessageStatsEvent;
  * @author mnxfst
  *
  */
-public class EmitterRuntimeEnvironment implements Runnable {
+public class EmitterRuntimeEnvironment implements Runnable, ComponentStatsSupport {
 
 	/** our faithful logging facility ... ;-) */ 
 	private static final Logger logger = Logger.getLogger(EmitterRuntimeEnvironment.class);
@@ -51,6 +55,11 @@ public class EmitterRuntimeEnvironment implements Runnable {
 	private final StreamingMessageQueueProducer statsQueueProducer;
 	/** indicates whether the environment is still running */
 	private boolean running = false;
+	/** stats counter */
+	private final AggregatedComponentStatistics statsEvent;
+	/** timer triggering stats collection */
+	private final Timer statsCollectionTimer;
+
 
 	/**
 	 * Initializes the runtime environment using the provided input
@@ -60,7 +69,8 @@ public class EmitterRuntimeEnvironment implements Runnable {
 	 * @param queueConsumer
 	 * @throws RequiredInputMissingException
 	 */
-	public EmitterRuntimeEnvironment(final String processingNodeId, final String pipelineId, final Emitter emitter, final StreamingMessageQueueConsumer queueConsumer, final StreamingMessageQueueProducer statsQueueProducer) throws RequiredInputMissingException {
+	public EmitterRuntimeEnvironment(final String processingNodeId, final String pipelineId, final Emitter emitter, 
+			final StreamingMessageQueueConsumer queueConsumer, final StreamingMessageQueueProducer statsQueueProducer) throws RequiredInputMissingException {
 		
 		///////////////////////////////////////////////////////////////////
 		// validate input
@@ -84,6 +94,13 @@ public class EmitterRuntimeEnvironment implements Runnable {
 		this.queueConsumer = queueConsumer;
 		this.statsQueueProducer = statsQueueProducer;
 		
+		this.statsEvent = new AggregatedComponentStatistics(this.emitterId, 0, 0, 
+				0, Integer.MAX_VALUE, Integer.MIN_VALUE, 0, Integer.MAX_VALUE, Integer.MIN_VALUE, 0, 0);
+		this.statsEvent.start();
+		
+		this.statsCollectionTimer = new Timer(true);
+		this.statsCollectionTimer.schedule(new ComponentStatsTriggerTask(this), 100, 100);
+
 		this.running = true;
 		
 		if(logger.isDebugEnabled())
@@ -97,33 +114,27 @@ public class EmitterRuntimeEnvironment implements Runnable {
 	public void run() {
 		
 		// initialize stats counter and timer
-		final ComponentMessageStatsEvent statsEvent = new ComponentMessageStatsEvent(this.emitterId, false, 0, 0, 0);
 		long start = 0;
 		int bodySize = 0;
 
 		// fetch the wait strategy attached to the queue (provided through the queue consumer)
 		StreamingMessageQueueWaitStrategy queueWaitStrategy = this.queueConsumer.getWaitStrategy();
-		
 		while(running) {
 
 			start = 0;
 			bodySize = 0;
-
 			try {
 				// fetch message from queue consumer via strategy
 				StreamingDataMessage message = queueWaitStrategy.waitFor(this.queueConsumer);
 				start = System.currentTimeMillis();
 				if(message != null && message.getBody() != null) {
-					this.emitter.onMessage(message);			
+					this.emitter.onMessage(message);
 					bodySize = message.getBody().length;
 				} 
+
 				////////////////////////////////////////////////////////
-				// prepare and export stats message
-				statsEvent.setDuration((int)(System.currentTimeMillis()-start));
-				statsEvent.setError(false);
-				statsEvent.setSize(bodySize);
-				statsEvent.setTimestamp(System.currentTimeMillis());
-				this.statsQueueProducer.insert(new StreamingDataMessage(statsEvent.toBytes(), System.currentTimeMillis()));
+				// stats handling
+				statsEvent.addEvent((int)(System.currentTimeMillis()-start), bodySize, false);
 				////////////////////////////////////////////////////////
 			} catch(InterruptedException e) {
 				// do nothing - waiting was interrupted				
@@ -132,12 +143,8 @@ public class EmitterRuntimeEnvironment implements Runnable {
 				// TODO add handler for responding to errors
 				
 				////////////////////////////////////////////////////////
-				// prepare and export stats message
-				statsEvent.setDuration(0);
-				statsEvent.setError(true);
-				statsEvent.setSize(bodySize);
-				statsEvent.setTimestamp(System.currentTimeMillis());
-				this.statsQueueProducer.insert(new StreamingDataMessage(statsEvent.toBytes(), System.currentTimeMillis()));
+				// stats handling
+				statsEvent.addEvent((int)(System.currentTimeMillis()-start), bodySize, true);
 				////////////////////////////////////////////////////////
 			}
 		}		
@@ -163,6 +170,15 @@ public class EmitterRuntimeEnvironment implements Runnable {
 	 */
 	public boolean isRunning() {
 		return running;
+	}
+
+	/**
+	 * @see com.ottogroup.bi.spqr.pipeline.statistics.ComponentStatsSupport#collectAndForwardStats()
+	 */
+	public void collectAndForwardStats() {
+		this.statsEvent.finish();
+		this.statsQueueProducer.insert(new StreamingDataMessage(this.statsEvent.toBytes(), System.currentTimeMillis()));
+		this.statsEvent.start();
 	}
 
 }

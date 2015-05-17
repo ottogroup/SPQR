@@ -15,6 +15,8 @@
  */
 package com.ottogroup.bi.spqr.pipeline.component.operator;
 
+import java.util.Timer;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -23,7 +25,9 @@ import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConsumer;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueProducer;
 import com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueWaitStrategy;
-import com.ottogroup.bi.spqr.pipeline.statistics.ComponentMessageStatsEvent;
+import com.ottogroup.bi.spqr.pipeline.statistics.AggregatedComponentStatistics;
+import com.ottogroup.bi.spqr.pipeline.statistics.ComponentStatsSupport;
+import com.ottogroup.bi.spqr.pipeline.statistics.ComponentStatsTriggerTask;
 
 /**
  * Provides a runtime environment for {@link DirectResponseOperator} instances. The environment polls
@@ -34,7 +38,7 @@ import com.ottogroup.bi.spqr.pipeline.statistics.ComponentMessageStatsEvent;
  * @author mnxfst
  * @since Mar 5, 2015
  */
-public class DirectResponseOperatorRuntimeEnvironment implements Runnable {
+public class DirectResponseOperatorRuntimeEnvironment implements Runnable, ComponentStatsSupport {
 
 	/** our faithful logging facility ... ;-) */ 
 	private static final Logger logger = Logger.getLogger(DirectResponseOperatorRuntimeEnvironment.class);
@@ -59,6 +63,11 @@ public class DirectResponseOperatorRuntimeEnvironment implements Runnable {
 	private final StreamingMessageQueueWaitStrategy consumerQueueWaitStrategy;
 	/** destination queue wait strategy */
 	private final StreamingMessageQueueWaitStrategy destinationQueueWaitStrategy;
+	/** stats container */
+	private final AggregatedComponentStatistics statsEvent;
+	/** timer triggering stats collection */
+	private final Timer statsCollectionTimer;
+
 
 	/**
 	 * Initializes the operator runtime environment using the provided input
@@ -100,6 +109,13 @@ public class DirectResponseOperatorRuntimeEnvironment implements Runnable {
 		this.consumerQueueWaitStrategy = queueConsumer.getWaitStrategy();
 		this.destinationQueueWaitStrategy = queueProducer.getWaitStrategy();
 
+		this.statsEvent = new AggregatedComponentStatistics(this.operatorId, 0, 0, 
+				0, Integer.MAX_VALUE, Integer.MIN_VALUE, 0, Integer.MAX_VALUE, Integer.MIN_VALUE, 0, 0);
+		this.statsEvent.start();
+
+		this.statsCollectionTimer = new Timer(true);
+		this.statsCollectionTimer.schedule(new ComponentStatsTriggerTask(this), 100, 100);
+
 		if(logger.isDebugEnabled())
 			logger.debug("direct response operator init [node="+this.processingNodeId+", pipeline="+this.pipelineId+", operator="+this.operatorId+"]");
 	}
@@ -110,8 +126,6 @@ public class DirectResponseOperatorRuntimeEnvironment implements Runnable {
 	public void run() {
 
 		// initialize stats counter and timer
-		final ComponentMessageStatsEvent statsEvent = new ComponentMessageStatsEvent(this.operatorId, false, 0, 0, 0);
-
 		long start = 0;
 		int bodySize = 0;
 		
@@ -136,12 +150,8 @@ public class DirectResponseOperatorRuntimeEnvironment implements Runnable {
 				}
 
 				////////////////////////////////////////////////////////
-				// prepare and export stats message
-				statsEvent.setDuration((int)(System.currentTimeMillis()-start));
-				statsEvent.setError(false);
-				statsEvent.setSize(bodySize);
-				statsEvent.setTimestamp(System.currentTimeMillis());
-				this.statsQueueProducer.insert(new StreamingDataMessage(statsEvent.toBytes(), System.currentTimeMillis()));
+				// stats handling
+				statsEvent.addEvent((int)(System.currentTimeMillis()-start), bodySize, false);
 				////////////////////////////////////////////////////////
 				
 			} catch(InterruptedException e) {
@@ -150,12 +160,8 @@ public class DirectResponseOperatorRuntimeEnvironment implements Runnable {
 				logger.error("processing error [node="+this.processingNodeId+", pipeline="+this.pipelineId+", operator="+this.operatorId+"]: " + e.getMessage(), e);
 				
 				////////////////////////////////////////////////////////
-				// prepare and export stats message
-				statsEvent.setDuration(0);
-				statsEvent.setError(true);
-				statsEvent.setSize(bodySize);
-				statsEvent.setTimestamp(System.currentTimeMillis());
-				this.statsQueueProducer.insert(new StreamingDataMessage(statsEvent.toBytes(), System.currentTimeMillis()));
+				// stats handling 
+				statsEvent.addEvent((int)(System.currentTimeMillis()-start), bodySize, true);
 				////////////////////////////////////////////////////////
 
 				// TODO add handler for responding to errors 
@@ -186,5 +192,12 @@ public class DirectResponseOperatorRuntimeEnvironment implements Runnable {
 		return running;
 	}
 	
-
+	/**
+	 * @see com.ottogroup.bi.spqr.pipeline.statistics.ComponentStatsSupport#collectAndForwardStats()
+	 */
+	public void collectAndForwardStats() {
+		this.statsEvent.finish();
+		this.statsQueueProducer.insert(new StreamingDataMessage(this.statsEvent.toBytes(), System.currentTimeMillis()));
+		this.statsEvent.start();
+	}
 }

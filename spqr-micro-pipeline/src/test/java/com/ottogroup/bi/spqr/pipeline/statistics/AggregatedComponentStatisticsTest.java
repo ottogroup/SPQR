@@ -32,11 +32,13 @@ public class AggregatedComponentStatisticsTest {
 	@Test
 	public void testToAndFromBytes_withValidInput() {
 		
+		int hidSize = "node".getBytes().length;
+		int pidSize = "pipe".getBytes().length;
 		int idSize = "test".getBytes().length;
 		
-		int expectedArraySize = idSize + 9 * AggregatedComponentStatistics.SIZE_OF_INT + 2 * AggregatedComponentStatistics.SIZE_OF_LONG;
+		int expectedArraySize = hidSize + pidSize + idSize + 2 * AggregatedComponentStatistics.SIZE_OF_DOUBLE + 9 * AggregatedComponentStatistics.SIZE_OF_INT + 2 * AggregatedComponentStatistics.SIZE_OF_LONG;
 		
-		AggregatedComponentStatistics stats = new AggregatedComponentStatistics("test", 123, 456, 654, 789, 987, 456, 908, 809, 989, 2);
+		AggregatedComponentStatistics stats = new AggregatedComponentStatistics("node", "pipe", "test", 123, 456, 654, 789, 987, 456, 908, 809, 989, 2);
 		byte[] content = stats.toBytes();
 		Assert.assertNotNull("Must not be null", content);
 		Assert.assertEquals("Values must be equal", expectedArraySize, content.length);
@@ -45,15 +47,18 @@ public class AggregatedComponentStatisticsTest {
 		Assert.assertNotNull("Must not be null", reStats);
 		Assert.assertEquals("Values must be equal", stats.getEndTime(), reStats.getEndTime());
 		Assert.assertEquals("Values must be equal", stats.getStartTime(), reStats.getStartTime());
-		Assert.assertEquals("Values must be equal", stats.getAvgDuration(), reStats.getAvgDuration());
-		Assert.assertEquals("Values must be equal", stats.getAvgSize(), reStats.getAvgSize());
+		Assert.assertEquals("Values must be equal", Double.valueOf(stats.getAvgDuration()), Double.valueOf(reStats.getAvgDuration()));
+		Assert.assertEquals("Values must be equal", Double.valueOf(stats.getAvgSize()), Double.valueOf(reStats.getAvgSize()));
 		Assert.assertEquals("Values must be equal", stats.getComponentId(), reStats.getComponentId());
+		Assert.assertEquals("Values must be equal", stats.getPipelineId(), reStats.getPipelineId());
+		Assert.assertEquals("Values must be equal", stats.getProcessingNodeId(), reStats.getProcessingNodeId());
 		Assert.assertEquals("Values must be equal", stats.getErrors(), reStats.getErrors());
 		Assert.assertEquals("Values must be equal", stats.getMaxDuration(), reStats.getMaxDuration());
 		Assert.assertEquals("Values must be equal", stats.getMaxSize(), reStats.getMaxSize());
 		Assert.assertEquals("Values must be equal", stats.getMinDuration(), reStats.getMinDuration());
 		Assert.assertEquals("Values must be equal", stats.getMinSize(), reStats.getMinSize());
 		Assert.assertEquals("Values must be equal", stats.getNumOfMessages(), reStats.getNumOfMessages());
+		
 	}
 	
 }

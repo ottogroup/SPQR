@@ -15,6 +15,7 @@
  */
 package com.ottogroup.bi.spqr.pipeline;
 
+import java.nio.channels.Pipe;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
@@ -46,6 +47,7 @@ import com.ottogroup.bi.spqr.pipeline.exception.UnknownWaitStrategyException;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueue;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConfiguration;
 import com.ottogroup.bi.spqr.pipeline.queue.chronicle.DefaultStreamingMessageQueue;
+import com.ottogroup.bi.spqr.pipeline.statistics.ComponentStatsEventCollector;
 import com.ottogroup.bi.spqr.repository.ComponentRepository;
 
 /**
@@ -132,14 +134,20 @@ public class MicroPipelineFactory {
 			}
 		}
 		
+		final StreamingMessageQueue statsQueue;
 		try {
-			microPipeline.addQueue(MicroPipeline.STATISTICS_QUEUE_NAME, initializeQueue(new StreamingMessageQueueConfiguration(MicroPipeline.STATISTICS_QUEUE_NAME)));
+			statsQueue = initializeQueue(new StreamingMessageQueueConfiguration(MicroPipeline.STATISTICS_QUEUE_NAME));
+			microPipeline.addQueue(MicroPipeline.STATISTICS_QUEUE_NAME, statsQueue);
 			logger.info("statistics queue initialized");			
 		} catch(Exception e) {
 			logger.error("statistics queue initialization failed [id="+MicroPipeline.STATISTICS_QUEUE_NAME+"]. Forcing shutdown of all queues.");
 			microPipeline.shutdown();
 			throw new QueueInitializationFailedException("Failed to initialize queue [id="+MicroPipeline.STATISTICS_QUEUE_NAME+"]. Reason: " + e.getMessage(), e);
 		}
+		
+		final ComponentStatsEventCollector statsCollector = new ComponentStatsEventCollector(this.processingNodeId, cfg.getId(), 500, statsQueue.getConsumer(), statsQueue.getConsumer().getWaitStrategy(), 8192);
+		
+		microPipeline.attachComponentStatsCollector(statsCollector);
 		
 		///////////////////////////////////////////////////////////////////////////////////
 
@@ -236,6 +244,9 @@ public class MicroPipelineFactory {
 			if(logger.isDebugEnabled())
 				logger.debug("Started runtime environment for emitter [id="+emitterId+"]");
 		}
+		executorService.submit(microPipeline.getStatsCollector());
+		if(logger.isDebugEnabled())
+			logger.debug("Started stats collector");
 		//
 		///////////////////////////////////////////////////////////////////////////////////
 		

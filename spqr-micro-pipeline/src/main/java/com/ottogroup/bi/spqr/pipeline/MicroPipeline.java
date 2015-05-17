@@ -26,6 +26,9 @@ import com.ottogroup.bi.spqr.pipeline.component.operator.DelayedResponseOperator
 import com.ottogroup.bi.spqr.pipeline.component.operator.DirectResponseOperatorRuntimeEnvironment;
 import com.ottogroup.bi.spqr.pipeline.component.source.SourceRuntimeEnvironment;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueue;
+import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConsumer;
+import com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueWaitStrategy;
+import com.ottogroup.bi.spqr.pipeline.statistics.ComponentStatsEventCollector;
 
 /**
  * Provides a runtime container for {@link MicroPipelineComponent} instances interconnected 
@@ -52,6 +55,8 @@ public class MicroPipeline {
 	private final Map<String, EmitterRuntimeEnvironment> emitters = new HashMap<>();
 	/** references to queues interconnecting the components */
 	private final Map<String, StreamingMessageQueue> queues = new HashMap<>();
+	/** stats collector */
+	private ComponentStatsEventCollector statsCollector = null;
 	
 	/**
 	 * Initializes the micro pipeline instance using the provided input 
@@ -59,6 +64,14 @@ public class MicroPipeline {
 	 */
 	public MicroPipeline(final String id) {
 		this.id = id;
+	}
+	
+	/**
+	 * Attaches the referenced {@link ComponentStatsEventCollector} to this micro pipeline
+	 * @param componentStatsCollector
+	 */
+	public void attachComponentStatsCollector(final ComponentStatsEventCollector componentStatsCollector) {		
+		this.statsCollector = componentStatsCollector;
 	}
 	
 	/**
@@ -244,6 +257,10 @@ public class MicroPipeline {
 
 	public Map<String, StreamingMessageQueue> getQueues() {
 		return queues;
+	}
+
+	public ComponentStatsEventCollector getStatsCollector() {
+		return statsCollector;
 	}
 	
 	

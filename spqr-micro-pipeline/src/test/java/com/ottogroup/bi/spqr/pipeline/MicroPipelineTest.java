@@ -31,6 +31,7 @@ import com.ottogroup.bi.spqr.pipeline.component.source.RandomNumberTestSource;
 import com.ottogroup.bi.spqr.pipeline.component.source.Source;
 import com.ottogroup.bi.spqr.pipeline.component.source.SourceRuntimeEnvironment;
 import com.ottogroup.bi.spqr.pipeline.queue.chronicle.DefaultStreamingMessageQueue;
+import com.ottogroup.bi.spqr.pipeline.statistics.ComponentStatsEventCollector;
 
 /**
  * Test case for {@link MicroPipeline}
@@ -56,11 +57,11 @@ public class MicroPipelineTest {
 	@Test
 	public void test_performance1() throws Exception {
 	
-		if(true)
+		if(false)
 			return;
 		
 		@SuppressWarnings("unused")
-		final int numGeneratedMessages = 10000000;
+		final int numGeneratedMessages = 200000;
 		
 		final String msg = "";
 		
@@ -106,16 +107,22 @@ public class MicroPipelineTest {
 		pipeline.addQueue(queue.getId(), queue);		
 		pipeline.addSource(source.getId(), srcEnv);
 		pipeline.addEmitter(emitter.getId(), emitterEnv);
+		pipeline.attachComponentStatsCollector(new ComponentStatsEventCollector("node", "pipe", 50, statsQueue.getConsumer(), statsQueue.getConsumer().getWaitStrategy(), 100000));
+		
 		long s1 = System.currentTimeMillis();
+		executorService.submit(pipeline.getStatsCollector());
 		executorService.submit(emitterEnv);
 		executorService.submit(srcEnv);
+		
 		while(!latch.await(5000, TimeUnit.MILLISECONDS));
 		long s2 = System.currentTimeMillis();
-		
+		System.out.println("size: " +statsQueue.getSize());
 		long duration = s2-s1;
 		
 		System.out.println(numGeneratedMessages + " messages transferred in " + duration + "ms. Throughput: " + ((double)numGeneratedMessages / (double)duration)+" msg/ms");
 		
+		System.in.read();
+		executorService.shutdownNow();
 		
 		
 	}

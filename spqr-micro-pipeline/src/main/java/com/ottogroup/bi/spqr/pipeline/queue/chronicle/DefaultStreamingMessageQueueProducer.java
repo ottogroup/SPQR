@@ -51,13 +51,16 @@ public class DefaultStreamingMessageQueueProducer implements
 	 */
 	public boolean insert(StreamingDataMessage message) {
 		
+		// TODO add type of concurrent queue to handle multiple writers properly. the queue elements are to inserted async' to chronicle   
 		if(message != null) {
-			queueProducer.startExcerpt();
-			queueProducer.writeLong(message.getTimestamp());
-			queueProducer.writeInt(message.getBody().length);
-			queueProducer.write(message.getBody());
-			queueProducer.finish();
-			return true;
+			synchronized (queueProducer) {
+				queueProducer.startExcerpt();
+				queueProducer.writeLong(message.getTimestamp());
+				queueProducer.writeInt(message.getBody().length);
+				queueProducer.write(message.getBody());
+				queueProducer.finish();
+				return true;
+			}
 		}
 		
 		return false;

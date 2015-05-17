@@ -54,11 +54,11 @@ public class ComponentStatsEventCollector implements Runnable {
 	/** internal buffer size */
 	private final int internalBufferSize;
 	/** cache to hold all incoming message processing event */
-	private final ConcurrentLinkedQueue<ComponentMessageStatsEvent> processingEvents;
+	private final Map<String, AggregatedComponentStatistics> processingEvents;
 	/** indicates whether the collector is running or not */
 	private boolean running = false;
 	/** counter for tracking number of received messages */
-	private final AtomicInteger messageCounter;
+	private AtomicInteger messageCounter;
 	/** last aggregation */
 	private long lastAggregationRun;
 	
@@ -70,17 +70,13 @@ public class ComponentStatsEventCollector implements Runnable {
 		this.statsQueueConsumer = statsQueueConsumer;
 		this.statsQueueWaitStrategy = statsQueueWaitStrategy;
 		this.internalBufferSize = internalBufferSize;
-		this.processingEvents = new ConcurrentLinkedQueue<>();
+		this.processingEvents = new ConcurrentLinkedQueue<ComponentMessageStatsEvent>();
 		this.running = true;
-		this.messageCounter = new AtomicInteger(internalBufferSize);
+		this.messageCounter = new AtomicInteger(0);
 		this.lastAggregationRun = System.currentTimeMillis();
 
 		this.statsAggregationTimer = new Timer(pipelineId+"-stats-collector", true);
-		this.statsAggregationTimer.schedule(new TimerTask() {
-			public void run() {
-				aggregate();
-			}
-		}, aggregateDuration, aggregateDuration);
+		this.statsAggregationTimer.schedule(new Runner(this), aggregateDuration, aggregateDuration);
 		
 		if(logger.isDebugEnabled())
 			logger.debug("stats event collector init [node="+this.processingNodeId+", pipeline="+this.pipelineId+", aggrDur="+aggregateDuration+", bufSize="+internalBufferSize+"]");
@@ -91,16 +87,20 @@ public class ComponentStatsEventCollector implements Runnable {
 	 * to attached sink
 	 */
 	public void aggregate() {
-
 		// if there do not exist any events, reset the counter (just to be sure) and return flow control to caller
 		if(this.processingEvents.isEmpty()) {
 			this.messageCounter.getAndSet(0);
 			return;
 		}
-			
+		
 		// retrieve all events, clear the queue and reset message counter 
-		ComponentMessageStatsEvent[] events = (ComponentMessageStatsEvent[])this.processingEvents.toArray();
-		this.processingEvents.clear(); // TODO check for deadlocks as clearing means polling til last element is reached
+		ComponentMessageStatsEvent[] events = (ComponentMessageStatsEvent[])this.processingEvents.toArray(new ComponentMessageStatsEvent[0]);
+
+		for(int i = 0; i < events.length; i++)
+			this.processingEvents.poll();
+
+		System.out.println(this.processingEvents.size());
+		//		this.processingEvents.clear(); // TODO check for deadlocks as clearing means polling til last element is reached
 		this.messageCounter.getAndSet(0);
 
 		Map<String, AggregatedComponentStatistics> components = new HashMap<String, AggregatedComponentStatistics>();
@@ -128,7 +128,7 @@ public class ComponentStatsEventCollector implements Runnable {
 		
 		for(String cid : components.keySet() ) {
 			AggregatedComponentStatistics cstats = components.get(cid);
-			logger.info("[cid="+cstats.getComponentId()+", start="+cstats.getStartTime()+", end="+cstats.getEndTime()+", msgs="+cstats.getNumOfMessages()+", errs="+cstats.getErrors()+
+			System.out.println("[cid="+cstats.getComponentId()+", start="+cstats.getStartTime()+", end="+cstats.getEndTime()+", msgs="+cstats.getNumOfMessages()+", errs="+cstats.getErrors()+
 					", minSize="+cstats.getMinSize()+", maxSize="+cstats.getMaxSize()+ ", avgSize="+cstats.getAvgSize() + 
 					", minDur="+cstats.getMinDuration() +", maxDur="+cstats.getMaxDuration()+", avgDur="+cstats.getAvgDuration()+"]");
 		}
@@ -136,6 +136,7 @@ public class ComponentStatsEventCollector implements Runnable {
 	
 	public void run() {
 		while(running) {
+			
 			try {
 				final StreamingDataMessage message = this.statsQueueWaitStrategy.waitFor(this.statsQueueConsumer);
 				if(this.messageCounter.get() < this.internalBufferSize) {
@@ -144,6 +145,7 @@ public class ComponentStatsEventCollector implements Runnable {
 						this.messageCounter.incrementAndGet();
 					}
 				} else {
+					System.out.println("stats queue full [node="+this.processingNodeId+", pipeline="+this.pipelineId+", bufSize="+this.internalBufferSize+"]");
 					logger.error("stats queue full [node="+this.processingNodeId+", pipeline="+this.pipelineId+", bufSize="+this.internalBufferSize+"]");
 				}
 			} catch(InterruptedException e) {
