@@ -79,7 +79,7 @@ public class DirectResponseOperatorRuntimeEnvironment implements Runnable, Compo
 	 * @param statsQueueProducer
 	 */
 	public DirectResponseOperatorRuntimeEnvironment(final String processingNodeId, final String pipelineId, final DirectResponseOperator directResponseOperator, final StreamingMessageQueueConsumer queueConsumer, 
-			final StreamingMessageQueueProducer queueProducer, final StreamingMessageQueueProducer statsQueueProducer) throws RequiredInputMissingException {
+			final StreamingMessageQueueProducer queueProducer, final StreamingMessageQueueProducer statsQueueProducer, final long statsCollectionDelay) throws RequiredInputMissingException {
 		
 		/////////////////////////////////////////////////////////////
 		// input validation
@@ -109,12 +109,12 @@ public class DirectResponseOperatorRuntimeEnvironment implements Runnable, Compo
 		this.consumerQueueWaitStrategy = queueConsumer.getWaitStrategy();
 		this.destinationQueueWaitStrategy = queueProducer.getWaitStrategy();
 
-		this.statsEvent = new AggregatedComponentStatistics(this.operatorId, 0, 0, 
+		this.statsEvent = new AggregatedComponentStatistics(this.processingNodeId, this.pipelineId, this.operatorId, 0, 0, 
 				0, Integer.MAX_VALUE, Integer.MIN_VALUE, 0, Integer.MAX_VALUE, Integer.MIN_VALUE, 0, 0);
 		this.statsEvent.start();
 
 		this.statsCollectionTimer = new Timer(true);
-		this.statsCollectionTimer.schedule(new ComponentStatsTriggerTask(this), 100, 100);
+		this.statsCollectionTimer.schedule(new ComponentStatsTriggerTask(this), (statsCollectionDelay > 0 ? statsCollectionDelay : 1000), (statsCollectionDelay > 0 ? statsCollectionDelay : 1000));
 
 		if(logger.isDebugEnabled())
 			logger.debug("direct response operator init [node="+this.processingNodeId+", pipeline="+this.pipelineId+", operator="+this.operatorId+"]");
@@ -198,6 +198,7 @@ public class DirectResponseOperatorRuntimeEnvironment implements Runnable, Compo
 	public void collectAndForwardStats() {
 		this.statsEvent.finish();
 		this.statsQueueProducer.insert(new StreamingDataMessage(this.statsEvent.toBytes(), System.currentTimeMillis()));
+		this.statsQueueProducer.getWaitStrategy().forceLockRelease();
 		this.statsEvent.start();
 	}
 }

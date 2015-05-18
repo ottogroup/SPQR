@@ -57,13 +57,13 @@ public class MicroPipelineTest {
 	@Test
 	public void test_performance1() throws Exception {
 	
-		if(false)
+		if(true)
 			return;
 		
 		@SuppressWarnings("unused")
-		final int numGeneratedMessages = 200000;
+		final int numGeneratedMessages = 20000000;
 		
-		final String msg = "";
+		final String msg = "wtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtf";
 		
 		final CountDownLatch latch = new CountDownLatch(numGeneratedMessages);
 
@@ -89,7 +89,7 @@ public class MicroPipelineTest {
 		source.initialize(rndGenProps);
 		source.setId("test_performance1_source");
 		
-		SourceRuntimeEnvironment srcEnv = new SourceRuntimeEnvironment("node", "pipe", source, queue.getProducer(), statsQueue.getProducer());
+		SourceRuntimeEnvironment srcEnv = new SourceRuntimeEnvironment("node", "pipe", source, queue.getProducer(), statsQueue.getProducer(), 100);
 
 		///////////////////////////////////////////////////////////////////////
 		// emitter
@@ -101,16 +101,17 @@ public class MicroPipelineTest {
 		emitter.setId("test_performance1_emitter");
 		emitter.initialize(emitterProps);
 		
-		EmitterRuntimeEnvironment emitterEnv = new EmitterRuntimeEnvironment("node", "pipe", emitter, queue.getConsumer(), statsQueue.getProducer());
+		EmitterRuntimeEnvironment emitterEnv = new EmitterRuntimeEnvironment("node", "pipe", emitter, queue.getConsumer(), statsQueue.getProducer(), 100);
 		
 		MicroPipeline pipeline = new MicroPipeline("test_performance1");
 		pipeline.addQueue(queue.getId(), queue);		
 		pipeline.addSource(source.getId(), srcEnv);
 		pipeline.addEmitter(emitter.getId(), emitterEnv);
-		pipeline.attachComponentStatsCollector(new ComponentStatsEventCollector("node", "pipe", 50, statsQueue.getConsumer(), statsQueue.getConsumer().getWaitStrategy(), 100000));
+		ComponentStatsEventCollector collector = new ComponentStatsEventCollector("node", "pipe", statsQueue.getConsumer(), statsQueue.getConsumer().getWaitStrategy());
+		pipeline.attachComponentStatsCollector(collector);
 		
 		long s1 = System.currentTimeMillis();
-		executorService.submit(pipeline.getStatsCollector());
+		executorService.submit(collector);
 		executorService.submit(emitterEnv);
 		executorService.submit(srcEnv);
 		
@@ -121,8 +122,11 @@ public class MicroPipelineTest {
 		
 		System.out.println(numGeneratedMessages + " messages transferred in " + duration + "ms. Throughput: " + ((double)numGeneratedMessages / (double)duration)+" msg/ms");
 		
-		System.in.read();
+//		System.in.read();
+		System.out.println(collector.getMessageCount());
+		collector.shutdown();
 		executorService.shutdownNow();
+		System.out.println("Count: " +collector.getMessageCount());
 		
 		
 	}

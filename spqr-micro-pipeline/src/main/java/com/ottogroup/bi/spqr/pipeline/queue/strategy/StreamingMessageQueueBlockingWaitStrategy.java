@@ -44,12 +44,12 @@ public class StreamingMessageQueueBlockingWaitStrategy implements StreamingMessa
 	 */
 	public StreamingDataMessage waitFor(StreamingMessageQueueConsumer queue) throws InterruptedException {
 		
-		StreamingDataMessage message = null;		
+		StreamingDataMessage message = null;
 		if((message = queue.next()) == null) {
 			
 			// acquire lock			
 			lock.lock();
-			try {				
+			try {
 				// try to fetch the next element from the queue.
 				// if there is no entry available, wait for external notification (forceLockRelease required)
 				while((message = queue.next()) == null) {

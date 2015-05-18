@@ -49,7 +49,7 @@ public class SourceRuntimeEnvironmentTest {
 		StreamingMessageQueueProducer mockProducer = Mockito.mock(StreamingMessageQueueProducer.class);
 		StreamingMessageQueueProducer mockStatsProducer = Mockito.mock(StreamingMessageQueueProducer.class);
 		try {			
-			new SourceRuntimeEnvironment(null, "pipe", mockSource, mockProducer, mockStatsProducer);
+			new SourceRuntimeEnvironment(null, "pipe", mockSource, mockProducer, mockStatsProducer, 100);
 			Assert.fail("Missing required input");
 		} catch(RequiredInputMissingException e) {
 			// expected
@@ -66,7 +66,7 @@ public class SourceRuntimeEnvironmentTest {
 		StreamingMessageQueueProducer mockProducer = Mockito.mock(StreamingMessageQueueProducer.class);
 		StreamingMessageQueueProducer mockStatsProducer = Mockito.mock(StreamingMessageQueueProducer.class);
 		try {			
-			new SourceRuntimeEnvironment("node", null, mockSource, mockProducer, mockStatsProducer);
+			new SourceRuntimeEnvironment("node", null, mockSource, mockProducer, mockStatsProducer, 100);
 			Assert.fail("Missing required input");
 		} catch(RequiredInputMissingException e) {
 			// expected
@@ -82,7 +82,7 @@ public class SourceRuntimeEnvironmentTest {
 		StreamingMessageQueueProducer mockProducer = Mockito.mock(StreamingMessageQueueProducer.class);
 		StreamingMessageQueueProducer mockStatsProducer = Mockito.mock(StreamingMessageQueueProducer.class);
 		try {			
-			new SourceRuntimeEnvironment("node", "pipe", null, mockProducer, mockStatsProducer);
+			new SourceRuntimeEnvironment("node", "pipe", null, mockProducer, mockStatsProducer, 100);
 			Assert.fail("Missing required input");
 		} catch(RequiredInputMissingException e) {
 			// expected
@@ -98,7 +98,7 @@ public class SourceRuntimeEnvironmentTest {
 		Source mockSource = Mockito.mock(Source.class);
 		StreamingMessageQueueProducer mockStatsProducer = Mockito.mock(StreamingMessageQueueProducer.class);
 		try {			
-			new SourceRuntimeEnvironment("node", "pipe", mockSource, null, mockStatsProducer);
+			new SourceRuntimeEnvironment("node", "pipe", mockSource, null, mockStatsProducer, 100);
 			Assert.fail("Missing required input");
 		} catch(RequiredInputMissingException e) {
 			// expected
@@ -114,7 +114,7 @@ public class SourceRuntimeEnvironmentTest {
 		Source mockSource = Mockito.mock(Source.class);
 		StreamingMessageQueueProducer mockProducer = Mockito.mock(StreamingMessageQueueProducer.class);
 		try {			
-			new SourceRuntimeEnvironment("node", "pipe", mockSource, mockProducer, null);
+			new SourceRuntimeEnvironment("node", "pipe", mockSource, mockProducer, null, 100);
 			Assert.fail("Missing required input");
 		} catch(RequiredInputMissingException e) {
 			// expected
@@ -152,7 +152,7 @@ public class SourceRuntimeEnvironmentTest {
 		
 		SourceRuntimeEnvironment env = null;
 		try {
-			env = new SourceRuntimeEnvironment("node", "pipe", source, queue.getProducer(), statsQueueProducer);			
+			env = new SourceRuntimeEnvironment("node", "pipe", source, queue.getProducer(), statsQueueProducer, 100);			
 			svc.submit(env);
 			svc.submit(new Runnable() {
 				

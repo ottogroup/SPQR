@@ -233,6 +233,7 @@ public class AggregatedComponentStatistics implements Serializable {
 			this.minDuration = duration;
 		if(this.maxDuration < duration)
 			this.maxDuration = duration;
+		
 		this.durationCount = this.durationCount + duration;
 	}
 	
@@ -262,8 +263,8 @@ public class AggregatedComponentStatistics implements Serializable {
 	 */
 	public void finish() {
 		this.endTime = System.currentTimeMillis();
-		this.avgDuration = (double)this.durationCount / (double)numOfMessages;
-		this.avgSize = (double)this.sizeCount / (double)numOfMessages;
+		this.avgDuration = (numOfMessages > 0 ? (double)this.durationCount / (double)numOfMessages : 0.0);
+		this.avgSize = (numOfMessages > 0 ? (double)this.sizeCount / (double)numOfMessages : 0.0);
 	}
 
 	public String getProcessingNodeId() {

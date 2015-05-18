@@ -70,7 +70,8 @@ public class EmitterRuntimeEnvironment implements Runnable, ComponentStatsSuppor
 	 * @throws RequiredInputMissingException
 	 */
 	public EmitterRuntimeEnvironment(final String processingNodeId, final String pipelineId, final Emitter emitter, 
-			final StreamingMessageQueueConsumer queueConsumer, final StreamingMessageQueueProducer statsQueueProducer) throws RequiredInputMissingException {
+			final StreamingMessageQueueConsumer queueConsumer, final StreamingMessageQueueProducer statsQueueProducer,
+			final long statsCollectionDelay) throws RequiredInputMissingException {
 		
 		///////////////////////////////////////////////////////////////////
 		// validate input
@@ -94,12 +95,12 @@ public class EmitterRuntimeEnvironment implements Runnable, ComponentStatsSuppor
 		this.queueConsumer = queueConsumer;
 		this.statsQueueProducer = statsQueueProducer;
 		
-		this.statsEvent = new AggregatedComponentStatistics(this.emitterId, 0, 0, 
+		this.statsEvent = new AggregatedComponentStatistics(this.processingNodeId, this.pipelineId, this.emitterId, 0, 0, 
 				0, Integer.MAX_VALUE, Integer.MIN_VALUE, 0, Integer.MAX_VALUE, Integer.MIN_VALUE, 0, 0);
 		this.statsEvent.start();
 		
 		this.statsCollectionTimer = new Timer(true);
-		this.statsCollectionTimer.schedule(new ComponentStatsTriggerTask(this), 100, 100);
+		this.statsCollectionTimer.schedule(new ComponentStatsTriggerTask(this), (statsCollectionDelay > 0 ? statsCollectionDelay : 1000), (statsCollectionDelay > 0 ? statsCollectionDelay : 1000));
 
 		this.running = true;
 		
@@ -178,6 +179,7 @@ public class EmitterRuntimeEnvironment implements Runnable, ComponentStatsSuppor
 	public void collectAndForwardStats() {
 		this.statsEvent.finish();
 		this.statsQueueProducer.insert(new StreamingDataMessage(this.statsEvent.toBytes(), System.currentTimeMillis()));
+		this.statsQueueProducer.getWaitStrategy().forceLockRelease();
 		this.statsEvent.start();
 	}
 

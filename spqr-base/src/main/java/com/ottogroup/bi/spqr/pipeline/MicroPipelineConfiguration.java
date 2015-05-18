@@ -43,12 +43,21 @@ public class MicroPipelineConfiguration implements Serializable {
 	/** component configurations */
 	@JsonProperty(value="components", required=true)
 	private List<MicroPipelineComponentConfiguration> components = new ArrayList<>();
+	/** timer for collecting components stats */
+	@JsonProperty(value="statsCollectionTimer", required=true)
+	private long statsCollectionTimer = 1000;
 	
 	public String getId() {
 		return id;
 	}
 	public void setId(String id) {
 		this.id = id;
+	}
+	public long getStatsCollectionTimer() {
+		return statsCollectionTimer;
+	}
+	public void setStatsCollectionTimer(long statsCollectionTimer) {
+		this.statsCollectionTimer = statsCollectionTimer;
 	}
 	public List<StreamingMessageQueueConfiguration> getQueues() {
 		return queues;

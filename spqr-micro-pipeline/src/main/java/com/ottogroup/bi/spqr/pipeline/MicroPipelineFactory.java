@@ -15,7 +15,6 @@
  */
 package com.ottogroup.bi.spqr.pipeline;
 
-import java.nio.channels.Pipe;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
@@ -145,8 +144,7 @@ public class MicroPipelineFactory {
 			throw new QueueInitializationFailedException("Failed to initialize queue [id="+MicroPipeline.STATISTICS_QUEUE_NAME+"]. Reason: " + e.getMessage(), e);
 		}
 		
-		final ComponentStatsEventCollector statsCollector = new ComponentStatsEventCollector(this.processingNodeId, cfg.getId(), 500, statsQueue.getConsumer(), statsQueue.getConsumer().getWaitStrategy(), 8192);
-		
+		final ComponentStatsEventCollector statsCollector = new ComponentStatsEventCollector(this.processingNodeId, cfg.getId(), statsQueue.getConsumer(), statsQueue.getConsumer().getWaitStrategy());		
 		microPipeline.attachComponentStatsCollector(statsCollector);
 		
 		///////////////////////////////////////////////////////////////////////////////////
@@ -181,22 +179,22 @@ public class MicroPipelineFactory {
 				
 				switch(component.getType()) {
 					case SOURCE: {
-						microPipeline.addSource(id, new SourceRuntimeEnvironment(this.processingNodeId, cfg.getId(), (Source)component, toQueue.getProducer(), statisticsQueue.getProducer()));
+						microPipeline.addSource(id, new SourceRuntimeEnvironment(this.processingNodeId, cfg.getId(), (Source)component, toQueue.getProducer(), statisticsQueue.getProducer(), cfg.getStatsCollectionTimer()));
 						sourceComponentFound = true;
 						break;
 					}
 					case DIRECT_RESPONSE_OPERATOR: {
 						microPipeline.addOperator(id, new DirectResponseOperatorRuntimeEnvironment(this.processingNodeId, cfg.getId(), (DirectResponseOperator)component, 
-								fromQueue.getConsumer(), toQueue.getProducer(), statisticsQueue.getProducer()));
+								fromQueue.getConsumer(), toQueue.getProducer(), statisticsQueue.getProducer(), cfg.getStatsCollectionTimer()));
 						break;
 					}
 					case DELAYED_RESPONSE_OPERATOR: {						
 						microPipeline.addOperator(id, new DelayedResponseOperatorRuntimeEnvironment(this.processingNodeId, cfg.getId(), (DelayedResponseOperator)component, getResponseWaitStrategy(componentCfg), 
-								fromQueue.getConsumer(), toQueue.getProducer(), statisticsQueue.getProducer(), executorService));
+								fromQueue.getConsumer(), toQueue.getProducer(), statisticsQueue.getProducer(), cfg.getStatsCollectionTimer(), executorService));
 						break;
 					}
 					case EMITTER: {
-						microPipeline.addEmitter(id, new EmitterRuntimeEnvironment(this.processingNodeId, cfg.getId(), (Emitter)component, fromQueue.getConsumer(), statisticsQueue.getProducer()));
+						microPipeline.addEmitter(id, new EmitterRuntimeEnvironment(this.processingNodeId, cfg.getId(), (Emitter)component, fromQueue.getConsumer(), statisticsQueue.getProducer(), cfg.getStatsCollectionTimer()));
 						emitterComponentFound = true;
 						break;
 					}

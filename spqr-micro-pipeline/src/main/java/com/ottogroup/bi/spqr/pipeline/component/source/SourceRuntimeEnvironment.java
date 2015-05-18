@@ -69,8 +69,9 @@ public class SourceRuntimeEnvironment implements Runnable, IncomingMessageCallba
 	 * @param statsQueueProducer
 	 * @throws RequiredInputMissingException
 	 */
-	public SourceRuntimeEnvironment(final String processingNodeId, final String pipelineId, final Source source, final StreamingMessageQueueProducer queueProducer, final StreamingMessageQueueProducer statsQueueProducer) throws RequiredInputMissingException {
-		this(processingNodeId, pipelineId, source, queueProducer, statsQueueProducer, Executors.newCachedThreadPool());
+	public SourceRuntimeEnvironment(final String processingNodeId, final String pipelineId, final Source source, final StreamingMessageQueueProducer queueProducer, 
+			final StreamingMessageQueueProducer statsQueueProducer, final long statsCollectionDelay) throws RequiredInputMissingException {
+		this(processingNodeId, pipelineId, source, queueProducer, statsQueueProducer, statsCollectionDelay, Executors.newCachedThreadPool());
 		this.localExecutorService = true;
 	}
 	
@@ -81,11 +82,12 @@ public class SourceRuntimeEnvironment implements Runnable, IncomingMessageCallba
 	 * @param source
 	 * @param queueProducer
 	 * @param statsQueueProducer
+	 * @param statsCollectionDelay
 	 * @param executorService
 	 * @throws RequiredInputMissingException
 	 */
 	public SourceRuntimeEnvironment(final String processingNodeId, final String pipelineId, final Source source, final StreamingMessageQueueProducer queueProducer, 
-			final StreamingMessageQueueProducer statsQueueProducer, final ExecutorService executorService) throws RequiredInputMissingException {
+			final StreamingMessageQueueProducer statsQueueProducer, final long statsCollectionDelay, final ExecutorService executorService) throws RequiredInputMissingException {
 		
 		///////////////////////////////////////////////////////////////
 		// validate input
@@ -113,7 +115,7 @@ public class SourceRuntimeEnvironment implements Runnable, IncomingMessageCallba
 		this.statsQueueProducer = statsQueueProducer;
 		this.executorService = executorService;
 		
-		this.statsEvent = new AggregatedComponentStatistics(this.sourceId, 0, 0, 
+		this.statsEvent = new AggregatedComponentStatistics(this.processingNodeId, this.pipelineId, this.sourceId, 0, 0, 
 				0, Integer.MAX_VALUE, Integer.MIN_VALUE, 0, Integer.MAX_VALUE, Integer.MIN_VALUE, 0, 0);
 		this.statsEvent.start();
 		this.executorService.submit(source);
@@ -121,7 +123,7 @@ public class SourceRuntimeEnvironment implements Runnable, IncomingMessageCallba
 			logger.debug("source runtime environment initialized [id="+source.getId()+"]");
 		
 		this.statsCollectionTimer = new Timer(true);
-		this.statsCollectionTimer.schedule(new ComponentStatsTriggerTask(this), 100, 100);
+		this.statsCollectionTimer.schedule(new ComponentStatsTriggerTask(this), (statsCollectionDelay > 0 ? statsCollectionDelay : 1000), (statsCollectionDelay > 0 ? statsCollectionDelay : 1000));
 	}
 
 	/**
@@ -173,6 +175,7 @@ public class SourceRuntimeEnvironment implements Runnable, IncomingMessageCallba
 	public void collectAndForwardStats() {
 		this.statsEvent.finish();
 		this.statsQueueProducer.insert(new StreamingDataMessage(this.statsEvent.toBytes(), System.currentTimeMillis()));
+		this.statsQueueProducer.getWaitStrategy().forceLockRelease();
 		this.statsEvent.start();
 	}
 	

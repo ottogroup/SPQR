@@ -86,11 +86,12 @@ public class DelayedResponseOperatorRuntimeEnvironment implements Runnable, Dela
 	 * @param queueConsumer
 	 * @param queueProducer
 	 * @param statsQueueProducer
+	 * @param statsCollectionDelay
 	 * @throws RequiredInputMissingException
 	 */
 	public DelayedResponseOperatorRuntimeEnvironment(final String processingNodeId, final String pipelineId, final DelayedResponseOperator delayedResponseOperator, final DelayedResponseOperatorWaitStrategy responseWaitStrategy,
-			final StreamingMessageQueueConsumer queueConsumer, final StreamingMessageQueueProducer queueProducer, final StreamingMessageQueueProducer statsQueueProducer) throws RequiredInputMissingException {
-		this(processingNodeId, pipelineId, delayedResponseOperator, responseWaitStrategy, queueConsumer, queueProducer, statsQueueProducer, Executors.newCachedThreadPool());
+			final StreamingMessageQueueConsumer queueConsumer, final StreamingMessageQueueProducer queueProducer, final StreamingMessageQueueProducer statsQueueProducer, final long statsCollectionDelay) throws RequiredInputMissingException {
+		this(processingNodeId, pipelineId, delayedResponseOperator, responseWaitStrategy, queueConsumer, queueProducer, statsQueueProducer, statsCollectionDelay, Executors.newCachedThreadPool());
 		this.localExecutorService = true;
 	}
 	
@@ -103,11 +104,13 @@ public class DelayedResponseOperatorRuntimeEnvironment implements Runnable, Dela
 	 * @param queueConsumer
 	 * @param queueProducer
 	 * @param statsQueueProducer
+	 * @param statsCollectionDelay
 	 * @param executorService
 	 * @throws RequiredInputMissingException
 	 */
 	public DelayedResponseOperatorRuntimeEnvironment(final String processingNodeId, final String pipelineId, final DelayedResponseOperator delayedResponseOperator, final DelayedResponseOperatorWaitStrategy responseWaitStrategy,
-			final StreamingMessageQueueConsumer queueConsumer, final StreamingMessageQueueProducer queueProducer, final StreamingMessageQueueProducer statsQueueProducer, final ExecutorService executorService) throws RequiredInputMissingException {
+			final StreamingMessageQueueConsumer queueConsumer, final StreamingMessageQueueProducer queueProducer, final StreamingMessageQueueProducer statsQueueProducer, final long statsCollectionDelay, 
+			final ExecutorService executorService) throws RequiredInputMissingException {
 		
 		/////////////////////////////////////////////////////////////
 		// input validation
@@ -145,12 +148,12 @@ public class DelayedResponseOperatorRuntimeEnvironment implements Runnable, Dela
 		this.consumerQueueWaitStrategy = queueConsumer.getWaitStrategy();
 		this.destinationQueueWaitStrategy = queueProducer.getWaitStrategy();
 
-		this.statsEvent = new AggregatedComponentStatistics(this.operatorId, 0, 0, 
+		this.statsEvent = new AggregatedComponentStatistics(this.processingNodeId, this.pipelineId, this.operatorId, 0, 0, 
 				0, Integer.MAX_VALUE, Integer.MIN_VALUE, 0, Integer.MAX_VALUE, Integer.MIN_VALUE, 0, 0);
 		this.statsEvent.start();
 
 		this.statsCollectionTimer = new Timer(true);
-		this.statsCollectionTimer.schedule(new ComponentStatsTriggerTask(this), 100, 100);
+		this.statsCollectionTimer.schedule(new ComponentStatsTriggerTask(this), (statsCollectionDelay > 0 ? statsCollectionDelay : 1000), (statsCollectionDelay > 0 ? statsCollectionDelay : 1000));
 
 		if(logger.isDebugEnabled())
 			logger.debug("delayed response operator init [node="+this.processingNodeId+", pipeline="+this.pipelineId+", operator="+this.operatorId+"]");
@@ -262,6 +265,7 @@ public class DelayedResponseOperatorRuntimeEnvironment implements Runnable, Dela
 	public void collectAndForwardStats() {
 		this.statsEvent.finish();
 		this.statsQueueProducer.insert(new StreamingDataMessage(this.statsEvent.toBytes(), System.currentTimeMillis()));
+		this.statsQueueProducer.getWaitStrategy().forceLockRelease();
 		this.statsEvent.start();
 	}
 }
