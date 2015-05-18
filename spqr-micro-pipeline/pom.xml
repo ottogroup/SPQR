@@ -55,6 +55,13 @@
 			<artifactId>spqr-repository</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+		
+		<!-- dropwizard metrics -->
+		<dependency>
+			<groupId>io.dropwizard.metrics</groupId>
+			<artifactId>metrics-core</artifactId>
+			<version>3.1.0</version>
+		</dependency>
 
 		<!-- logger -->
   		<dependency>
