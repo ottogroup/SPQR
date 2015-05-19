@@ -8,7 +8,7 @@
   	<!-- maven specifc artifact grouping and versioning information -->
   	<groupId>com.ottogroup.bi.spqr</groupId>
 	<artifactId>spqr-parent</artifactId>
-  	<version>0.5.0</version>
+  	<version>0.6.0-SNAPSHOT</version>
   	<packaging>pom</packaging>
 
   	<!-- general project information, eg. name and description -->
