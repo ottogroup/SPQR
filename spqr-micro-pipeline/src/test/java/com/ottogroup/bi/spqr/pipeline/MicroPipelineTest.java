@@ -31,7 +31,6 @@ import com.ottogroup.bi.spqr.pipeline.component.source.RandomNumberTestSource;
 import com.ottogroup.bi.spqr.pipeline.component.source.Source;
 import com.ottogroup.bi.spqr.pipeline.component.source.SourceRuntimeEnvironment;
 import com.ottogroup.bi.spqr.pipeline.queue.chronicle.DefaultStreamingMessageQueue;
-import com.ottogroup.bi.spqr.pipeline.statistics.ComponentStatsEventCollector;
 
 /**
  * Test case for {@link MicroPipeline}
@@ -63,7 +62,7 @@ public class MicroPipelineTest {
 		@SuppressWarnings("unused")
 		final int numGeneratedMessages = 20000000;
 		
-		final String msg = "wtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtfwtf";
+		final String msg = "www.test.org";
 		
 		final CountDownLatch latch = new CountDownLatch(numGeneratedMessages);
 
@@ -74,11 +73,6 @@ public class MicroPipelineTest {
 		queue.setId("test_performance1_queue");
 		queue.initialize(queueProps);
 
-		Properties statsQueueProps = new Properties();
-		DefaultStreamingMessageQueue statsQueue = new DefaultStreamingMessageQueue();
-		statsQueue.setId(MicroPipeline.STATISTICS_QUEUE_NAME);
-		statsQueue.initialize(statsQueueProps);
-		
 		///////////////////////////////////////////////////////////////////////
 		// source
 		Properties rndGenProps = new Properties();
@@ -89,7 +83,7 @@ public class MicroPipelineTest {
 		source.initialize(rndGenProps);
 		source.setId("test_performance1_source");
 		
-		SourceRuntimeEnvironment srcEnv = new SourceRuntimeEnvironment("node", "pipe", source, queue.getProducer(), statsQueue.getProducer(), 100);
+		SourceRuntimeEnvironment srcEnv = new SourceRuntimeEnvironment("node", "pipe", source, queue.getProducer());
 
 		///////////////////////////////////////////////////////////////////////
 		// emitter
@@ -101,32 +95,28 @@ public class MicroPipelineTest {
 		emitter.setId("test_performance1_emitter");
 		emitter.initialize(emitterProps);
 		
-		EmitterRuntimeEnvironment emitterEnv = new EmitterRuntimeEnvironment("node", "pipe", emitter, queue.getConsumer(), statsQueue.getProducer(), 100);
+		EmitterRuntimeEnvironment emitterEnv = new EmitterRuntimeEnvironment("node", "pipe", emitter, queue.getConsumer());
 		
 		MicroPipeline pipeline = new MicroPipeline("test_performance1");
 		pipeline.addQueue(queue.getId(), queue);		
 		pipeline.addSource(source.getId(), srcEnv);
 		pipeline.addEmitter(emitter.getId(), emitterEnv);
-		ComponentStatsEventCollector collector = new ComponentStatsEventCollector("node", "pipe", statsQueue.getConsumer(), statsQueue.getConsumer().getWaitStrategy());
-		pipeline.attachComponentStatsCollector(collector);
+//		ComponentStatsEventCollector collector = new ComponentStatsEventCollector("node", "pipe", statsQueue.getConsumer(), statsQueue.getConsumer().getWaitStrategy());
+//		pipeline.attachComponentStatsCollector(collector);
 		
 		long s1 = System.currentTimeMillis();
-		executorService.submit(collector);
+//		executorService.submit(collector);
 		executorService.submit(emitterEnv);
 		executorService.submit(srcEnv);
 		
 		while(!latch.await(5000, TimeUnit.MILLISECONDS));
 		long s2 = System.currentTimeMillis();
-		System.out.println("size: " +statsQueue.getSize());
 		long duration = s2-s1;
 		
 		System.out.println(numGeneratedMessages + " messages transferred in " + duration + "ms. Throughput: " + ((double)numGeneratedMessages / (double)duration)+" msg/ms");
 		
 //		System.in.read();
-		System.out.println(collector.getMessageCount());
-		collector.shutdown();
 		executorService.shutdownNow();
-		System.out.println("Count: " +collector.getMessageCount());
 		
 		
 	}

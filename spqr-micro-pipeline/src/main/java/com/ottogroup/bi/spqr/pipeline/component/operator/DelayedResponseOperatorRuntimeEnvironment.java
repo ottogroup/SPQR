@@ -15,21 +15,18 @@
  */
 package com.ottogroup.bi.spqr.pipeline.component.operator;
 
-import java.util.Timer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
+import com.codahale.metrics.Counter;
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
 import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConsumer;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueProducer;
 import com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueWaitStrategy;
-import com.ottogroup.bi.spqr.pipeline.statistics.AggregatedComponentStatistics;
-import com.ottogroup.bi.spqr.pipeline.statistics.ComponentStatsSupport;
-import com.ottogroup.bi.spqr.pipeline.statistics.ComponentStatsTriggerTask;
 
 /**
  * Provides a runtime environment for {@link DelayedResponseOperator} instances. The environment polls
@@ -40,7 +37,7 @@ import com.ottogroup.bi.spqr.pipeline.statistics.ComponentStatsTriggerTask;
  * @author mnxfst
  * @since Mar 11, 2015
  */
-public class DelayedResponseOperatorRuntimeEnvironment implements Runnable, DelayedResponseCollector, ComponentStatsSupport {
+public class DelayedResponseOperatorRuntimeEnvironment implements Runnable, DelayedResponseCollector {
 
 	/** our faithful logging facility ... ;-) */ 
 	private static final Logger logger = Logger.getLogger(DelayedResponseOperatorRuntimeEnvironment.class);
@@ -59,8 +56,6 @@ public class DelayedResponseOperatorRuntimeEnvironment implements Runnable, Dela
 	private final StreamingMessageQueueConsumer queueConsumer;
 	/** provides write access to assigned destination queue */
 	private final StreamingMessageQueueProducer queueProducer;	
-	/** provides write access to assigned stats queue */
-	private final StreamingMessageQueueProducer statsQueueProducer;
 	/** indicates whether the operator runtime is still running or not */
 	private boolean running = false;
 	/** executor environment used to run the response wait strategy */
@@ -71,10 +66,8 @@ public class DelayedResponseOperatorRuntimeEnvironment implements Runnable, Dela
 	private final StreamingMessageQueueWaitStrategy consumerQueueWaitStrategy;
 	/** destination queue wait strategy */
 	private final StreamingMessageQueueWaitStrategy destinationQueueWaitStrategy;
-	/** stats container */
-	private final AggregatedComponentStatistics statsEvent;
-	/** timer triggering stats collection */
-	private final Timer statsCollectionTimer;
+	/** message counter metric */
+	private Counter messageCounter = null;
 
 
 	/**
@@ -85,13 +78,11 @@ public class DelayedResponseOperatorRuntimeEnvironment implements Runnable, Dela
 	 * @param responseWaitStrategy
 	 * @param queueConsumer
 	 * @param queueProducer
-	 * @param statsQueueProducer
-	 * @param statsCollectionDelay
 	 * @throws RequiredInputMissingException
 	 */
 	public DelayedResponseOperatorRuntimeEnvironment(final String processingNodeId, final String pipelineId, final DelayedResponseOperator delayedResponseOperator, final DelayedResponseOperatorWaitStrategy responseWaitStrategy,
-			final StreamingMessageQueueConsumer queueConsumer, final StreamingMessageQueueProducer queueProducer, final StreamingMessageQueueProducer statsQueueProducer, final long statsCollectionDelay) throws RequiredInputMissingException {
-		this(processingNodeId, pipelineId, delayedResponseOperator, responseWaitStrategy, queueConsumer, queueProducer, statsQueueProducer, statsCollectionDelay, Executors.newCachedThreadPool());
+			final StreamingMessageQueueConsumer queueConsumer, final StreamingMessageQueueProducer queueProducer) throws RequiredInputMissingException {
+		this(processingNodeId, pipelineId, delayedResponseOperator, responseWaitStrategy, queueConsumer, queueProducer, Executors.newCachedThreadPool());
 		this.localExecutorService = true;
 	}
 	
@@ -103,13 +94,11 @@ public class DelayedResponseOperatorRuntimeEnvironment implements Runnable, Dela
 	 * @param responseWaitStrategy
 	 * @param queueConsumer
 	 * @param queueProducer
-	 * @param statsQueueProducer
-	 * @param statsCollectionDelay
 	 * @param executorService
 	 * @throws RequiredInputMissingException
 	 */
 	public DelayedResponseOperatorRuntimeEnvironment(final String processingNodeId, final String pipelineId, final DelayedResponseOperator delayedResponseOperator, final DelayedResponseOperatorWaitStrategy responseWaitStrategy,
-			final StreamingMessageQueueConsumer queueConsumer, final StreamingMessageQueueProducer queueProducer, final StreamingMessageQueueProducer statsQueueProducer, final long statsCollectionDelay, 
+			final StreamingMessageQueueConsumer queueConsumer, final StreamingMessageQueueProducer queueProducer, 
 			final ExecutorService executorService) throws RequiredInputMissingException {
 		
 		/////////////////////////////////////////////////////////////
@@ -126,8 +115,6 @@ public class DelayedResponseOperatorRuntimeEnvironment implements Runnable, Dela
 			throw new RequiredInputMissingException("Missing required queue consumer");
 		if(queueProducer == null)
 			throw new RequiredInputMissingException("Missing required queue producer");
-		if(statsQueueProducer == null)
-			throw new RequiredInputMissingException("Missing required stats queue producer");
 		//
 		/////////////////////////////////////////////////////////////
 
@@ -141,19 +128,11 @@ public class DelayedResponseOperatorRuntimeEnvironment implements Runnable, Dela
 		this.delayedResponseOperator.setWaitStrategy(this.responseWaitStrategy);
 		this.queueConsumer = queueConsumer;
 		this.queueProducer = queueProducer;
-		this.statsQueueProducer = statsQueueProducer;
 		this.executorService = executorService;		
 		this.executorService.submit(this.responseWaitStrategy);
 		this.running = true;
 		this.consumerQueueWaitStrategy = queueConsumer.getWaitStrategy();
 		this.destinationQueueWaitStrategy = queueProducer.getWaitStrategy();
-
-		this.statsEvent = new AggregatedComponentStatistics(this.processingNodeId, this.pipelineId, this.operatorId, 0, 0, 
-				0, Integer.MAX_VALUE, Integer.MIN_VALUE, 0, Integer.MAX_VALUE, Integer.MIN_VALUE, 0, 0);
-		this.statsEvent.start();
-
-		this.statsCollectionTimer = new Timer(true);
-		this.statsCollectionTimer.schedule(new ComponentStatsTriggerTask(this), (statsCollectionDelay > 0 ? statsCollectionDelay : 1000), (statsCollectionDelay > 0 ? statsCollectionDelay : 1000));
 
 		if(logger.isDebugEnabled())
 			logger.debug("delayed response operator init [node="+this.processingNodeId+", pipeline="+this.pipelineId+", operator="+this.operatorId+"]");
@@ -164,41 +143,24 @@ public class DelayedResponseOperatorRuntimeEnvironment implements Runnable, Dela
 	 */
 	public void run() {
 		
-		// initialize stats counter and timer
-		long start = 0;
-		int bodySize = 0;
-
 		while(running) {
-
-			// reset stats counter and timer
-			start = 0;
-			bodySize = 0;
 
 			try {
 				StreamingDataMessage message = this.consumerQueueWaitStrategy.waitFor(this.queueConsumer); // this.queueConsumer.next();
-				start = System.currentTimeMillis();				
 				if(message != null && message.getBody() != null) {
 					// forward retrieved message to operator for further processing
 					this.delayedResponseOperator.onMessage(message);
 					// notify response wait strategy on retrieved message
 					this.responseWaitStrategy.onMessage(message);
-					bodySize = message.getBody().length;
+					
+					if(this.messageCounter != null)
+						this.messageCounter.inc();
 				}
-				
-				////////////////////////////////////////////////////////
-				// stats handling
-				statsEvent.addEvent((int)(System.currentTimeMillis()-start), bodySize, false);
-				////////////////////////////////////////////////////////
 		} catch(InterruptedException e) {
 				// do nothing - waiting was interrupted				
 			} catch(Exception e) {
 				logger.error("processing error [node="+this.processingNodeId+", pipeline="+this.pipelineId+", operator="+this.operatorId+"]: " + e.getMessage(), e);
 				// TODO add handler for responding to errors
-				
-				////////////////////////////////////////////////////////
-				// stats handling
-				statsEvent.addEvent((int)(System.currentTimeMillis()-start), bodySize, true);
-				////////////////////////////////////////////////////////
 			}
 		}
 	}
@@ -258,14 +220,11 @@ public class DelayedResponseOperatorRuntimeEnvironment implements Runnable, Dela
 	public boolean isRunning() {
 		return running;
 	}
-	
+
 	/**
-	 * @see com.ottogroup.bi.spqr.pipeline.statistics.ComponentStatsSupport#collectAndForwardStats()
+	 * @param messageCounter the messageCounter to set
 	 */
-	public void collectAndForwardStats() {
-		this.statsEvent.finish();
-		this.statsQueueProducer.insert(new StreamingDataMessage(this.statsEvent.toBytes(), System.currentTimeMillis()));
-		this.statsQueueProducer.getWaitStrategy().forceLockRelease();
-		this.statsEvent.start();
+	public void setMessageCounter(Counter messageCounter) {
+		this.messageCounter = messageCounter;
 	}
 }

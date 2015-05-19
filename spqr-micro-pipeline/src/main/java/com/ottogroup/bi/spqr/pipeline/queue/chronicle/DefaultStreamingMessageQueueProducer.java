@@ -17,6 +17,7 @@ package com.ottogroup.bi.spqr.pipeline.queue.chronicle;
 
 import net.openhft.chronicle.ExcerptAppender;
 
+import com.codahale.metrics.Counter;
 import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueProducer;
 import com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueWaitStrategy;
@@ -33,6 +34,7 @@ public class DefaultStreamingMessageQueueProducer implements
 	private final String queueId;
 	private final ExcerptAppender queueProducer;
 	private final StreamingMessageQueueWaitStrategy waitStrategy;
+	private Counter messageInsertionCounter = null; 
 	
 	/**
 	 * Initializes the producer using the provided input
@@ -50,7 +52,7 @@ public class DefaultStreamingMessageQueueProducer implements
 	 * @see com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueProducer#insert(com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage)
 	 */
 	public boolean insert(StreamingDataMessage message) {
-		
+
 		// TODO add concurrency handler to support multiple writers properly   
 		if(message != null) {
 			synchronized (queueProducer) {
@@ -59,6 +61,10 @@ public class DefaultStreamingMessageQueueProducer implements
 				queueProducer.writeInt(message.getBody().length);
 				queueProducer.write(message.getBody());
 				queueProducer.finish();
+		
+				if(this.messageInsertionCounter != null)
+					this.messageInsertionCounter.inc();
+				
 				return true;
 			}
 		}
@@ -75,6 +81,13 @@ public class DefaultStreamingMessageQueueProducer implements
 
 	public String getQueueId() {
 		return queueId;
+	}
+
+	/**
+	 * @see com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueProducer#setMessageInsertionCounter(com.codahale.metrics.Counter)
+	 */
+	public void setMessageInsertionCounter(Counter counter) {
+		this.messageInsertionCounter = counter;
 	}
 
 }

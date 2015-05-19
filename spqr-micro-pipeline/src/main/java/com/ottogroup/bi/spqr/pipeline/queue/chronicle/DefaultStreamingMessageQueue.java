@@ -26,6 +26,7 @@ import net.openhft.chronicle.tools.ChronicleTools;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
+import com.codahale.metrics.Counter;
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
 import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueue;
@@ -180,5 +181,20 @@ public class DefaultStreamingMessageQueue implements StreamingMessageQueue {
 		return this.id;
 	}
 
+	/**
+	 * @see com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueue#setMessageInsertionCounter(com.codahale.metrics.Counter)
+	 */
+	public void setMessageInsertionCounter(Counter counter) {
+		this.queueProducer.setMessageInsertionCounter(counter);
+	}
+
+	/**
+	 * @see com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueue#setMessageRetrievalCounter(com.codahale.metrics.Counter)
+	 */
+	public void setMessageRetrievalCounter(Counter counter) {
+		this.queueConsumer.setMessageRetrievalCounter(counter);
+	}
+
+	
 
 }

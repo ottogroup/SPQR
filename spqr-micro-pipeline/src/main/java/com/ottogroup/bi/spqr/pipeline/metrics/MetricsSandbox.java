@@ -19,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 
 import com.codahale.metrics.ConsoleReporter;
 import com.codahale.metrics.Histogram;
+import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 
 /**
@@ -31,8 +32,8 @@ public class MetricsSandbox {
 	
 	public static void main(String[] args) throws Exception {
 		startReport();
-//		Meter req = metrics.meter("requests");
-		Histogram gram = metrics.histogram("histo");
+		Meter req = metrics.meter("requests");
+//		Histogram gram = metrics.histogram("histo");
 //		Counter count = metrics.counter("counter");
 //		Timer timer = metrics.timer("timer");
 //		Timer.Context ctx = timer.time();
@@ -43,18 +44,18 @@ public class MetricsSandbox {
 //		count.inc();
 //		count.inc(18);
 //		
-		gram.update(10);
-		gram.update(10);
-		gram.update(20);
-		gram.update(20);
-		gram.update(20);
-		gram.update(20);
-		gram.update(20);
-		gram.update(25);
-		gram.update(25);
-		gram.update(15);
-//		req.mark();
-//		req.mark();
+//		gram.update(10);
+//		gram.update(10);
+//		gram.update(20);
+//		gram.update(20);
+//		gram.update(20);
+//		gram.update(20);
+//		gram.update(20);
+//		gram.update(25);
+//		gram.update(25);
+//		gram.update(15);
+		req.mark();
+		req.mark();
 		
 		wait5Seconds();
 //		for(int i = 0; i < 100; i++)
@@ -72,10 +73,16 @@ public class MetricsSandbox {
 	}
 	
 	static void startReport() {
-	      ConsoleReporter reporter = ConsoleReporter.forRegistry(metrics)
-	          .convertRatesTo(TimeUnit.SECONDS)
-	          .convertDurationsTo(TimeUnit.MILLISECONDS)
-	          .build();
+//	      CsvReporter reporter = CsvReporter.forRegistry(metrics)
+//	          .convertRatesTo(TimeUnit.SECONDS)
+//	          .convertDurationsTo(TimeUnit.MILLISECONDS)
+//	          .build(new File("/tmp/data"));
+		
+		ConsoleReporter reporter = ConsoleReporter.forRegistry(metrics)
+		          .convertRatesTo(TimeUnit.SECONDS)
+		          .convertDurationsTo(TimeUnit.MILLISECONDS)
+		          .build();
+		
 	      reporter.start(1, TimeUnit.SECONDS);
 	  }
 

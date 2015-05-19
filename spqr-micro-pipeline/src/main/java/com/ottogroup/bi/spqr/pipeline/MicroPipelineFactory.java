@@ -24,6 +24,9 @@ import java.util.concurrent.ExecutorService;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
+import com.codahale.metrics.Counter;
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
 import com.ottogroup.bi.spqr.exception.ComponentInitializationFailedException;
 import com.ottogroup.bi.spqr.exception.QueueInitializationFailedException;
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
@@ -43,10 +46,10 @@ import com.ottogroup.bi.spqr.pipeline.component.operator.TimerBasedResponseWaitS
 import com.ottogroup.bi.spqr.pipeline.component.source.Source;
 import com.ottogroup.bi.spqr.pipeline.component.source.SourceRuntimeEnvironment;
 import com.ottogroup.bi.spqr.pipeline.exception.UnknownWaitStrategyException;
+import com.ottogroup.bi.spqr.pipeline.metrics.ComponentMetricsHandler;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueue;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConfiguration;
 import com.ottogroup.bi.spqr.pipeline.queue.chronicle.DefaultStreamingMessageQueue;
-import com.ottogroup.bi.spqr.pipeline.statistics.ComponentStatsEventCollector;
 import com.ottogroup.bi.spqr.repository.ComponentRepository;
 
 /**
@@ -97,6 +100,14 @@ public class MicroPipelineFactory {
 			throw new RequiredInputMissingException("Missing required queue configurations");
 		//
 		///////////////////////////////////////////////////////////////////////////////////
+
+		MetricRegistry.name(StringUtils.lowerCase(StringUtils.trim(this.processingNodeId)),
+				            StringUtils.lowerCase(StringUtils.trim(cfg.getId())),
+				            "queue",
+				            "messages");
+				            
+		
+		final ComponentMetricsHandler componentMetricsHandler = new ComponentMetricsHandler(this.processingNodeId, cfg.getId(), new MetricRegistry());		
 		
 		///////////////////////////////////////////////////////////////////////////////////
 		// (1) initialize queues
@@ -108,13 +119,6 @@ public class MicroPipelineFactory {
 		for(final StreamingMessageQueueConfiguration queueConfig : cfg.getQueues()) {
 			String id = StringUtils.lowerCase(StringUtils.trim(queueConfig.getId()));
 			
-			// ensure that the identifier differs from the statistics queue name
-			if(StringUtils.equalsIgnoreCase(id, MicroPipeline.STATISTICS_QUEUE_NAME)) {
-				logger.error("queue initialization failed [id="+id+"]. Queue found with reserved stats queue name. Forcing shutdown of all queues.");
-				microPipeline.shutdown();
-				throw new QueueInitializationFailedException("Reserved queue identifier found [id="+id+"]");
-			}
-			
 			// a queue for that identifier already exists: kill the pipeline and tell the caller about it
 			if(microPipeline.hasQueue(id)) {
 				logger.error("queue initialization failed [id="+id+"]. Forcing shutdown of all queues.");
@@ -124,7 +128,37 @@ public class MicroPipelineFactory {
 		
 			// try to instantiate the queue, if it fails .... shutdown queues initialized so far and throw an exception
 			try {
-				microPipeline.addQueue(id, initializeQueue(queueConfig));			
+				StreamingMessageQueue queueInstance = initializeQueue(queueConfig);
+				
+				/////////////////////////////////////////////////////////////////////
+				// add queue message insertion and retrieval counters
+				// TODO configure
+				Counter queueInsertionCounter = componentMetricsHandler.getMetricRegistry().counter(
+						MetricRegistry.name(
+								StringUtils.lowerCase(StringUtils.trim(this.processingNodeId)),
+								StringUtils.lowerCase(StringUtils.trim(cfg.getId())),
+								"queue",
+								id,
+								"messages",
+								"in"
+						)
+				);
+				
+				Counter queueRetrievalCounter = componentMetricsHandler.getMetricRegistry().counter(
+						MetricRegistry.name(
+								StringUtils.lowerCase(StringUtils.trim(this.processingNodeId)),
+								StringUtils.lowerCase(StringUtils.trim(cfg.getId())),
+								"queue",
+								id,
+								"messages",
+								"out"
+						)
+				);
+				queueInstance.setMessageInsertionCounter(queueInsertionCounter);
+				queueInstance.setMessageRetrievalCounter(queueRetrievalCounter);
+				/////////////////////////////////////////////////////////////////////
+				
+				microPipeline.addQueue(id, queueInstance);				
 				logger.info("queue initialized[id="+id+"]");
 			} catch(Exception e) {
 				logger.error("queue initialization failed [id="+id+"]. Forcing shutdown of all queues.");
@@ -133,25 +167,10 @@ public class MicroPipelineFactory {
 			}
 		}
 		
-		final StreamingMessageQueue statsQueue;
-		try {
-			statsQueue = initializeQueue(new StreamingMessageQueueConfiguration(MicroPipeline.STATISTICS_QUEUE_NAME));
-			microPipeline.addQueue(MicroPipeline.STATISTICS_QUEUE_NAME, statsQueue);
-			logger.info("statistics queue initialized");			
-		} catch(Exception e) {
-			logger.error("statistics queue initialization failed [id="+MicroPipeline.STATISTICS_QUEUE_NAME+"]. Forcing shutdown of all queues.");
-			microPipeline.shutdown();
-			throw new QueueInitializationFailedException("Failed to initialize queue [id="+MicroPipeline.STATISTICS_QUEUE_NAME+"]. Reason: " + e.getMessage(), e);
-		}
-		
-		final ComponentStatsEventCollector statsCollector = new ComponentStatsEventCollector(this.processingNodeId, cfg.getId(), statsQueue.getConsumer(), statsQueue.getConsumer().getWaitStrategy());		
-		microPipeline.attachComponentStatsCollector(statsCollector);
-		
 		///////////////////////////////////////////////////////////////////////////////////
 
 		///////////////////////////////////////////////////////////////////////////////////
 		// (2) initialize components
-		final StreamingMessageQueue statisticsQueue = microPipeline.getQueue(MicroPipeline.STATISTICS_QUEUE_NAME);
 		final Map<String, MicroPipelineComponent> components = new HashMap<>();
 		boolean sourceComponentFound = false;
 		boolean emitterComponentFound = false;
@@ -177,24 +196,55 @@ public class MicroPipelineFactory {
 				final StreamingMessageQueue fromQueue = microPipeline.getQueue(StringUtils.lowerCase(StringUtils.trim(componentCfg.getFromQueue())));
 				final StreamingMessageQueue toQueue = microPipeline.getQueue(StringUtils.lowerCase(StringUtils.trim(componentCfg.getToQueue())));
 				
+				final Counter messageCounter = componentMetricsHandler.getMetricRegistry().counter(
+						MetricRegistry.name(
+								StringUtils.lowerCase(StringUtils.trim(this.processingNodeId)),
+								StringUtils.lowerCase(StringUtils.trim(cfg.getId())),
+								"component",
+								id,
+								"messages",
+								"count"
+						)
+				);
+				
 				switch(component.getType()) {
 					case SOURCE: {
-						microPipeline.addSource(id, new SourceRuntimeEnvironment(this.processingNodeId, cfg.getId(), (Source)component, toQueue.getProducer(), statisticsQueue.getProducer(), cfg.getStatsCollectionTimer()));
+						SourceRuntimeEnvironment srcEnv = new SourceRuntimeEnvironment(this.processingNodeId, cfg.getId(), (Source)component, toQueue.getProducer());
+						srcEnv.setMessageCounter(messageCounter);
+						microPipeline.addSource(id, srcEnv);
 						sourceComponentFound = true;
 						break;
 					}
 					case DIRECT_RESPONSE_OPERATOR: {
-						microPipeline.addOperator(id, new DirectResponseOperatorRuntimeEnvironment(this.processingNodeId, cfg.getId(), (DirectResponseOperator)component, 
-								fromQueue.getConsumer(), toQueue.getProducer(), statisticsQueue.getProducer(), cfg.getStatsCollectionTimer()));
+						
+						final Timer messageProcessingTimer = componentMetricsHandler.getMetricRegistry().timer(
+								MetricRegistry.name(
+										StringUtils.lowerCase(StringUtils.trim(this.processingNodeId)),
+										StringUtils.lowerCase(StringUtils.trim(cfg.getId())),
+										"component",
+										id,
+										"messages",
+										"timer"
+								)
+						);
+						DirectResponseOperatorRuntimeEnvironment directResponseEnv = new DirectResponseOperatorRuntimeEnvironment(this.processingNodeId, cfg.getId(), (DirectResponseOperator)component, 
+								fromQueue.getConsumer(), toQueue.getProducer());
+						directResponseEnv.setMessageCounter(messageCounter);
+						directResponseEnv.setMessageProcessingTimer(messageProcessingTimer);
+						microPipeline.addOperator(id, directResponseEnv);
 						break;
 					}
-					case DELAYED_RESPONSE_OPERATOR: {						
-						microPipeline.addOperator(id, new DelayedResponseOperatorRuntimeEnvironment(this.processingNodeId, cfg.getId(), (DelayedResponseOperator)component, getResponseWaitStrategy(componentCfg), 
-								fromQueue.getConsumer(), toQueue.getProducer(), statisticsQueue.getProducer(), cfg.getStatsCollectionTimer(), executorService));
+					case DELAYED_RESPONSE_OPERATOR: {
+						DelayedResponseOperatorRuntimeEnvironment delayedResponseEnv = new DelayedResponseOperatorRuntimeEnvironment(this.processingNodeId, cfg.getId(), (DelayedResponseOperator)component, getResponseWaitStrategy(componentCfg), 
+								fromQueue.getConsumer(), toQueue.getProducer(), executorService);
+						delayedResponseEnv.setMessageCounter(messageCounter);
+						microPipeline.addOperator(id, delayedResponseEnv);
 						break;
 					}
 					case EMITTER: {
-						microPipeline.addEmitter(id, new EmitterRuntimeEnvironment(this.processingNodeId, cfg.getId(), (Emitter)component, fromQueue.getConsumer(), statisticsQueue.getProducer(), cfg.getStatsCollectionTimer()));
+						EmitterRuntimeEnvironment emitterEnv = new EmitterRuntimeEnvironment(this.processingNodeId, cfg.getId(), (Emitter)component, fromQueue.getConsumer());
+						emitterEnv.setMessageCounter(messageCounter);
+						microPipeline.addEmitter(id, emitterEnv);
 						emitterComponentFound = true;
 						break;
 					}
@@ -220,6 +270,8 @@ public class MicroPipelineFactory {
 		
 		///////////////////////////////////////////////////////////////////////////////////
 
+		microPipeline.attachComponentMetricsHandler(componentMetricsHandler);
+		
 		///////////////////////////////////////////////////////////////////////////////////
 		// (3) start components --> ramp up their runtime environments 
 		for(String sourceId : microPipeline.getSources().keySet()) {
@@ -242,7 +294,7 @@ public class MicroPipelineFactory {
 			if(logger.isDebugEnabled())
 				logger.debug("Started runtime environment for emitter [id="+emitterId+"]");
 		}
-		executorService.submit(microPipeline.getStatsCollector());
+		
 		if(logger.isDebugEnabled())
 			logger.debug("Started stats collector");
 		//

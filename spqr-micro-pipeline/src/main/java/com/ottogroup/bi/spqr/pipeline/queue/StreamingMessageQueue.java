@@ -17,6 +17,7 @@ package com.ottogroup.bi.spqr.pipeline.queue;
 
 import java.util.Properties;
 
+import com.codahale.metrics.Counter;
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
 import com.ottogroup.bi.spqr.pipeline.MicroPipeline;
 import com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponent;
@@ -82,6 +83,16 @@ public interface StreamingMessageQueue  {
 	 */
 	public StreamingMessageQueueConsumer getConsumer();
 	
+	/**
+	 * Attaches an optional {@link Counter} instance for counting inserted messages
+	 * @param counter
+	 */
+	public void setMessageInsertionCounter(final Counter counter);
 	
+	/**
+	 * Attaches an optional {@link Counter} instance for counting retrieved messages 
+	 * @param counter
+	 */
+	public void setMessageRetrievalCounter(final Counter counter);	
 }
 

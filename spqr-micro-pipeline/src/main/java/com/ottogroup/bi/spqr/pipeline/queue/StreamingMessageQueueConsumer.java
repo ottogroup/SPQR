@@ -15,6 +15,7 @@
  */
 package com.ottogroup.bi.spqr.pipeline.queue;
 
+import com.codahale.metrics.Counter;
 import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
 import com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueWaitStrategy;
 
@@ -43,4 +44,9 @@ public interface StreamingMessageQueueConsumer {
 	 */
 	public StreamingMessageQueueWaitStrategy getWaitStrategy();
 
+	/**
+	 * Attaches an optional {@link Counter} instance for counting retrieved messages 
+	 * @param counter
+	 */
+	public void setMessageRetrievalCounter(final Counter counter);	
 }

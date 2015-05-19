@@ -15,19 +15,16 @@
  */
 package com.ottogroup.bi.spqr.pipeline.component.operator;
 
-import java.util.Timer;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
+import com.codahale.metrics.Counter;
+import com.codahale.metrics.Timer;
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
 import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConsumer;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueProducer;
 import com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueWaitStrategy;
-import com.ottogroup.bi.spqr.pipeline.statistics.AggregatedComponentStatistics;
-import com.ottogroup.bi.spqr.pipeline.statistics.ComponentStatsSupport;
-import com.ottogroup.bi.spqr.pipeline.statistics.ComponentStatsTriggerTask;
 
 /**
  * Provides a runtime environment for {@link DirectResponseOperator} instances. The environment polls
@@ -38,7 +35,7 @@ import com.ottogroup.bi.spqr.pipeline.statistics.ComponentStatsTriggerTask;
  * @author mnxfst
  * @since Mar 5, 2015
  */
-public class DirectResponseOperatorRuntimeEnvironment implements Runnable, ComponentStatsSupport {
+public class DirectResponseOperatorRuntimeEnvironment implements Runnable {
 
 	/** our faithful logging facility ... ;-) */ 
 	private static final Logger logger = Logger.getLogger(DirectResponseOperatorRuntimeEnvironment.class);
@@ -55,18 +52,16 @@ public class DirectResponseOperatorRuntimeEnvironment implements Runnable, Compo
 	private final StreamingMessageQueueConsumer queueConsumer;
 	/** provides write access to assigned destination queue */
 	private final StreamingMessageQueueProducer queueProducer;
-	/** provides write access to stats queue */
-	private final StreamingMessageQueueProducer statsQueueProducer;
 	/** indicates whether the operator runtime is still running or not */
 	private boolean running = false;
 	/** consumer queue wait strategy */
 	private final StreamingMessageQueueWaitStrategy consumerQueueWaitStrategy;
 	/** destination queue wait strategy */
 	private final StreamingMessageQueueWaitStrategy destinationQueueWaitStrategy;
-	/** stats container */
-	private final AggregatedComponentStatistics statsEvent;
-	/** timer triggering stats collection */
-	private final Timer statsCollectionTimer;
+	/** message counter metric */
+	private Counter messageCounter = null;
+	/** message processing timer metric */
+	private Timer messageProcessingTimer = null;
 
 
 	/**
@@ -76,10 +71,9 @@ public class DirectResponseOperatorRuntimeEnvironment implements Runnable, Compo
 	 * @param directResponseOperator
 	 * @param queueConsumer
 	 * @param queueProducer
-	 * @param statsQueueProducer
 	 */
 	public DirectResponseOperatorRuntimeEnvironment(final String processingNodeId, final String pipelineId, final DirectResponseOperator directResponseOperator, final StreamingMessageQueueConsumer queueConsumer, 
-			final StreamingMessageQueueProducer queueProducer, final StreamingMessageQueueProducer statsQueueProducer, final long statsCollectionDelay) throws RequiredInputMissingException {
+			final StreamingMessageQueueProducer queueProducer) throws RequiredInputMissingException {
 		
 		/////////////////////////////////////////////////////////////
 		// input validation
@@ -93,8 +87,6 @@ public class DirectResponseOperatorRuntimeEnvironment implements Runnable, Compo
 			throw new RequiredInputMissingException("Missing required queue consumer");
 		if(queueProducer == null)
 			throw new RequiredInputMissingException("Missing required queue producer");
-		if(statsQueueProducer == null)
-			throw new RequiredInputMissingException("Missing required stats queue producer");
 		//
 		/////////////////////////////////////////////////////////////
 		
@@ -104,17 +96,9 @@ public class DirectResponseOperatorRuntimeEnvironment implements Runnable, Compo
 		this.directResponseOperator = directResponseOperator;
 		this.queueConsumer = queueConsumer;
 		this.queueProducer = queueProducer;
-		this.statsQueueProducer = statsQueueProducer;
 		this.running = true;
 		this.consumerQueueWaitStrategy = queueConsumer.getWaitStrategy();
 		this.destinationQueueWaitStrategy = queueProducer.getWaitStrategy();
-
-		this.statsEvent = new AggregatedComponentStatistics(this.processingNodeId, this.pipelineId, this.operatorId, 0, 0, 
-				0, Integer.MAX_VALUE, Integer.MIN_VALUE, 0, Integer.MAX_VALUE, Integer.MIN_VALUE, 0, 0);
-		this.statsEvent.start();
-
-		this.statsCollectionTimer = new Timer(true);
-		this.statsCollectionTimer.schedule(new ComponentStatsTriggerTask(this), (statsCollectionDelay > 0 ? statsCollectionDelay : 1000), (statsCollectionDelay > 0 ? statsCollectionDelay : 1000));
 
 		if(logger.isDebugEnabled())
 			logger.debug("direct response operator init [node="+this.processingNodeId+", pipeline="+this.pipelineId+", operator="+this.operatorId+"]");
@@ -125,20 +109,15 @@ public class DirectResponseOperatorRuntimeEnvironment implements Runnable, Compo
 	 */
 	public void run() {
 
-		// initialize stats counter and timer
-		long start = 0;
-		int bodySize = 0;
-		
 		while(running) {
 			
-			// reset stats counter and timer
-			start = 0;
-			bodySize = 0;
-
 			try {				
 				StreamingDataMessage message = this.consumerQueueWaitStrategy.waitFor(this.queueConsumer);
-				start = System.currentTimeMillis();
 				if(message != null && message.getBody() != null) {
+					
+					@SuppressWarnings("resource") // context#close() calls context#stop -> avoid additional call, thus accept warning
+					Timer.Context timerContext = (this.messageProcessingTimer != null ? this.messageProcessingTimer.time() : null);
+
 					StreamingDataMessage[] responseMessages = this.directResponseOperator.onMessage(message);
 					if(responseMessages != null && responseMessages.length > 0) {
 						for(final StreamingDataMessage responseMessage : responseMessages) {
@@ -146,24 +125,18 @@ public class DirectResponseOperatorRuntimeEnvironment implements Runnable, Compo
 						}
 						this.destinationQueueWaitStrategy.forceLockRelease();
 					}
-					bodySize = message.getBody().length;
-				}
+					
+					if(timerContext != null)
+						timerContext.stop();
 
-				////////////////////////////////////////////////////////
-				// stats handling
-				statsEvent.addEvent((int)(System.currentTimeMillis()-start), bodySize, false);
-				////////////////////////////////////////////////////////
+					if(this.messageCounter != null)
+						this.messageCounter.inc();
+				}
 				
 			} catch(InterruptedException e) {
 				// do nothing - waiting was interrupted				
 			} catch(Exception e) {
 				logger.error("processing error [node="+this.processingNodeId+", pipeline="+this.pipelineId+", operator="+this.operatorId+"]: " + e.getMessage(), e);
-				
-				////////////////////////////////////////////////////////
-				// stats handling 
-				statsEvent.addEvent((int)(System.currentTimeMillis()-start), bodySize, true);
-				////////////////////////////////////////////////////////
-
 				// TODO add handler for responding to errors 
 			}
 		}		
@@ -191,14 +164,19 @@ public class DirectResponseOperatorRuntimeEnvironment implements Runnable, Compo
 	public boolean isRunning() {
 		return running;
 	}
-	
+
 	/**
-	 * @see com.ottogroup.bi.spqr.pipeline.statistics.ComponentStatsSupport#collectAndForwardStats()
+	 * @param messageCounter the messageCounter to set
 	 */
-	public void collectAndForwardStats() {
-		this.statsEvent.finish();
-		this.statsQueueProducer.insert(new StreamingDataMessage(this.statsEvent.toBytes(), System.currentTimeMillis()));
-		this.statsQueueProducer.getWaitStrategy().forceLockRelease();
-		this.statsEvent.start();
+	public void setMessageCounter(Counter messageCounter) {
+		this.messageCounter = messageCounter;
 	}
+
+	/**
+	 * @param messageProcessingTimer the messageProcessingTimer to set
+	 */
+	public void setMessageProcessingTimer(Timer messageProcessingTimer) {
+		this.messageProcessingTimer = messageProcessingTimer;
+	}
+	
 }

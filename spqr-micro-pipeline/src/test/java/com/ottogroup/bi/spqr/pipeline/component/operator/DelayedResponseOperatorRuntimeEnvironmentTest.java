@@ -51,7 +51,7 @@ public class DelayedResponseOperatorRuntimeEnvironmentTest {
 	@Test
 	public void testConstructor_withNullProcessingNodeId() {
 		try {
-			new DelayedResponseOperatorRuntimeEnvironment(null, "pipe-1", Mockito.mock(DelayedResponseOperator.class), Mockito.mock(DelayedResponseOperatorWaitStrategy.class), Mockito.mock(StreamingMessageQueueConsumer.class), Mockito.mock(StreamingMessageQueueProducer.class), Mockito.mock(StreamingMessageQueueProducer.class), 100);
+			new DelayedResponseOperatorRuntimeEnvironment(null, "pipe-1", Mockito.mock(DelayedResponseOperator.class), Mockito.mock(DelayedResponseOperatorWaitStrategy.class), Mockito.mock(StreamingMessageQueueConsumer.class), Mockito.mock(StreamingMessageQueueProducer.class));
 			Assert.fail("Missing required input");
 		} catch(RequiredInputMissingException e) {
 			// expected
@@ -65,7 +65,7 @@ public class DelayedResponseOperatorRuntimeEnvironmentTest {
 	@Test
 	public void testConstructor_withNullPipelineId() {
 		try {
-			new DelayedResponseOperatorRuntimeEnvironment("proc-1", null, Mockito.mock(DelayedResponseOperator.class), Mockito.mock(DelayedResponseOperatorWaitStrategy.class), Mockito.mock(StreamingMessageQueueConsumer.class), Mockito.mock(StreamingMessageQueueProducer.class), Mockito.mock(StreamingMessageQueueProducer.class), 100);
+			new DelayedResponseOperatorRuntimeEnvironment("proc-1", null, Mockito.mock(DelayedResponseOperator.class), Mockito.mock(DelayedResponseOperatorWaitStrategy.class), Mockito.mock(StreamingMessageQueueConsumer.class), Mockito.mock(StreamingMessageQueueProducer.class));
 			Assert.fail("Missing required input");
 		} catch(RequiredInputMissingException e) {
 			// expected
@@ -79,7 +79,7 @@ public class DelayedResponseOperatorRuntimeEnvironmentTest {
 	@Test
 	public void testConstructor_withNullOperatorInput() {
 		try {
-			new DelayedResponseOperatorRuntimeEnvironment("proc-1", "pipe-1", null, Mockito.mock(DelayedResponseOperatorWaitStrategy.class), Mockito.mock(StreamingMessageQueueConsumer.class), Mockito.mock(StreamingMessageQueueProducer.class), Mockito.mock(StreamingMessageQueueProducer.class), 100);
+			new DelayedResponseOperatorRuntimeEnvironment("proc-1", "pipe-1", null, Mockito.mock(DelayedResponseOperatorWaitStrategy.class), Mockito.mock(StreamingMessageQueueConsumer.class), Mockito.mock(StreamingMessageQueueProducer.class));
 			Assert.fail("Missing required input");
 		} catch(RequiredInputMissingException e) {
 			// expected
@@ -93,7 +93,7 @@ public class DelayedResponseOperatorRuntimeEnvironmentTest {
 	@Test
 	public void testConstructor_withNullWaitStrategyInput() {
 		try {
-			new DelayedResponseOperatorRuntimeEnvironment("proc-1", "pipe-1", Mockito.mock(DelayedResponseOperator.class), null, Mockito.mock(StreamingMessageQueueConsumer.class), Mockito.mock(StreamingMessageQueueProducer.class), Mockito.mock(StreamingMessageQueueProducer.class), 100);
+			new DelayedResponseOperatorRuntimeEnvironment("proc-1", "pipe-1", Mockito.mock(DelayedResponseOperator.class), null, Mockito.mock(StreamingMessageQueueConsumer.class), Mockito.mock(StreamingMessageQueueProducer.class));
 			Assert.fail("Missing required input");
 		} catch(RequiredInputMissingException e) {
 			// expected
@@ -107,7 +107,7 @@ public class DelayedResponseOperatorRuntimeEnvironmentTest {
 	@Test
 	public void testConstructor_withNullConsumerInput() {
 		try {
-			new DelayedResponseOperatorRuntimeEnvironment("proc-1", "pipe-1", Mockito.mock(DelayedResponseOperator.class), Mockito.mock(DelayedResponseOperatorWaitStrategy.class), null, Mockito.mock(StreamingMessageQueueProducer.class), Mockito.mock(StreamingMessageQueueProducer.class), 100);
+			new DelayedResponseOperatorRuntimeEnvironment("proc-1", "pipe-1", Mockito.mock(DelayedResponseOperator.class), Mockito.mock(DelayedResponseOperatorWaitStrategy.class), null, Mockito.mock(StreamingMessageQueueProducer.class));
 			Assert.fail("Missing required input");
 		} catch(RequiredInputMissingException e) {
 			// expected
@@ -121,26 +121,13 @@ public class DelayedResponseOperatorRuntimeEnvironmentTest {
 	@Test
 	public void testConstructor_withNullProducerInput() {
 		try {
-			new DelayedResponseOperatorRuntimeEnvironment("proc-1", "pipe-1", Mockito.mock(DelayedResponseOperator.class), Mockito.mock(DelayedResponseOperatorWaitStrategy.class), Mockito.mock(StreamingMessageQueueConsumer.class), null, Mockito.mock(StreamingMessageQueueProducer.class), 100);
+			new DelayedResponseOperatorRuntimeEnvironment("proc-1", "pipe-1", Mockito.mock(DelayedResponseOperator.class), Mockito.mock(DelayedResponseOperatorWaitStrategy.class), Mockito.mock(StreamingMessageQueueConsumer.class), null);
 			Assert.fail("Missing required input");
 		} catch(RequiredInputMissingException e) {
 			// expected
 		}
 	}
 
-	/**
-	 * Test case for {@link DelayedResponseOperatorRuntimeEnvironment#DelayedResponseOperatorRuntimeEnvironment(DelayedResponseOperator, DelayedResponseOperatorWaitStrategy, StreamingMessageQueueConsumer, StreamingMessageQueueProducer)}
-	 * being provided null as input to stats queue producer parameter which must lead to a {@link RequiredInputMissingException}
-	 */
-	@Test
-	public void testConstructor_withNullStatsQueueProducerInput() {
-		try {
-			new DelayedResponseOperatorRuntimeEnvironment("proc-1", "pipe-1", Mockito.mock(DelayedResponseOperator.class), Mockito.mock(DelayedResponseOperatorWaitStrategy.class), Mockito.mock(StreamingMessageQueueConsumer.class), Mockito.mock(StreamingMessageQueueProducer.class), null, 100);
-			Assert.fail("Missing required input");
-		} catch(RequiredInputMissingException e) {
-			// expected
-		}
-	}
 	
 	/**
 	 * Test case for {@link DelayedResponseOperatorRuntimeEnvironment#DelayedResponseOperatorRuntimeEnvironment(DelayedResponseOperator, DelayedResponseOperatorWaitStrategy, StreamingMessageQueueConsumer, StreamingMessageQueueProducer)}
@@ -148,7 +135,7 @@ public class DelayedResponseOperatorRuntimeEnvironmentTest {
 	 */
 	@Test
 	public void testConstructor_withValidInput() throws RequiredInputMissingException  {
-		DelayedResponseOperatorRuntimeEnvironment env = new DelayedResponseOperatorRuntimeEnvironment("proc-1", "pipe-1", Mockito.mock(DelayedResponseOperator.class), Mockito.mock(DelayedResponseOperatorWaitStrategy.class), Mockito.mock(StreamingMessageQueueConsumer.class), Mockito.mock(StreamingMessageQueueProducer.class), Mockito.mock(StreamingMessageQueueProducer.class), 100);
+		DelayedResponseOperatorRuntimeEnvironment env = new DelayedResponseOperatorRuntimeEnvironment("proc-1", "pipe-1", Mockito.mock(DelayedResponseOperator.class), Mockito.mock(DelayedResponseOperatorWaitStrategy.class), Mockito.mock(StreamingMessageQueueConsumer.class), Mockito.mock(StreamingMessageQueueProducer.class));
 		Assert.assertTrue("The environment must be running", env.isRunning());
 	}
 
@@ -162,7 +149,6 @@ public class DelayedResponseOperatorRuntimeEnvironmentTest {
 		DelayedResponseOperatorWaitStrategy responseWaitStrategy = Mockito.mock(DelayedResponseOperatorWaitStrategy.class);
 		StreamingMessageQueueConsumer queueConsumer = Mockito.mock(StreamingMessageQueueConsumer.class);
 		StreamingMessageQueueProducer queueProducer = Mockito.mock(StreamingMessageQueueProducer.class);
-		StreamingMessageQueueProducer statsQueueProducer = Mockito.mock(StreamingMessageQueueProducer.class);
 		StreamingMessageQueueWaitStrategy queueConsumerWaitStrategy = Mockito.mock(StreamingMessageQueueWaitStrategy.class);
 		StreamingMessageQueueWaitStrategy queueProducerWaitStrategy = Mockito.mock(StreamingMessageQueueWaitStrategy.class);
 		
@@ -174,7 +160,7 @@ public class DelayedResponseOperatorRuntimeEnvironmentTest {
 		Mockito.when(delayedResponseOperator.getId()).thenReturn("test-id");
 		Mockito.when(queueProducer.getWaitStrategy()).thenReturn(queueProducerWaitStrategy);
 		
-		DelayedResponseOperatorRuntimeEnvironment env = new DelayedResponseOperatorRuntimeEnvironment("proc-1", "pipe-1", delayedResponseOperator, responseWaitStrategy, queueConsumer, queueProducer, statsQueueProducer, 100);
+		DelayedResponseOperatorRuntimeEnvironment env = new DelayedResponseOperatorRuntimeEnvironment("proc-1", "pipe-1", delayedResponseOperator, responseWaitStrategy, queueConsumer, queueProducer);
 		executorService.submit(env);
 
 		env.retrieveMessages();
@@ -187,7 +173,6 @@ public class DelayedResponseOperatorRuntimeEnvironmentTest {
 		Mockito.verify(delayedResponseOperator, Mockito.timeout(500)).getResult();
 		Mockito.verify(queueProducerWaitStrategy, Mockito.timeout(500)).forceLockRelease();
 		Mockito.verify(queueProducer, Mockito.timeout(500)).insert(response);
-		Mockito.verify(statsQueueProducer, Mockito.timeout(500).atLeastOnce()).insert(Mockito.any(StreamingDataMessage.class));
 		
 		Assert.assertTrue("The environment must be running", env.isRunning());
 		env.shutdown();

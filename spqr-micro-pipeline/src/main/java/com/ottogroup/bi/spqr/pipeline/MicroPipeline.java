@@ -25,8 +25,8 @@ import com.ottogroup.bi.spqr.pipeline.component.emitter.EmitterRuntimeEnvironmen
 import com.ottogroup.bi.spqr.pipeline.component.operator.DelayedResponseOperatorRuntimeEnvironment;
 import com.ottogroup.bi.spqr.pipeline.component.operator.DirectResponseOperatorRuntimeEnvironment;
 import com.ottogroup.bi.spqr.pipeline.component.source.SourceRuntimeEnvironment;
+import com.ottogroup.bi.spqr.pipeline.metrics.ComponentMetricsHandler;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueue;
-import com.ottogroup.bi.spqr.pipeline.statistics.ComponentStatsEventCollector;
 
 /**
  * Provides a runtime container for {@link MicroPipelineComponent} instances interconnected 
@@ -37,9 +37,6 @@ import com.ottogroup.bi.spqr.pipeline.statistics.ComponentStatsEventCollector;
 public class MicroPipeline {
 	
 	private static final Logger logger = Logger.getLogger(MicroPipeline.class);
-
-	/** default identifier used for statistics queue - must not be assigned to other queues */ 
-	public static final String STATISTICS_QUEUE_NAME = "stats";
 	
 	/** unique pipeline identifier - must be unique within the whole cluster */
 	private final String id;
@@ -54,7 +51,7 @@ public class MicroPipeline {
 	/** references to queues interconnecting the components */
 	private final Map<String, StreamingMessageQueue> queues = new HashMap<>();
 	/** stats collector */
-	private ComponentStatsEventCollector statsCollector = null;
+	private ComponentMetricsHandler componentMetricsHandler = null;
 	
 	/**
 	 * Initializes the micro pipeline instance using the provided input 
@@ -65,11 +62,11 @@ public class MicroPipeline {
 	}
 	
 	/**
-	 * Attaches the referenced {@link ComponentStatsEventCollector} to this micro pipeline
-	 * @param componentStatsCollector
+	 * Attaches the referenced {@link ComponentMetricsHandler} to this micro pipeline
+	 * @param componentMetricsHandler
 	 */
-	public void attachComponentStatsCollector(final ComponentStatsEventCollector componentStatsCollector) {		
-		this.statsCollector = componentStatsCollector;
+	public void attachComponentMetricsHandler(final ComponentMetricsHandler componentMetricsHandler) {		
+		this.componentMetricsHandler = componentMetricsHandler;
 	}
 	
 	/**
@@ -170,6 +167,12 @@ public class MicroPipeline {
 	public void shutdown() {
 		
 		//////////////////////////////////////////////////////////////////////////////////////////
+		// shutting down the metrics collector
+		if(this.componentMetricsHandler != null)
+			this.componentMetricsHandler.shutdown();
+		//////////////////////////////////////////////////////////////////////////////////////////
+
+		//////////////////////////////////////////////////////////////////////////////////////////
 		// shutting down runtime environments: sources, operators, emitters
 		for(final String srcId : this.sources.keySet()) {
 			SourceRuntimeEnvironment srcEnv = this.sources.get(srcId);
@@ -257,8 +260,8 @@ public class MicroPipeline {
 		return queues;
 	}
 
-	public ComponentStatsEventCollector getStatsCollector() {
-		return statsCollector;
+	public ComponentMetricsHandler getStatsCollector() {
+		return componentMetricsHandler;
 	}
 	
 	

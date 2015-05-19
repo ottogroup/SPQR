@@ -15,19 +15,14 @@
  */
 package com.ottogroup.bi.spqr.pipeline.component.emitter;
 
-import java.util.Timer;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
+import com.codahale.metrics.Counter;
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
 import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConsumer;
-import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueProducer;
 import com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueWaitStrategy;
-import com.ottogroup.bi.spqr.pipeline.statistics.AggregatedComponentStatistics;
-import com.ottogroup.bi.spqr.pipeline.statistics.ComponentStatsSupport;
-import com.ottogroup.bi.spqr.pipeline.statistics.ComponentStatsTriggerTask;
 
 /**
  * Provides a runtime environment for {@link Emitter} instances. The environment retrieves all
@@ -36,7 +31,7 @@ import com.ottogroup.bi.spqr.pipeline.statistics.ComponentStatsTriggerTask;
  * @author mnxfst
  *
  */
-public class EmitterRuntimeEnvironment implements Runnable, ComponentStatsSupport {
+public class EmitterRuntimeEnvironment implements Runnable {
 
 	/** our faithful logging facility ... ;-) */ 
 	private static final Logger logger = Logger.getLogger(EmitterRuntimeEnvironment.class);
@@ -51,14 +46,10 @@ public class EmitterRuntimeEnvironment implements Runnable, ComponentStatsSuppor
 	private final Emitter emitter;
 	/** provides read access to assigned source queue */
 	private final StreamingMessageQueueConsumer queueConsumer;
-	/** attached statistics queue producer */
-	private final StreamingMessageQueueProducer statsQueueProducer;
 	/** indicates whether the environment is still running */
 	private boolean running = false;
-	/** stats counter */
-	private final AggregatedComponentStatistics statsEvent;
-	/** timer triggering stats collection */
-	private final Timer statsCollectionTimer;
+	/** message counter metric */
+	private Counter messageCounter = null;
 
 
 	/**
@@ -70,8 +61,7 @@ public class EmitterRuntimeEnvironment implements Runnable, ComponentStatsSuppor
 	 * @throws RequiredInputMissingException
 	 */
 	public EmitterRuntimeEnvironment(final String processingNodeId, final String pipelineId, final Emitter emitter, 
-			final StreamingMessageQueueConsumer queueConsumer, final StreamingMessageQueueProducer statsQueueProducer,
-			final long statsCollectionDelay) throws RequiredInputMissingException {
+			final StreamingMessageQueueConsumer queueConsumer) throws RequiredInputMissingException {
 		
 		///////////////////////////////////////////////////////////////////
 		// validate input
@@ -83,8 +73,6 @@ public class EmitterRuntimeEnvironment implements Runnable, ComponentStatsSuppor
 			throw new RequiredInputMissingException("Missing required emitter");
 		if(queueConsumer == null)
 			throw new RequiredInputMissingException("Missing required input queue consumer");
-		if(statsQueueProducer == null) 
-			throw new RequiredInputMissingException("Missing required stats queue producer");
 		//
 		///////////////////////////////////////////////////////////////////
 
@@ -93,15 +81,7 @@ public class EmitterRuntimeEnvironment implements Runnable, ComponentStatsSuppor
 		this.emitterId = StringUtils.lowerCase(StringUtils.trim(emitter.getId()));
 		this.emitter = emitter;
 		this.queueConsumer = queueConsumer;
-		this.statsQueueProducer = statsQueueProducer;
 		
-		this.statsEvent = new AggregatedComponentStatistics(this.processingNodeId, this.pipelineId, this.emitterId, 0, 0, 
-				0, Integer.MAX_VALUE, Integer.MIN_VALUE, 0, Integer.MAX_VALUE, Integer.MIN_VALUE, 0, 0);
-		this.statsEvent.start();
-		
-		this.statsCollectionTimer = new Timer(true);
-		this.statsCollectionTimer.schedule(new ComponentStatsTriggerTask(this), (statsCollectionDelay > 0 ? statsCollectionDelay : 1000), (statsCollectionDelay > 0 ? statsCollectionDelay : 1000));
-
 		this.running = true;
 		
 		if(logger.isDebugEnabled())
@@ -114,39 +94,25 @@ public class EmitterRuntimeEnvironment implements Runnable, ComponentStatsSuppor
 	 */
 	public void run() {
 		
-		// initialize stats counter and timer
-		long start = 0;
-		int bodySize = 0;
-
 		// fetch the wait strategy attached to the queue (provided through the queue consumer)
 		StreamingMessageQueueWaitStrategy queueWaitStrategy = this.queueConsumer.getWaitStrategy();
 		while(running) {
 
-			start = 0;
-			bodySize = 0;
 			try {
 				// fetch message from queue consumer via strategy
 				StreamingDataMessage message = queueWaitStrategy.waitFor(this.queueConsumer);
-				start = System.currentTimeMillis();
 				if(message != null && message.getBody() != null) {
 					this.emitter.onMessage(message);
-					bodySize = message.getBody().length;
+					
+					if(this.messageCounter != null)
+						this.messageCounter.inc();
 				} 
 
-				////////////////////////////////////////////////////////
-				// stats handling
-				statsEvent.addEvent((int)(System.currentTimeMillis()-start), bodySize, false);
-				////////////////////////////////////////////////////////
 			} catch(InterruptedException e) {
 				// do nothing - waiting was interrupted				
 			} catch(Exception e) {
 				logger.error("processing error [node="+this.processingNodeId+", pipeline="+this.pipelineId+", emitter="+this.emitterId+"]: " + e.getMessage(), e);
 				// TODO add handler for responding to errors
-				
-				////////////////////////////////////////////////////////
-				// stats handling
-				statsEvent.addEvent((int)(System.currentTimeMillis()-start), bodySize, true);
-				////////////////////////////////////////////////////////
 			}
 		}		
 	}
@@ -174,13 +140,11 @@ public class EmitterRuntimeEnvironment implements Runnable, ComponentStatsSuppor
 	}
 
 	/**
-	 * @see com.ottogroup.bi.spqr.pipeline.statistics.ComponentStatsSupport#collectAndForwardStats()
+	 * @param messageCounter the messageCounter to set
 	 */
-	public void collectAndForwardStats() {
-		this.statsEvent.finish();
-		this.statsQueueProducer.insert(new StreamingDataMessage(this.statsEvent.toBytes(), System.currentTimeMillis()));
-		this.statsQueueProducer.getWaitStrategy().forceLockRelease();
-		this.statsEvent.start();
+	public void setMessageCounter(Counter messageCounter) {
+		this.messageCounter = messageCounter;
 	}
 
+	
 }

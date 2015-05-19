@@ -15,26 +15,23 @@
  */
 package com.ottogroup.bi.spqr.pipeline.component.source;
 
-import java.util.Timer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
+import com.codahale.metrics.Counter;
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
 import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueProducer;
-import com.ottogroup.bi.spqr.pipeline.statistics.AggregatedComponentStatistics;
-import com.ottogroup.bi.spqr.pipeline.statistics.ComponentStatsSupport;
-import com.ottogroup.bi.spqr.pipeline.statistics.ComponentStatsTriggerTask;
 
 /**
  * Runtime environment for {@link Source} instances
  * @author mnxfst
  * @since Mar 5, 2015
  */
-public class SourceRuntimeEnvironment implements Runnable, IncomingMessageCallback, ComponentStatsSupport {
+public class SourceRuntimeEnvironment implements Runnable, IncomingMessageCallback {
 
 	/** our faithful logging facility ... ;-) */ 
 	private static final Logger logger = Logger.getLogger(SourceRuntimeEnvironment.class);
@@ -49,16 +46,12 @@ public class SourceRuntimeEnvironment implements Runnable, IncomingMessageCallba
 	private final Source source;
 	/** attached queue producer which receives incoming messages */
 	private final StreamingMessageQueueProducer queueProducer;
-	/** attached statistics queue producer */
-	private final StreamingMessageQueueProducer statsQueueProducer;
 	/** executor service that will run the source instance */
 	private final ExecutorService executorService;
 	/** local executor service? - must be shut down as well, otherwise the provider must take care of it */
 	private boolean localExecutorService = false;
-	/** stats container */
-	private final AggregatedComponentStatistics statsEvent;
-	/** timer triggering stats collection */
-	private final Timer statsCollectionTimer;
+	/** message counter metric */
+	private Counter messageCounter;
 
 	/**
 	 * Initializes the runtime environment using the provided input
@@ -66,12 +59,10 @@ public class SourceRuntimeEnvironment implements Runnable, IncomingMessageCallba
 	 * @param pipelineId
 	 * @param source
 	 * @param queueProducer
-	 * @param statsQueueProducer
 	 * @throws RequiredInputMissingException
 	 */
-	public SourceRuntimeEnvironment(final String processingNodeId, final String pipelineId, final Source source, final StreamingMessageQueueProducer queueProducer, 
-			final StreamingMessageQueueProducer statsQueueProducer, final long statsCollectionDelay) throws RequiredInputMissingException {
-		this(processingNodeId, pipelineId, source, queueProducer, statsQueueProducer, statsCollectionDelay, Executors.newCachedThreadPool());
+	public SourceRuntimeEnvironment(final String processingNodeId, final String pipelineId, final Source source, final StreamingMessageQueueProducer queueProducer) throws RequiredInputMissingException {
+		this(processingNodeId, pipelineId, source, queueProducer, Executors.newCachedThreadPool());
 		this.localExecutorService = true;
 	}
 	
@@ -81,13 +72,11 @@ public class SourceRuntimeEnvironment implements Runnable, IncomingMessageCallba
 	 * @param pipelineId
 	 * @param source
 	 * @param queueProducer
-	 * @param statsQueueProducer
-	 * @param statsCollectionDelay
 	 * @param executorService
 	 * @throws RequiredInputMissingException
 	 */
 	public SourceRuntimeEnvironment(final String processingNodeId, final String pipelineId, final Source source, final StreamingMessageQueueProducer queueProducer, 
-			final StreamingMessageQueueProducer statsQueueProducer, final long statsCollectionDelay, final ExecutorService executorService) throws RequiredInputMissingException {
+			final ExecutorService executorService) throws RequiredInputMissingException {
 		
 		///////////////////////////////////////////////////////////////
 		// validate input
@@ -99,8 +88,6 @@ public class SourceRuntimeEnvironment implements Runnable, IncomingMessageCallba
 			throw new RequiredInputMissingException("Missing required source");
 		if(queueProducer == null)
 			throw new RequiredInputMissingException("Missing required queue producer");
-		if(statsQueueProducer == null)
-			throw new RequiredInputMissingException("Missing required stats queue producer");
 		if(executorService == null)
 			throw new RequiredInputMissingException("Missing required executor service");
 		//
@@ -112,18 +99,11 @@ public class SourceRuntimeEnvironment implements Runnable, IncomingMessageCallba
 		this.source = source;
 		this.source.setIncomingMessageCallback(this);
 		this.queueProducer = queueProducer;
-		this.statsQueueProducer = statsQueueProducer;
 		this.executorService = executorService;
 		
-		this.statsEvent = new AggregatedComponentStatistics(this.processingNodeId, this.pipelineId, this.sourceId, 0, 0, 
-				0, Integer.MAX_VALUE, Integer.MIN_VALUE, 0, Integer.MAX_VALUE, Integer.MIN_VALUE, 0, 0);
-		this.statsEvent.start();
 		this.executorService.submit(source);
 		if(logger.isDebugEnabled())
 			logger.debug("source runtime environment initialized [id="+source.getId()+"]");
-		
-		this.statsCollectionTimer = new Timer(true);
-		this.statsCollectionTimer.schedule(new ComponentStatsTriggerTask(this), (statsCollectionDelay > 0 ? statsCollectionDelay : 1000), (statsCollectionDelay > 0 ? statsCollectionDelay : 1000));
 	}
 
 	/**
@@ -136,14 +116,11 @@ public class SourceRuntimeEnvironment implements Runnable, IncomingMessageCallba
 	 * @see com.ottogroup.bi.spqr.pipeline.component.source.IncomingMessageCallback#onMessage(com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage)
 	 */
 	public void onMessage(StreamingDataMessage message) {
-		long start = System.currentTimeMillis();
 		this.queueProducer.insert(message);
 		this.queueProducer.getWaitStrategy().forceLockRelease();
-
-		////////////////////////////////////////////////////////
-		// stats handling
-		this.statsEvent.addEvent((int)(System.currentTimeMillis()-start), (message != null && message.getBody() != null ? message.getBody().length : 0), false);
-		////////////////////////////////////////////////////////
+		
+		if(this.messageCounter != null)
+			this.messageCounter.inc();
 	}
 	
 	/**
@@ -170,13 +147,11 @@ public class SourceRuntimeEnvironment implements Runnable, IncomingMessageCallba
 	}
 
 	/**
-	 * @see com.ottogroup.bi.spqr.pipeline.statistics.ComponentStatsSupport#collectAndForwardStats()
+	 * Sets the message {@link Counter}
+	 * @param counter
 	 */
-	public void collectAndForwardStats() {
-		this.statsEvent.finish();
-		this.statsQueueProducer.insert(new StreamingDataMessage(this.statsEvent.toBytes(), System.currentTimeMillis()));
-		this.statsQueueProducer.getWaitStrategy().forceLockRelease();
-		this.statsEvent.start();
+	public void setMessageCounter(final Counter counter) {
+		this.messageCounter = counter;
 	}
 	
 }

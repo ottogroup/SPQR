@@ -17,6 +17,7 @@ package com.ottogroup.bi.spqr.pipeline.queue.chronicle;
 
 import net.openhft.chronicle.ExcerptTailer;
 
+import com.codahale.metrics.Counter;
 import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConsumer;
 import com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueWaitStrategy;
@@ -31,6 +32,7 @@ public class DefaultStreamingMessageQueueConsumer implements StreamingMessageQue
 	private final String queueId;
 	private final ExcerptTailer queueReader;
 	private final StreamingMessageQueueWaitStrategy waitStrategy;
+	private Counter messageRetrievalCounter = null;
 	
 	/**
 	 * Initializes the consumer using the provided input
@@ -56,6 +58,10 @@ public class DefaultStreamingMessageQueueConsumer implements StreamingMessageQue
 			byte[] body = new byte[bytes];
 			queueReader.read(body);
 			queueReader.finish();
+			
+			if(this.messageRetrievalCounter != null)
+				this.messageRetrievalCounter.inc();
+			
 			return new StreamingDataMessage(body, timestamp);
 		}
 		
@@ -73,6 +79,13 @@ public class DefaultStreamingMessageQueueConsumer implements StreamingMessageQue
 
 	public String getQueueId() {
 		return queueId;
+	}
+
+	/**
+	 * @see com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConsumer#setMessageRetrievalCounter(com.codahale.metrics.Counter)
+	 */
+	public void setMessageRetrievalCounter(Counter counter) {
+		this.messageRetrievalCounter = counter;
 	}
 
 	
