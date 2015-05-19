@@ -108,6 +108,8 @@ public class CachedComponentClassLoader extends ClassLoader {
 				return clazz;
 			}
 			
+			// create package
+			
 			// otherwise hand over the request to the parent class loader
 			clazz = super.loadClass(name);
 			if(clazz == null)
