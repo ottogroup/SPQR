@@ -15,12 +15,14 @@
  */
 package com.ottogroup.bi.spqr.pipeline.metrics;
 
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import com.codahale.metrics.ConsoleReporter;
+import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Histogram;
-import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
 
 /**
  * @author mnxfst
@@ -32,13 +34,13 @@ public class MetricsSandbox {
 	
 	public static void main(String[] args) throws Exception {
 		startReport();
-		Meter req = metrics.meter("requests");
+//		Meter req = metrics.meter("requests");
 //		Histogram gram = metrics.histogram("histo");
 //		Counter count = metrics.counter("counter");
-//		Timer timer = metrics.timer("timer");
-//		Timer.Context ctx = timer.time();
-//		Thread.sleep(1234);
-//		ctx.stop();
+		Timer timer = metrics.timer("timer");
+		Timer.Context ctx = timer.time();
+		Thread.sleep(1234);
+		ctx.stop();
 		
 		
 //		count.inc();
@@ -54,8 +56,17 @@ public class MetricsSandbox {
 //		gram.update(25);
 //		gram.update(25);
 //		gram.update(15);
-		req.mark();
-		req.mark();
+//		req.mark();
+//		req.mark();
+
+		
+		metrics.register(MetricRegistry.name(MetricsSandbox.class, "test", "size"),
+                new Gauge<Integer>() {
+                    @Override
+                    public Integer getValue() {
+                        return new Random().nextInt(100);
+                    }
+                });
 		
 		wait5Seconds();
 //		for(int i = 0; i < 100; i++)
