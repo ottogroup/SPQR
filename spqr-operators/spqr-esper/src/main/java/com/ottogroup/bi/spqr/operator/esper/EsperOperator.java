@@ -213,7 +213,7 @@ public class EsperOperator implements DelayedResponseOperator {
 	public void update(Map<String, Object> eventMap) {
 		
 		@SuppressWarnings("unchecked")
-		Map<String, Object> body = (Map<String, Object>)eventMap.get(SPQR_EVENT_BODY_FIELD);
+		Map<String, Object> body = eventMap;
 		Long timestamp = (Long)eventMap.get(SPQR_EVENT_TIMESTAMP_FIELD);
 
 		if(body != null) {

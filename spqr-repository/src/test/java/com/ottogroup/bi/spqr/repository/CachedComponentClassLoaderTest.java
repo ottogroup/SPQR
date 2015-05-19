@@ -79,6 +79,29 @@ public class CachedComponentClassLoaderTest {
 		Assert.assertEquals("Values must be equal", c.getName(), "java.lang.String");
 	}
 
+	
+	/**
+	 * Test case for {@link CachedComponentClassLoader#loadClass(String)}
+	 * being provided a reference towards a standard class 
+	 */
+	@Test
+	public void testPackage_withStandardClassReference() throws ClassNotFoundException {
+		CachedComponentClassLoader cl = new CachedComponentClassLoader(CachedComponentClassLoader.class.getClassLoader());
+		Class<?> c = cl.loadClass("java.lang.String");
+		Assert.assertEquals("Values must be equal", c.getPackage().getName(), "java.lang");
+	}
+	
+	/**
+	 * Test case for {@link CachedComponentClassLoader#loadClass(String)}
+	 * being provided a reference towards a external class 
+	 */
+	@Test
+	public void testPackage_withExternalClassReference() throws ClassNotFoundException {
+		CachedComponentClassLoader cl = new CachedComponentClassLoader(CachedComponentClassLoader.class.getClassLoader());
+		Class<?> c = cl.loadClass("com.fasterxml.jackson.databind.JsonNode");
+		Assert.assertEquals("Values must be equal", c.getPackage().getName(), "com.fasterxml.jackson.databind");
+	}
+
 	/**
 	 * Test case for {@link CachedComponentClassLoader#findClass(String)} being provided 
 	 * an empty string

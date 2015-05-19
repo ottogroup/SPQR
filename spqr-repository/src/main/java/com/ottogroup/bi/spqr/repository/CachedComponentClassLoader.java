@@ -90,6 +90,13 @@ public class CachedComponentClassLoader extends ClassLoader {
 		
 		synchronized (getClassLoadingLock(name)) {
 			
+			//check if package exists
+			String packageName = name.replaceAll(".[^.]*$", "");
+			if(super.getPackage(packageName) == null) {
+				//create non existing Package		
+				super.definePackage(packageName, null, null, null, null, null, null, null);
+			}
+		
 			// check if class has already been loaded
 			Class<?> clazz = findLoadedClass(name);
 			if(clazz != null)
@@ -107,11 +114,11 @@ public class CachedComponentClassLoader extends ClassLoader {
 			if(clazz != null) {
 				return clazz;
 			}
-			
-			// create package
-			
+
 			// otherwise hand over the request to the parent class loader
 			clazz = super.loadClass(name);
+			//check if package exists
+			
 			if(clazz == null)
 				throw new ClassNotFoundException("Class '" + name + "' not found");
 			

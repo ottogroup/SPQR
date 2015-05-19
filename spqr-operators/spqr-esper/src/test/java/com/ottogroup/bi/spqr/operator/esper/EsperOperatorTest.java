@@ -204,7 +204,7 @@ public class EsperOperatorTest {
 
 		Mockito.verify(strategy).release();
 		String content = new String(operator.getResult()[0].getBody());
-		Assert.assertEquals("Values must be equal", "{\"key\":\"value\"}", content);
+		Assert.assertEquals("Values must be equal", "{\"timestamp\":1,\"body\":{\"key\":\"value\"}}", content);
 	}	
 	
 }
