@@ -26,8 +26,6 @@ import com.ottogroup.bi.spqr.pipeline.component.operator.DelayedResponseOperator
 import com.ottogroup.bi.spqr.pipeline.component.operator.DirectResponseOperatorRuntimeEnvironment;
 import com.ottogroup.bi.spqr.pipeline.component.source.SourceRuntimeEnvironment;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueue;
-import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConsumer;
-import com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueWaitStrategy;
 import com.ottogroup.bi.spqr.pipeline.statistics.ComponentStatsEventCollector;
 
 /**

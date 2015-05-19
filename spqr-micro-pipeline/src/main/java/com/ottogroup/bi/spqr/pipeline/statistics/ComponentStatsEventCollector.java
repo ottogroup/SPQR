@@ -17,6 +17,8 @@ package com.ottogroup.bi.spqr.pipeline.statistics;
 
 import org.apache.log4j.Logger;
 
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.graphite.GraphiteReporter;
 import com.ottogroup.bi.spqr.pipeline.MicroPipeline;
 import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueue;
@@ -48,6 +50,8 @@ public class ComponentStatsEventCollector implements Runnable {
 	
 	public ComponentStatsEventCollector(final String processingNodeId, final String pipelineId,  
 			final StreamingMessageQueueConsumer statsQueueConsumer, final StreamingMessageQueueWaitStrategy statsQueueWaitStrategy) {
+		
+		
 		
 		this.processingNodeId = processingNodeId;
 		this.pipelineId = pipelineId;
