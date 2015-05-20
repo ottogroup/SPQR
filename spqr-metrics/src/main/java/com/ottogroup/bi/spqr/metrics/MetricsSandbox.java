@@ -15,14 +15,19 @@
  */
 package com.ottogroup.bi.spqr.metrics;
 
-import java.util.Random;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import com.codahale.metrics.ConsoleReporter;
-import com.codahale.metrics.Gauge;
-import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.Timer;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * @author mnxfst
@@ -33,53 +38,103 @@ public class MetricsSandbox {
 	static final MetricRegistry metrics = new MetricRegistry();
 	
 	public static void main(String[] args) throws Exception {
-		startReport();
-//		Meter req = metrics.meter("requests");
-//		Histogram gram = metrics.histogram("histo");
-//		Counter count = metrics.counter("counter");
-		Timer timer = metrics.timer("timer");
-		Timer.Context ctx = timer.time();
-		Thread.sleep(1234);
-		ctx.stop();
-		
-		
-//		count.inc();
-//		count.inc(18);
+//		startReport();
+////		Meter req = metrics.meter("requests");
+////		Histogram gram = metrics.histogram("histo");
+////		Counter count = metrics.counter("counter");
+//		Timer timer = metrics.timer("timer");
+//		Timer.Context ctx = timer.time();
+//		Thread.sleep(1234);
+//		ctx.stop();
 //		
-//		gram.update(10);
-//		gram.update(10);
-//		gram.update(20);
-//		gram.update(20);
-//		gram.update(20);
-//		gram.update(20);
-//		gram.update(20);
-//		gram.update(25);
-//		gram.update(25);
-//		gram.update(15);
-//		req.mark();
-//		req.mark();
-
-		
-		metrics.register(MetricRegistry.name(MetricsSandbox.class, "test", "size"),
-                new Gauge<Integer>() {
-                    @Override
-                    public Integer getValue() {
-                        return new Random().nextInt(100);
-                    }
-                });
-		
-		wait5Seconds();
-//		for(int i = 0; i < 100; i++)
-//			req.mark();
+//		
+////		count.inc();
+////		count.inc(18);
+////		
+////		gram.update(10);
+////		gram.update(10);
+////		gram.update(20);
+////		gram.update(20);
+////		gram.update(20);
+////		gram.update(20);
+////		gram.update(20);
+////		gram.update(25);
+////		gram.update(25);
+////		gram.update(15);
+////		req.mark();
+////		req.mark();
+//
+//		
+//		metrics.register(MetricRegistry.name(MetricsSandbox.class, "test", "size"),
+//                new Gauge<Integer>() {
+//                    @Override
+//                    public Integer getValue() {
+//                        return new Random().nextInt(100);
+//                    }
+//                });
+//		
 //		wait5Seconds();
-		System.out.println(MetricRegistry.name(MetricsSandbox.class, "runme"));
-
-		for(String k : metrics.getHistograms().keySet()) {
-			Histogram g = metrics.getHistograms().get(k);
-			System.out.println(k + ": " + g.getSnapshot().get999thPercentile());
-		}
+////		for(int i = 0; i < 100; i++)
+////			req.mark();
+////		wait5Seconds();
+//		System.out.println(MetricRegistry.name(MetricsSandbox.class, "runme"));
+//
+//		for(String k : metrics.getHistograms().keySet()) {
+//			Histogram g = metrics.getHistograms().get(k);
+//			System.out.println(k + ": " + g.getSnapshot().get999thPercentile());
+//		}
+//		
+//		System.out.println(MetricRegistry.name("first", "second", "third", "fourth", "fifth"));
 		
-		System.out.println(MetricRegistry.name("first", "second", "third", "fourth", "fifth"));
+		FileInputStream fin = new FileInputStream("/home/mnxfst/projects/dev/spqr/data/sample-event.json");
+		ByteArrayOutputStream bout = new ByteArrayOutputStream();
+		int c = 0;
+		while((c = fin.read()) != -1) {
+			bout.write(c);
+		}
+		fin.close();
+		
+		
+		ObjectMapper mapper = new ObjectMapper();
+		byte[] msg = bout.toByteArray();
+		
+//
+//	    // Parse byte array to Map
+//	    ByteArrayInputStream byteIn = new ByteArrayInputStream(byteOut.toByteArray());
+//	    ObjectInputStream in = new ObjectInputStream(byteIn);
+//	    Map<Integer, String> data2 = (Map<Integer, String>) in.readObject();
+//	    System.out.println(data2.toString());
+//		
+//		
+		mapper.readValue(msg, new TypeReference<Map<String, Object>>() {});
+	    mapper.readTree(msg);
+		
+		
+		for(int i = 0; i < 5; i++) {
+		
+		long s1 = System.currentTimeMillis();
+		Map content = mapper.readValue(msg, new TypeReference<Map<String, Object>>() {});
+		long s2 = System.currentTimeMillis();		
+		JsonNode jsonNode = mapper.readTree(msg);
+		long s3 = System.currentTimeMillis();
+
+		
+		ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+	    ObjectOutputStream out = new ObjectOutputStream(byteOut);
+	    out.writeObject(content);
+	    long s4 = System.currentTimeMillis();
+	    ByteArrayInputStream byteIn = new ByteArrayInputStream(byteOut.toByteArray());
+	    ObjectInputStream in = new ObjectInputStream(byteIn);
+	    Map<Integer, String> data2 = (Map<Integer, String>) in.readObject();
+	    long s5 = System.currentTimeMillis();	
+		
+	    if(i == 4) {
+		System.out.println("to map: " + (s2-s1)+"ms");
+		System.out.println("to node: " + (s3-s2)+"ms");
+		System.out.println("to baos: " + (s4-s3)+"ms");
+		System.out.println("from baos: " + (s5-s4)+"ms");
+	    }
+		}
 		
 	}
 	
