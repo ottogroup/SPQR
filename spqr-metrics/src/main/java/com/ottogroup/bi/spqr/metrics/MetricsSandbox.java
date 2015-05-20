@@ -86,7 +86,7 @@ public class MetricsSandbox {
 //		
 //		System.out.println(MetricRegistry.name("first", "second", "third", "fourth", "fifth"));
 		
-		FileInputStream fin = new FileInputStream("/home/mnxfst/projects/dev/spqr/data/sample-event.json");
+		FileInputStream fin = new FileInputStream("");
 		ByteArrayOutputStream bout = new ByteArrayOutputStream();
 		int c = 0;
 		while((c = fin.read()) != -1) {
