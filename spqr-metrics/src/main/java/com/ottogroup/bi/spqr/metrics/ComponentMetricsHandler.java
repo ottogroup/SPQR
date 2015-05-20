@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.ottogroup.bi.spqr.pipeline.metrics;
+package com.ottogroup.bi.spqr.metrics;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -24,9 +24,6 @@ import org.apache.log4j.Logger;
 import com.codahale.metrics.Metric;
 import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.graphite.Graphite;
-import com.codahale.metrics.graphite.GraphiteReporter;
-import com.ottogroup.bi.spqr.pipeline.MicroPipeline;
 
 /**
  * Attached to a {@link MicroPipeline} the handler manages the {@link Metric} collection and
@@ -59,7 +56,7 @@ public class ComponentMetricsHandler {
 		this.processingNodeId = processingNodeId;
 		this.pipelineId = pipelineId;
 		this.metricRegistry = metricRegistry;
-		final Graphite graphite = new Graphite(new InetSocketAddress("localhost", 2003));
+//		final Graphite graphite = new Graphite(new InetSocketAddress("localhost", 2003));
 		try {
 			graphite.connect();
 		} catch (IllegalStateException | IOException e) {

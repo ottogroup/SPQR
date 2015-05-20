@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.ottogroup.bi.spqr.pipeline.metrics;
+package com.ottogroup.bi.spqr.metrics;
 
 import java.util.Random;
 import java.util.concurrent.TimeUnit;

@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.codahale.metrics.Counter;
+import com.codahale.metrics.Timer;
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
 import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConsumer;
@@ -50,6 +51,8 @@ public class EmitterRuntimeEnvironment implements Runnable {
 	private boolean running = false;
 	/** message counter metric */
 	private Counter messageCounter = null;
+	/** insertion timer metric */
+	private Timer messageEmitDurationTimer = null;
 
 
 	/**
@@ -102,8 +105,15 @@ public class EmitterRuntimeEnvironment implements Runnable {
 				// fetch message from queue consumer via strategy
 				StreamingDataMessage message = queueWaitStrategy.waitFor(this.queueConsumer);
 				if(message != null && message.getBody() != null) {
+					
+					@SuppressWarnings("resource") // context#close() calls context#stop -> avoid additional call, thus accept warning
+					Timer.Context timerContext = (this.messageEmitDurationTimer != null ? this.messageEmitDurationTimer.time() : null);
+
 					this.emitter.onMessage(message);
 					
+					if(timerContext != null)
+						timerContext.stop();
+
 					if(this.messageCounter != null)
 						this.messageCounter.inc();
 				} 
@@ -146,5 +156,11 @@ public class EmitterRuntimeEnvironment implements Runnable {
 		this.messageCounter = messageCounter;
 	}
 
+	/**
+	 * @param messageEmitDurationTimer the messageEmitDurationTimer to set
+	 */
+	public void setMessageEmitDurationTimer(Timer messageEmitDurationTimer) {
+		this.messageEmitDurationTimer = messageEmitDurationTimer;
+	}
 	
 }

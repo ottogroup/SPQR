@@ -1,7 +1,7 @@
 /**
  * 
  */
-package com.ottogroup.bi.spqr.pipeline.metrics;
+package com.ottogroup.bi.spqr.metrics;
 
 import java.io.IOException;
 import java.util.Locale;
@@ -23,9 +23,6 @@ import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.ScheduledReporter;
 import com.codahale.metrics.Snapshot;
 import com.codahale.metrics.Timer;
-import com.codahale.metrics.graphite.Graphite;
-import com.codahale.metrics.graphite.GraphiteReporter;
-import com.codahale.metrics.graphite.GraphiteSender;
 
 /**
  * @author mnxfst
@@ -50,7 +47,14 @@ public class SPQRGraphiteReporter extends ScheduledReporter {
     public static class Builder {
         private final MetricRegistry registry;
         private Clock clock;
-        private String prefix;
+        private
+		SPQRMetricRegistry registry = new SPQRMetricRegistry("test-id");
+//		registry.histogram("test-histo").update(123);
+//		registry.counter("test-counter").inc(12);
+//		registry.meter("test-meter").mark(19);
+//		registry.timer("test-timer");
+		
+		 String prefix;
         private TimeUnit rateUnit;
         private TimeUnit durationUnit;
         private MetricFilter filter;

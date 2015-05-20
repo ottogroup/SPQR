@@ -30,6 +30,7 @@ import com.codahale.metrics.Timer;
 import com.ottogroup.bi.spqr.exception.ComponentInitializationFailedException;
 import com.ottogroup.bi.spqr.exception.QueueInitializationFailedException;
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
+import com.ottogroup.bi.spqr.metrics.ComponentMetricsHandler;
 import com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponent;
 import com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponentConfiguration;
 import com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponentType;
@@ -46,7 +47,6 @@ import com.ottogroup.bi.spqr.pipeline.component.operator.TimerBasedResponseWaitS
 import com.ottogroup.bi.spqr.pipeline.component.source.Source;
 import com.ottogroup.bi.spqr.pipeline.component.source.SourceRuntimeEnvironment;
 import com.ottogroup.bi.spqr.pipeline.exception.UnknownWaitStrategyException;
-import com.ottogroup.bi.spqr.pipeline.metrics.ComponentMetricsHandler;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueue;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConfiguration;
 import com.ottogroup.bi.spqr.pipeline.queue.chronicle.DefaultStreamingMessageQueue;
@@ -242,8 +242,21 @@ public class MicroPipelineFactory {
 						break;
 					}
 					case EMITTER: {
+						final Timer messageEmitDurationTimer = componentMetricsHandler.getMetricRegistry().timer(
+								MetricRegistry.name(
+										StringUtils.lowerCase(StringUtils.trim(this.processingNodeId)),
+										StringUtils.lowerCase(StringUtils.trim(cfg.getId())),
+										"component",
+										id,
+										"messages",
+										"emit",
+										"duration"
+								)
+						);
+
 						EmitterRuntimeEnvironment emitterEnv = new EmitterRuntimeEnvironment(this.processingNodeId, cfg.getId(), (Emitter)component, fromQueue.getConsumer());
 						emitterEnv.setMessageCounter(messageCounter);
+						emitterEnv.setMessageEmitDurationTimer(messageEmitDurationTimer);
 						microPipeline.addEmitter(id, emitterEnv);
 						emitterComponentFound = true;
 						break;

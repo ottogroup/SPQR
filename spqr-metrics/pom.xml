@@ -8,12 +8,12 @@
 	</parent>
   
   	<!-- maven specifc artifact grouping and versioning information -->
-	<artifactId>spqr-micro-pipeline</artifactId>
+	<artifactId>spqr-metrics</artifactId>
   	<packaging>jar</packaging>
 
   	<!-- general project information, eg. name and description -->
-  	<name>spqr-micro-pipeline</name>
-  	<description>SPQR micro pipeline</description>
+  	<name>spqr-metrics</name>
+  	<description>SPQR metrics</description>
   	<url>https://github.com/ottogroup/SPQR.git</url>
   	<inceptionYear>2015</inceptionYear>
   	
@@ -24,6 +24,10 @@
 	    <distribution>repo</distribution>
 	  </license>
 	</licenses>
+  
+	<properties>
+		<kafka.version>0.8.1.1</kafka.version>
+	</properties>
   
   	<dependencies>
 
@@ -48,20 +52,6 @@
 			<artifactId>spqr-base</artifactId>
 			<version>${project.version}</version>
 		</dependency>
-
-		<!-- spqr metrics -->
-		<dependency>
-			<groupId>com.ottogroup.bi.spqr</groupId>
-			<artifactId>spqr-metrics</artifactId>
-			<version>${project.version}</version>
-		</dependency>
-				
-		<!-- spqr repository -->
-		<dependency>
-			<groupId>com.ottogroup.bi.spqr</groupId>
-			<artifactId>spqr-repository</artifactId>
-			<version>${project.version}</version>
-		</dependency>
 		
 		<!-- dropwizard metrics -->
 		<dependency>
@@ -69,19 +59,13 @@
 			<artifactId>metrics-core</artifactId>
 			<version>3.1.2</version>
 		</dependency>
-		
-		<dependency>
-			<groupId>io.dropwizard.metrics</groupId>
-			<artifactId>metrics-graphite</artifactId>
-			<version>3.1.2</version>
-		</dependency>
-		
-		<dependency>
-			<groupId>io.dropwizard.metrics</groupId>
-			<artifactId>metrics-jvm</artifactId>
-			<version>3.1.2</version>
-		</dependency>
 
+		<dependency>
+			<groupId>io.dropwizard.metrics</groupId>
+			<artifactId>metrics-json</artifactId>
+			<version>3.1.2</version>
+		</dependency>
+		
 		<!-- logger -->
   		<dependency>
   			<groupId>log4j</groupId>
@@ -89,30 +73,31 @@
   			<version>1.2.17</version>
   			<scope>compile</scope>
   		</dependency>
-  		
-  		<!-- apache commons -->
+
+		<!-- kafka dependencies -->
 		<dependency>
-			<groupId>org.apache.commons</groupId>
-			<artifactId>commons-lang3</artifactId>
-			<version>3.3.2</version>
-	  		<scope>compile</scope>
-  		</dependency>
-  	
-  		<!-- jackson libraries -->
-		<dependency>
-    		<groupId>com.fasterxml.jackson.core</groupId>
-  			<artifactId>jackson-databind</artifactId>
-  			<version>2.5.1</version>
-	  		<scope>compile</scope>
-    	</dependency>
-    	
-    	<!-- openHFT chronicle used by default to exchange data -->
-    	<dependency>
-    		<groupId>net.openhft</groupId>
-    		<artifactId>chronicle</artifactId>
-    		<version>3.4.3</version>
+			<groupId>org.apache.kafka</groupId>
+			<artifactId>kafka_2.10</artifactId>
+			<version>${kafka.version}</version>
+			<exclusions>
+        		<exclusion>
+            		<groupId>com.sun.jdmk</groupId>
+            		<artifactId>jmxtools</artifactId>
+        		</exclusion>
+	        	<exclusion>
+	            	<groupId>com.sun.jmx</groupId>
+	            	<artifactId>jmxri</artifactId>
+	        	</exclusion>
+	        	<exclusion>
+		            <groupId>javax.jms</groupId>
+	    	        <artifactId>jms</artifactId>
+		        </exclusion>
+				<exclusion>
+        			<groupId>org.slf4j</groupId>
+        			<artifactId>slf4j-api</artifactId>
+     			</exclusion>     						        
+    		</exclusions>
 		</dependency>
-    	    
   		
   	</dependencies>
   	

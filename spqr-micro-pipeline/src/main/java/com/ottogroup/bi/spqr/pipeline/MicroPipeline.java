@@ -20,12 +20,12 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
+import com.ottogroup.bi.spqr.metrics.ComponentMetricsHandler;
 import com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponent;
 import com.ottogroup.bi.spqr.pipeline.component.emitter.EmitterRuntimeEnvironment;
 import com.ottogroup.bi.spqr.pipeline.component.operator.DelayedResponseOperatorRuntimeEnvironment;
 import com.ottogroup.bi.spqr.pipeline.component.operator.DirectResponseOperatorRuntimeEnvironment;
 import com.ottogroup.bi.spqr.pipeline.component.source.SourceRuntimeEnvironment;
-import com.ottogroup.bi.spqr.pipeline.metrics.ComponentMetricsHandler;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueue;
 
 /**
