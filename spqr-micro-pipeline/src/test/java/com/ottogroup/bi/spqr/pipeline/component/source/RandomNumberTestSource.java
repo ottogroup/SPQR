@@ -120,4 +120,14 @@ public class RandomNumberTestSource implements Source {
 		return MicroPipelineComponentType.SOURCE;
 	}
 
+
+	public long getSeed() {
+		return seed;
+	}
+
+
+	public void setSeed(long seed) {
+		this.seed = seed;
+	}
+
 }

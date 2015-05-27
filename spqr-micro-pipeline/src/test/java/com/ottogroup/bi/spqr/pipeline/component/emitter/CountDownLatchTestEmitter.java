@@ -102,5 +102,49 @@ public class CountDownLatchTestEmitter implements Emitter {
 		return this.id;
 	}
 
+	public long getMessageCount() {
+		return messageCount;
+	}
+
+	public void setMessageCount(long messageCount) {
+		this.messageCount = messageCount;
+	}
+
+	public long getAwaitMessages() {
+		return awaitMessages;
+	}
+
+	public void setAwaitMessages(long awaitMessages) {
+		this.awaitMessages = awaitMessages;
+	}
+
+	public int getMax() {
+		return max;
+	}
+
+	public void setMax(int max) {
+		this.max = max;
+	}
+
+	public int getMin() {
+		return min;
+	}
+
+	public void setMin(int min) {
+		this.min = min;
+	}
+
+	public int getAvg() {
+		return avg;
+	}
+
+	public void setAvg(int avg) {
+		this.avg = avg;
+	}
+
+	public CountDownLatch getLatch() {
+		return latch;
+	}
+
 
 }
