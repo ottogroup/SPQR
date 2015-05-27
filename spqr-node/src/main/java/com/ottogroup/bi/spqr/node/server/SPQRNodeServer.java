@@ -111,22 +111,22 @@ public class SPQRNodeServer extends Application<SPQRNodeServerConfiguration> {
 		
 		// register metrics handler
 		MetricsHandler handler = new MetricsHandler();
-		handler.register(new MemoryUsageGaugeSet());
-		handler.register("fs", new FileDescriptorRatioGauge());
-		handler.register(new ClassLoadingGaugeSet());
-		handler.register(new GarbageCollectorMetricSet());
-		handler.register(new ThreadStatesGaugeSet());
-		
-		KafkaReporter kafkaReporter = KafkaReporter.forRegistry(handler.getRegistry()).
-				brokerList("localhost:9092").clientId(nodeId+"Metrics").
-				convertRatesTo(TimeUnit.SECONDS).convertDurationsTo(TimeUnit.MICROSECONDS).
-				topic("nodemetrics").zookeeperConnect("localhost:2181").build();
-		kafkaReporter.start(1,TimeUnit.SECONDS);		
-		handler.addScheduledReporter("node-kafka-reporter", kafkaReporter);
-		
-		ConsoleReporter rep = ConsoleReporter.forRegistry(handler.getRegistry()).convertDurationsTo(TimeUnit.SECONDS).convertRatesTo(TimeUnit.MILLISECONDS).formattedFor(Locale.GERMANY).build();
-		rep.start(1, TimeUnit.SECONDS);
-		handler.addScheduledReporter("stdout", rep);
+//		handler.register(new MemoryUsageGaugeSet());
+//		handler.register("fs", new FileDescriptorRatioGauge());
+//		handler.register(new ClassLoadingGaugeSet());
+//		handler.register(new GarbageCollectorMetricSet());
+//		handler.register(new ThreadStatesGaugeSet());
+//		
+//		KafkaReporter kafkaReporter = KafkaReporter.forRegistry(handler.getRegistry()).
+//				brokerList("localhost:9092").clientId(nodeId+"Metrics").
+//				convertRatesTo(TimeUnit.SECONDS).convertDurationsTo(TimeUnit.MICROSECONDS).
+//				topic("nodemetrics").zookeeperConnect("localhost:2181").build();
+//		kafkaReporter.start(1,TimeUnit.SECONDS);		
+//		handler.addScheduledReporter("node-kafka-reporter", kafkaReporter);
+//		
+//		ConsoleReporter rep = ConsoleReporter.forRegistry(handler.getRegistry()).convertDurationsTo(TimeUnit.SECONDS).convertRatesTo(TimeUnit.MILLISECONDS).formattedFor(Locale.GERMANY).build();
+//		rep.start(1, TimeUnit.SECONDS);
+//		handler.addScheduledReporter("stdout", rep);
 		
 	}
 	
