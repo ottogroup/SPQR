@@ -27,6 +27,7 @@ import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
 /**
  * Flattens JSON content to key/value structure where the key is represented by the concatenated JSON nodes and the key is the value attached to
  * the final node belonging to the path 
+ * 
  * @author mnxfst
  * @since May 27, 2015
  */
