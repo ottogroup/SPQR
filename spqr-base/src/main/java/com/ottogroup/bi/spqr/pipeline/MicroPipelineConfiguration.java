@@ -73,7 +73,4 @@ public class MicroPipelineConfiguration implements Serializable {
 			List<MicroPipelineMetricsReporterConfiguration> metricsReporter) {
 		this.metricsReporter = metricsReporter;
 	}
-	
-	
-	
 }
