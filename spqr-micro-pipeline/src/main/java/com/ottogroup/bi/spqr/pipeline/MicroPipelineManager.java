@@ -15,8 +15,10 @@
  */
 package com.ottogroup.bi.spqr.pipeline;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -178,6 +180,26 @@ public class MicroPipelineManager {
 	}
 	
 	/**
+	 * Returns a list of identifiers belonging to registered {@link MicroPipeline}
+	 * @return
+	 */
+	public Set<String> getPipelineIds() {		
+		return (this.pipelines != null && !this.pipelines.isEmpty()) ? this.pipelines.keySet() : Collections.<String>emptySet();
+	}
+	
+	/**
+	 * Returns the {@link MicroPipelineConfiguration} for all registered {@link MicroPipeline} instances
+	 * @return
+	 */
+	public Map<String, MicroPipelineConfiguration> getPipelineConfigurations() {
+		Map<String, MicroPipelineConfiguration> cfgs = new HashMap<>();		
+		for(final MicroPipeline pipeline : this.pipelines.values()) {
+			cfgs.put(pipeline.getId(), pipeline.getConfiguration());
+		}		
+		return cfgs;
+	}
+	
+	/**
 	 * Shuts down the manager by stopping all running {@link MicroPipeline} instances
 	 */
 	public void shutdown() {
@@ -190,6 +212,14 @@ public class MicroPipelineManager {
 				logger.error("failed to shutdown pipeline [id="+pipelineId+"]. Reason: " + e.getMessage(), e);
 			}
 		}
+	}
+
+	/**
+	 * Returns the processing node identifier
+	 * @return
+	 */
+	public String getProcessingNodeId() {
+		return processingNodeId;
 	}
 	
 }

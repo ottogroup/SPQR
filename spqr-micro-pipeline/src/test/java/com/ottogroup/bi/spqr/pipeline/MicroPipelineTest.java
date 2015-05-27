@@ -97,7 +97,7 @@ public class MicroPipelineTest {
 		
 		EmitterRuntimeEnvironment emitterEnv = new EmitterRuntimeEnvironment("node", "pipe", emitter, queue.getConsumer());
 		
-		MicroPipeline pipeline = new MicroPipeline("test_performance1");
+		MicroPipeline pipeline = new MicroPipeline("test_performance1", new MicroPipelineConfiguration());
 		pipeline.addQueue(queue.getId(), queue);		
 		pipeline.addSource(source.getId(), srcEnv);
 		pipeline.addEmitter(emitter.getId(), emitterEnv);

@@ -190,7 +190,33 @@ public class MicroPipelineManagerTest {
 		Assert.assertEquals("Values must be equal", StringUtils.lowerCase(StringUtils.trim(cfg.getId())), manager.executePipeline(cfg));
 		Assert.assertEquals("Values must be equal", 1, manager.getNumOfRegisteredPipelines());
 		
-		Mockito.verify(factory).instantiatePipeline(cfg, executorService);		
+		Mockito.verify(factory).instantiatePipeline(cfg, executorService);
+	}
+	
+	/**
+	 * Test case for {@link MicroPipelineManager#getPipelineIds()} with previously registered {@link MicroPipeline} instance
+	 */
+	@Test
+	public void testGetPipelineIds_withExistingConfiguration() throws Exception {
+		MicroPipelineConfiguration cfg = new MicroPipelineConfiguration();
+		cfg.setId("testExecutePipeline_withValidConfiguration");
+		
+		MicroPipeline pipeline = Mockito.mock(MicroPipeline.class);
+		Mockito.when(pipeline.getId()).thenReturn(cfg.getId());
+		
+		MicroPipelineFactory factory = Mockito.mock(MicroPipelineFactory.class);
+		Mockito.when(factory.instantiatePipeline(cfg, executorService)).thenReturn(pipeline);
+		
+		MicroPipelineManager manager = new MicroPipelineManager("id", factory, executorService);		
+		Assert.assertTrue("The result must be empty", manager.getPipelineIds().isEmpty());
+		
+		Assert.assertEquals("Values must be equal", StringUtils.lowerCase(StringUtils.trim(cfg.getId())), manager.executePipeline(cfg));
+		Assert.assertEquals("Values must be equal", 1, manager.getNumOfRegisteredPipelines());
+		Assert.assertEquals("The set must contain 1 element", 1, manager.getPipelineIds().size());
+		Assert.assertTrue("The set must contain the identifier", manager.getPipelineIds().contains(StringUtils.lowerCase(StringUtils.trim(cfg.getId()))));
+		
+		
+		Mockito.verify(factory).instantiatePipeline(cfg, executorService);
 	}
 	
 	/**

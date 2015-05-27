@@ -40,6 +40,8 @@ public class MicroPipeline {
 	
 	/** unique pipeline identifier - must be unique within the whole cluster */
 	private final String id;
+	/** configuration */
+	private final MicroPipelineConfiguration configuration;
 	/** references to source runtime environments */
 	private final Map<String, SourceRuntimeEnvironment> sources = new HashMap<>();
 	/** references to direct response operator runtime environments */
@@ -56,9 +58,11 @@ public class MicroPipeline {
 	/**
 	 * Initializes the micro pipeline instance using the provided input 
 	 * @param id
+	 * @param configuration
 	 */
-	public MicroPipeline(final String id) {
+	public MicroPipeline(final String id, final MicroPipelineConfiguration configuration) {
 		this.id = id;
+		this.configuration = configuration;
 	}	
 	
 	/**
@@ -262,6 +266,10 @@ public class MicroPipeline {
 
 	public MetricsHandler getMetricsHandler() {
 		return metricsHandler;
+	}
+
+	public MicroPipelineConfiguration getConfiguration() {
+		return configuration;
 	}
 	
 	

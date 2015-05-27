@@ -16,11 +16,13 @@
 package com.ottogroup.bi.spqr.node.resource.pipeline;
 
 import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -51,6 +53,9 @@ public class MicroPipelineResource {
 	public static final String ERROR_MSG_PIPELINE_ID_MISSING = "Missing required pipeline id";
 	public static final String ERROR_MSG_PIPELINE_CONFIGURATION_MISSING = "Missing required pipeline configuration";
 	public static final String ERROR_MSG_PIPELINE_IDS_DIFFER = "Pipeline id referenced in path is not equal to id found in configuration"; 
+	
+	public static final String LIST_PIPELINES_MODE_FULL = "FULL";
+	public static final String LIST_PIPELINES_MODE_SIMPLE = "SIMPLE";
 	
 	private final MicroPipelineManager microPipelineManager;
 	
@@ -164,5 +169,22 @@ public class MicroPipelineResource {
 			return new MicroPipelineShutdownResponse(pipelineId, MicroPipelineShutdownState.TECHNICAL_ERROR, e.getMessage());
 		}
 	}
-	
+
+	/**
+	 * Lists all {@link MicroPipeline} instances registered with this node. Depending on the <i>mode</i> parameter, the 
+	 * result contains either just a list of pipeline identifiers or contains the associated {@link MicroPipelineConfiguration} as well. 
+	 * @param mode result mode: SIMPLE, FULL (default: SIMPLE) 
+	 * @return
+	 */
+	@Produces(value = "application/json" )
+	@Timed(name = "pipeline-list" )
+	@GET
+	@Path("list")
+	public ListRegisteredMicroPipelinesResponse listRegisteredPipelines(@QueryParam("mode") final String mode) {
+		if(StringUtils.isBlank(mode) || StringUtils.equalsIgnoreCase(mode, LIST_PIPELINES_MODE_SIMPLE)) {
+			return new ListRegisteredMicroPipelinesResponse(this.microPipelineManager.getProcessingNodeId(), this.microPipelineManager.getPipelineIds());
+		}
+		
+		return new ListRegisteredMicroPipelinesResponse(this.microPipelineManager.getProcessingNodeId(), this.microPipelineManager.getPipelineIds(), this.microPipelineManager.getPipelineConfigurations());		
+	}
 }

@@ -17,7 +17,6 @@ package com.ottogroup.bi.spqr.pipeline;
 
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
@@ -49,8 +48,6 @@ import com.ottogroup.bi.spqr.pipeline.component.operator.TimerBasedResponseWaitS
 import com.ottogroup.bi.spqr.pipeline.component.source.Source;
 import com.ottogroup.bi.spqr.pipeline.component.source.SourceRuntimeEnvironment;
 import com.ottogroup.bi.spqr.pipeline.exception.UnknownWaitStrategyException;
-import com.ottogroup.bi.spqr.pipeline.metrics.MetricReporterType;
-import com.ottogroup.bi.spqr.pipeline.metrics.MicroPipelineMetricsReporterConfiguration;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueue;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConfiguration;
 import com.ottogroup.bi.spqr.pipeline.queue.chronicle.DefaultStreamingMessageQueue;
@@ -119,7 +116,7 @@ public class MicroPipelineFactory {
 		// keep track of all ready created queue instances and create a new one for each configuration
 		// entry. if creation fails for any reason, all previously created queues are shut down and
 		// a queue initialization exception is thrown
-		MicroPipeline microPipeline = new MicroPipeline(StringUtils.lowerCase(StringUtils.trim(cfg.getId())));
+		MicroPipeline microPipeline = new MicroPipeline(StringUtils.lowerCase(StringUtils.trim(cfg.getId())), cfg);
 		for(final StreamingMessageQueueConfiguration queueConfig : cfg.getQueues()) {
 			String id = StringUtils.lowerCase(StringUtils.trim(queueConfig.getId()));
 			
