@@ -20,6 +20,7 @@
   	<modules>
 		<module>spqr-base</module>
 		<module>spqr-repository</module>
+		<module>spqr-metrics</module>
 		<module>spqr-micro-pipeline</module>
 		<module>spqr-node</module>
 		<module>spqr-resman</module>
