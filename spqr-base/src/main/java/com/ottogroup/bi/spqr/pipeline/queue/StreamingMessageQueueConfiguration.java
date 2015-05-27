@@ -34,6 +34,12 @@ public class StreamingMessageQueueConfiguration implements Serializable {
 	/** component identifier */
 	@JsonProperty(value="id", required=true)
 	private String id = null;
+	/** add message insertion counter */
+	@JsonProperty(value="attachInsertionCounter", required=false)
+	private boolean attachInsertionCounter = false;
+	/** add message retrieval counter */
+	@JsonProperty(value="attachRetrievalCounter", required=false)
+	private boolean attachRetrievalCounter = false;
 	/** queue settings */
 	@JsonProperty(value="queueSettings", required=true)
 	private Properties properties = null;
@@ -48,16 +54,32 @@ public class StreamingMessageQueueConfiguration implements Serializable {
 	public String getId() {
 		return id;
 	}
+	
 	public void setId(String id) {
 		this.id = id;
 	}
+	
 	public Properties getProperties() {
 		return properties;
 	}
+	
 	public void setProperties(Properties properties) {
 		this.properties = properties;
 	}
-	
-	
-	
+
+	public boolean isAttachInsertionCounter() {
+		return attachInsertionCounter;
+	}
+
+	public void setAttachInsertionCounter(boolean attachInsertionCounter) {
+		this.attachInsertionCounter = attachInsertionCounter;
+	}
+
+	public boolean isAttachRetrievalCounter() {
+		return attachRetrievalCounter;
+	}
+
+	public void setAttachRetrievalCounter(boolean attachRetrievalCounter) {
+		this.attachRetrievalCounter = attachRetrievalCounter;
+	}	
 }

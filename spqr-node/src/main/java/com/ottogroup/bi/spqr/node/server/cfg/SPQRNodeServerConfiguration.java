@@ -37,6 +37,7 @@ public class SPQRNodeServerConfiguration extends Configuration {
 	/** http client configuration */
 	@JsonProperty(value="httpClient", required=true)
     private JerseyClientConfiguration httpClient;
+			
 	
 	public SPQRProcessingNodeConfiguration getSpqrNode() {
 		return spqrNode;

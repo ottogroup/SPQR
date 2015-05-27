@@ -23,37 +23,34 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
-import com.codahale.metrics.ConsoleReporter;
-import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.jvm.ClassLoadingGaugeSet;
 import com.codahale.metrics.jvm.FileDescriptorRatioGauge;
 import com.codahale.metrics.jvm.GarbageCollectorMetricSet;
 import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
-import com.codahale.metrics.jvm.ThreadDeadlockDetector;
 import com.codahale.metrics.jvm.ThreadStatesGaugeSet;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.ottogroup.bi.spqr.exception.RemoteClientConnectionFailedException;
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
 import com.ottogroup.bi.spqr.metrics.MetricsHandler;
-import com.ottogroup.bi.spqr.metrics.kafka.KafkaReporter;
+import com.ottogroup.bi.spqr.metrics.MetricsReporterFactory;
 import com.ottogroup.bi.spqr.node.message.NodeRegistration.NodeRegistrationResponse;
 import com.ottogroup.bi.spqr.node.message.NodeRegistration.NodeRegistrationState;
 import com.ottogroup.bi.spqr.node.resman.SPQRResourceManagerClient;
 import com.ottogroup.bi.spqr.node.resource.pipeline.MicroPipelineResource;
+import com.ottogroup.bi.spqr.node.server.cfg.SPQRNodeMetricsConfiguration;
 import com.ottogroup.bi.spqr.node.server.cfg.SPQRNodeServerConfiguration;
 import com.ottogroup.bi.spqr.node.server.cfg.SPQRResourceManagerConfiguration;
 import com.ottogroup.bi.spqr.node.server.cfg.SPQRResourceManagerConfiguration.ResourceManagerMode;
 import com.ottogroup.bi.spqr.pipeline.MicroPipeline;
 import com.ottogroup.bi.spqr.pipeline.MicroPipelineManager;
+import com.ottogroup.bi.spqr.pipeline.metrics.MicroPipelineMetricsReporterConfiguration;
 import com.ottogroup.bi.spqr.repository.ComponentDescriptor;
 import com.ottogroup.bi.spqr.repository.ComponentRepository;
 
@@ -111,23 +108,44 @@ public class SPQRNodeServer extends Application<SPQRNodeServerConfiguration> {
 		
 		// register metrics handler
 		MetricsHandler handler = new MetricsHandler();
-//		handler.register(new MemoryUsageGaugeSet());
-//		handler.register("fs", new FileDescriptorRatioGauge());
-//		handler.register(new ClassLoadingGaugeSet());
-//		handler.register(new GarbageCollectorMetricSet());
-//		handler.register(new ThreadStatesGaugeSet());
-//		
-//		KafkaReporter kafkaReporter = KafkaReporter.forRegistry(handler.getRegistry()).
-//				brokerList("localhost:9092").clientId(nodeId+"Metrics").
-//				convertRatesTo(TimeUnit.SECONDS).convertDurationsTo(TimeUnit.MICROSECONDS).
-//				topic("nodemetrics").zookeeperConnect("localhost:2181").build();
-//		kafkaReporter.start(1,TimeUnit.SECONDS);		
-//		handler.addScheduledReporter("node-kafka-reporter", kafkaReporter);
-//		
-//		ConsoleReporter rep = ConsoleReporter.forRegistry(handler.getRegistry()).convertDurationsTo(TimeUnit.SECONDS).convertRatesTo(TimeUnit.MILLISECONDS).formattedFor(Locale.GERMANY).build();
-//		rep.start(1, TimeUnit.SECONDS);
-//		handler.addScheduledReporter("stdout", rep);
-		
+		if(configuration.getSpqrNode().getSpqrMetrics() != null) {
+			final SPQRNodeMetricsConfiguration metricsCfg = configuration.getSpqrNode().getSpqrMetrics();
+			
+			if(metricsCfg.getMetricsReporter() != null && !metricsCfg.getMetricsReporter().isEmpty()) {
+				
+				if(metricsCfg.isAttachClassLoadingMetricCollector()) {
+					handler.register(new ClassLoadingGaugeSet());
+				}
+				if(metricsCfg.isAttachFileDescriptorMetricCollector()) {
+					handler.register("fs", new FileDescriptorRatioGauge());		
+				}
+				if(metricsCfg.isAttachGCMetricCollector()) {
+					handler.register(new GarbageCollectorMetricSet());		
+				}
+				if(metricsCfg.isAttachMemoryUsageMetricCollector()) {
+					handler.register(new MemoryUsageGaugeSet());		
+				}
+				if(metricsCfg.isAttachThreadStateMetricCollector()) {
+					handler.register(new ThreadStatesGaugeSet());		
+				}
+			
+				MetricsReporterFactory.attachReporters(handler, metricsCfg.getMetricsReporter());
+				
+				logger.info("metrics[classloader="+metricsCfg.isAttachClassLoadingMetricCollector()+
+							       ",fileSystem="+metricsCfg.isAttachFileDescriptorMetricCollector()+
+							       ",gc="+metricsCfg.isAttachGCMetricCollector()+
+							       ",memory="+metricsCfg.isAttachMemoryUsageMetricCollector()+
+							       ",threadState="+metricsCfg.isAttachThreadStateMetricCollector()+"]");
+				
+				StringBuffer buf = new StringBuffer();
+				for(final MicroPipelineMetricsReporterConfiguration mr : metricsCfg.getMetricsReporter()) {
+					buf.append("(id=").append(mr.getId()).append(", type=").append(mr.getType()).append(")");
+				}
+				logger.info("metricReporters["+buf.toString()+"]");
+			}
+		} else {
+			logger.info("no metrics and metric reporters configured for processing node '"+nodeId+"'");
+		}
 	}
 	
 	/**
@@ -246,12 +264,13 @@ public class SPQRNodeServer extends Application<SPQRNodeServerConfiguration> {
 		logger.info("Components deployment finished [repo="+repositoryPath+", componentFolders="+folderCount+", componets="+componentsCount+"]");
 		return library;
 	}	
+	
+	
 	/**
 	 * Ramps up the node server instance
 	 * @param args
 	 */
 	public static void main(String[] args) throws Exception {
-		
 		new SPQRNodeServer().run(args);
 	}
 

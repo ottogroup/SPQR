@@ -13,19 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.ottogroup.bi.spqr.node.server.cfg;
+package com.ottogroup.bi.spqr.pipeline.metrics;
 
 import java.io.Serializable;
 
-import com.codahale.metrics.ConsoleReporter;
-import com.fasterxml.jackson.annotation.JsonRootName;
-
 /**
- * Configures {@link ConsoleReporter}
+ * Supporter reporter types
  * @author mnxfst
- * @since May 21, 2015
+ * @since May 27, 2015
  */
-@JsonRootName(value="metricsConsoleReporterConfiguration")
-public class MetricsConsoleReporterConfiguration implements Serializable {
-
+public enum MetricReporterType implements Serializable {
+	CONSOLE, KAFKA, CSV, GRAPHITE
 }

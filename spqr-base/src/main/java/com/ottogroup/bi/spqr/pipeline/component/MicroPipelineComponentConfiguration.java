@@ -52,6 +52,13 @@ public class MicroPipelineComponentConfiguration implements Serializable {
 	/** identifier of queues to produce content to */
 	@JsonProperty(value="toQueue", required=true)
 	private String toQueue = null;
+	/** attach message counter */
+	@JsonProperty(value="attachMessageCounter", required=false)
+	private boolean attachMessageCounter = false;
+	/** attach processing timer */
+	@JsonProperty(value="attachProcessingTimer", required=false)
+	private boolean attachProcessingTimer = false;
+	
 	
 	public String getId() {
 		return id;
@@ -96,5 +103,17 @@ public class MicroPipelineComponentConfiguration implements Serializable {
 	}
 	public void setToQueue(String toQueue) {
 		this.toQueue = toQueue;
+	}
+	public boolean isAttachMessageCounter() {
+		return attachMessageCounter;
+	}
+	public void setAttachMessageCounter(boolean attachMessageCounter) {
+		this.attachMessageCounter = attachMessageCounter;
+	}
+	public boolean isAttachProcessingTimer() {
+		return attachProcessingTimer;
+	}
+	public void setAttachProcessingTimer(boolean attachProcessingTimer) {
+		this.attachProcessingTimer = attachProcessingTimer;
 	}
 }

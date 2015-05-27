@@ -22,6 +22,7 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponentConfiguration;
+import com.ottogroup.bi.spqr.pipeline.metrics.MicroPipelineMetricsReporterConfiguration;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConfiguration;
 
 /**
@@ -43,6 +44,9 @@ public class MicroPipelineConfiguration implements Serializable {
 	/** component configurations */
 	@JsonProperty(value="components", required=true)
 	private List<MicroPipelineComponentConfiguration> components = new ArrayList<>();
+	/** metrics reporter */
+	@JsonProperty(value="metricsReporter", required=false)
+	private List<MicroPipelineMetricsReporterConfiguration> metricsReporter = new ArrayList<MicroPipelineMetricsReporterConfiguration>();
 	
 	public String getId() {
 		return id;
@@ -61,6 +65,13 @@ public class MicroPipelineConfiguration implements Serializable {
 	}
 	public void setComponents(List<MicroPipelineComponentConfiguration> components) {
 		this.components = components;
+	}
+	public List<MicroPipelineMetricsReporterConfiguration> getMetricsReporter() {
+		return metricsReporter;
+	}
+	public void setMetricsReporter(
+			List<MicroPipelineMetricsReporterConfiguration> metricsReporter) {
+		this.metricsReporter = metricsReporter;
 	}
 	
 	

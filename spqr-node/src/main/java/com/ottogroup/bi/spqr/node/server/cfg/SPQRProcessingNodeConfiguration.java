@@ -54,6 +54,11 @@ public class SPQRProcessingNodeConfiguration implements Serializable {
 	/** admin port */
 	@JsonProperty(value="adminPort", required=true)
 	private int adminPort = 8081;
+	
+	/** spqr server metrics */
+	@JsonProperty(value="spqrMetrics", required=false)
+	private SPQRNodeMetricsConfiguration spqrMetrics = null;
+
 		
 	public String getLog4jConfiguration() {
 		return log4jConfiguration;
@@ -104,5 +109,11 @@ public class SPQRProcessingNodeConfiguration implements Serializable {
 		this.adminPort = adminPort;
 	}
 	
-	
+	public SPQRNodeMetricsConfiguration getSpqrMetrics() {
+		return spqrMetrics;
+	}
+	public void setSpqrMetrics(SPQRNodeMetricsConfiguration spqrMetrics) {
+		this.spqrMetrics = spqrMetrics;
+	}
+
 }

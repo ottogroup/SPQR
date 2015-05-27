@@ -17,16 +17,14 @@ package com.ottogroup.bi.spqr.pipeline;
 
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.Locale;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
-import com.codahale.metrics.ConsoleReporter;
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
@@ -34,6 +32,7 @@ import com.ottogroup.bi.spqr.exception.ComponentInitializationFailedException;
 import com.ottogroup.bi.spqr.exception.QueueInitializationFailedException;
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
 import com.ottogroup.bi.spqr.metrics.MetricsHandler;
+import com.ottogroup.bi.spqr.metrics.MetricsReporterFactory;
 import com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponent;
 import com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponentConfiguration;
 import com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponentType;
@@ -50,6 +49,8 @@ import com.ottogroup.bi.spqr.pipeline.component.operator.TimerBasedResponseWaitS
 import com.ottogroup.bi.spqr.pipeline.component.source.Source;
 import com.ottogroup.bi.spqr.pipeline.component.source.SourceRuntimeEnvironment;
 import com.ottogroup.bi.spqr.pipeline.exception.UnknownWaitStrategyException;
+import com.ottogroup.bi.spqr.pipeline.metrics.MetricReporterType;
+import com.ottogroup.bi.spqr.pipeline.metrics.MicroPipelineMetricsReporterConfiguration;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueue;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConfiguration;
 import com.ottogroup.bi.spqr.pipeline.queue.chronicle.DefaultStreamingMessageQueue;
@@ -109,10 +110,8 @@ public class MicroPipelineFactory {
 				            "queue",
 				            "messages");
 				            
-		// TODO deactivate
 		final MetricsHandler metricsHandler = new MetricsHandler();
-		// TODO START
-		metricsHandler.addScheduledReporter("stdout", ConsoleReporter.forRegistry(metricsHandler.getRegistry()).convertDurationsTo(TimeUnit.SECONDS).convertRatesTo(TimeUnit.MILLISECONDS).formattedFor(Locale.GERMANY).build());
+		MetricsReporterFactory.attachReporters(metricsHandler, cfg.getMetricsReporter());
 		
 		///////////////////////////////////////////////////////////////////////////////////
 		// (1) initialize queues
@@ -135,32 +134,42 @@ public class MicroPipelineFactory {
 			try {
 				StreamingMessageQueue queueInstance = initializeQueue(queueConfig);
 				
+
 				/////////////////////////////////////////////////////////////////////
 				// add queue message insertion and retrieval counters
-				// TODO configure
-				final Counter queueInsertionCounter = metricsHandler.counter(
-						MetricRegistry.name(
-								StringUtils.lowerCase(StringUtils.trim(this.processingNodeId)),
-								StringUtils.lowerCase(StringUtils.trim(cfg.getId())),
-								"queue",
-								id,
-								"messages",
-								"in"
-						), true
-				);
+				if(queueConfig.isAttachInsertionCounter()) {
+					final Counter queueInsertionCounter = metricsHandler.counter(
+							MetricRegistry.name(
+									StringUtils.lowerCase(StringUtils.trim(this.processingNodeId)),
+									StringUtils.lowerCase(StringUtils.trim(cfg.getId())),
+									"queue",
+									id,
+									"messages",
+									"in"
+							), true
+					);
+					queueInstance.setMessageInsertionCounter(queueInsertionCounter);
+					
+					if(logger.isDebugEnabled())
+						logger.debug("queue[id="+id+"]: message insertion counter attached");
+				}
 				
-				final Counter queueRetrievalCounter = metricsHandler.counter(
-						MetricRegistry.name(
-								StringUtils.lowerCase(StringUtils.trim(this.processingNodeId)),
-								StringUtils.lowerCase(StringUtils.trim(cfg.getId())),
-								"queue",
-								id,
-								"messages",
-								"out"
-						), true
-				);
-				queueInstance.setMessageInsertionCounter(queueInsertionCounter);
-				queueInstance.setMessageRetrievalCounter(queueRetrievalCounter);
+				if(queueConfig.isAttachRetrievalCounter()) {
+					final Counter queueRetrievalCounter = metricsHandler.counter(
+							MetricRegistry.name(
+									StringUtils.lowerCase(StringUtils.trim(this.processingNodeId)),
+									StringUtils.lowerCase(StringUtils.trim(cfg.getId())),
+									"queue",
+									id,
+									"messages",
+									"out"
+							), true
+					);
+					queueInstance.setMessageRetrievalCounter(queueRetrievalCounter);
+
+					if(logger.isDebugEnabled())
+						logger.debug("queue[id="+id+"]: message retrieval counter attached");
+				}
 				/////////////////////////////////////////////////////////////////////
 				
 				microPipeline.addQueue(id, queueInstance);				
@@ -201,7 +210,9 @@ public class MicroPipelineFactory {
 				final StreamingMessageQueue fromQueue = microPipeline.getQueue(StringUtils.lowerCase(StringUtils.trim(componentCfg.getFromQueue())));
 				final StreamingMessageQueue toQueue = microPipeline.getQueue(StringUtils.lowerCase(StringUtils.trim(componentCfg.getToQueue())));
 				
-				final Counter messageCounter = metricsHandler.counter(
+				Counter messageCounter = null;
+				if(componentCfg.isAttachMessageCounter()) {
+					messageCounter = metricsHandler.counter(
 						MetricRegistry.name(
 								StringUtils.lowerCase(StringUtils.trim(this.processingNodeId)),
 								StringUtils.lowerCase(StringUtils.trim(cfg.getId())),
@@ -210,58 +221,88 @@ public class MicroPipelineFactory {
 								"messages",
 								"count"
 						), true
-				);
+					);
+				}
 				
 				switch(component.getType()) {
 					case SOURCE: {
 						SourceRuntimeEnvironment srcEnv = new SourceRuntimeEnvironment(this.processingNodeId, cfg.getId(), (Source)component, toQueue.getProducer());
-						srcEnv.setMessageCounter(messageCounter);
+
+						///////////////////////////////////////////////
+						// attach monitoring components
+						if(messageCounter != null)
+							srcEnv.setMessageCounter(messageCounter);
+						///////////////////////////////////////////////
+
 						microPipeline.addSource(id, srcEnv);
 						sourceComponentFound = true;
 						break;
 					}
 					case DIRECT_RESPONSE_OPERATOR: {
-						
-						final Timer messageProcessingTimer = metricsHandler.timer(
-								MetricRegistry.name(
-										StringUtils.lowerCase(StringUtils.trim(this.processingNodeId)),
-										StringUtils.lowerCase(StringUtils.trim(cfg.getId())),
-										"component",
-										id,
-										"messages",
-										"timer"
-								)
-						);
+
 						DirectResponseOperatorRuntimeEnvironment directResponseEnv = new DirectResponseOperatorRuntimeEnvironment(this.processingNodeId, cfg.getId(), (DirectResponseOperator)component, 
 								fromQueue.getConsumer(), toQueue.getProducer());
-						directResponseEnv.setMessageCounter(messageCounter);
-						directResponseEnv.setMessageProcessingTimer(messageProcessingTimer);
+
+						///////////////////////////////////////////////
+						// attach monitoring components
+						if(componentCfg.isAttachProcessingTimer()) {
+							final Timer messageProcessingTimer = metricsHandler.timer(
+									MetricRegistry.name(
+											StringUtils.lowerCase(StringUtils.trim(this.processingNodeId)),
+											StringUtils.lowerCase(StringUtils.trim(cfg.getId())),
+											"component",
+											id,
+											"messages",
+											"timer"
+									)
+							);
+							directResponseEnv.setMessageProcessingTimer(messageProcessingTimer);
+						}
+						
+						if(messageCounter != null)
+							directResponseEnv.setMessageCounter(messageCounter);
+						///////////////////////////////////////////////
+						
 						microPipeline.addOperator(id, directResponseEnv);
 						break;
 					}
 					case DELAYED_RESPONSE_OPERATOR: {
 						DelayedResponseOperatorRuntimeEnvironment delayedResponseEnv = new DelayedResponseOperatorRuntimeEnvironment(this.processingNodeId, cfg.getId(), (DelayedResponseOperator)component, getResponseWaitStrategy(componentCfg), 
 								fromQueue.getConsumer(), toQueue.getProducer(), executorService);
-						delayedResponseEnv.setMessageCounter(messageCounter);
+						
+						///////////////////////////////////////////////
+						// attach monitoring components
+						if(messageCounter != null)
+							delayedResponseEnv.setMessageCounter(messageCounter);
+						///////////////////////////////////////////////
+						
 						microPipeline.addOperator(id, delayedResponseEnv);
 						break;
 					}
 					case EMITTER: {
-						final Timer messageEmitDurationTimer = metricsHandler.timer(
-								MetricRegistry.name(
-										StringUtils.lowerCase(StringUtils.trim(this.processingNodeId)),
-										StringUtils.lowerCase(StringUtils.trim(cfg.getId())),
-										"component",
-										id,
-										"messages",
-										"emit",
-										"duration"
-								)
-						);
-
 						EmitterRuntimeEnvironment emitterEnv = new EmitterRuntimeEnvironment(this.processingNodeId, cfg.getId(), (Emitter)component, fromQueue.getConsumer());
-						emitterEnv.setMessageCounter(messageCounter);
-						emitterEnv.setMessageEmitDurationTimer(messageEmitDurationTimer);
+
+						///////////////////////////////////////////////
+						// attach monitoring components
+						if(componentCfg.isAttachProcessingTimer()) {
+							final Timer messageEmitDurationTimer = metricsHandler.timer(
+									MetricRegistry.name(
+											StringUtils.lowerCase(StringUtils.trim(this.processingNodeId)),
+											StringUtils.lowerCase(StringUtils.trim(cfg.getId())),
+											"component",
+											id,
+											"messages",
+											"emit",
+											"duration"
+									)
+							);
+							emitterEnv.setMessageEmitDurationTimer(messageEmitDurationTimer);
+						}
+
+						if(messageCounter != null)
+							emitterEnv.setMessageCounter(messageCounter);
+						///////////////////////////////////////////////
+						
 						microPipeline.addEmitter(id, emitterEnv);
 						emitterComponentFound = true;
 						break;
@@ -499,4 +540,5 @@ public class MicroPipelineFactory {
 		throw new UnknownWaitStrategyException("Unknown wait strategy '"+strategyName+"'");
 		
 	}
+	
 }
