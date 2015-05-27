@@ -17,20 +17,23 @@ package com.ottogroup.bi.spqr.pipeline;
 
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
+import com.codahale.metrics.ConsoleReporter;
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.ottogroup.bi.spqr.exception.ComponentInitializationFailedException;
 import com.ottogroup.bi.spqr.exception.QueueInitializationFailedException;
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
-import com.ottogroup.bi.spqr.metrics.ComponentMetricsHandler;
+import com.ottogroup.bi.spqr.metrics.MetricsHandler;
 import com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponent;
 import com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponentConfiguration;
 import com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponentType;
@@ -106,8 +109,10 @@ public class MicroPipelineFactory {
 				            "queue",
 				            "messages");
 				            
-		
-		final ComponentMetricsHandler componentMetricsHandler = new ComponentMetricsHandler(this.processingNodeId, cfg.getId(), new MetricRegistry());		
+		// TODO deactivate
+		final MetricsHandler metricsHandler = new MetricsHandler();
+		// TODO START
+		metricsHandler.addScheduledReporter("stdout", ConsoleReporter.forRegistry(metricsHandler.getRegistry()).convertDurationsTo(TimeUnit.SECONDS).convertRatesTo(TimeUnit.MILLISECONDS).formattedFor(Locale.GERMANY).build());
 		
 		///////////////////////////////////////////////////////////////////////////////////
 		// (1) initialize queues
@@ -133,7 +138,7 @@ public class MicroPipelineFactory {
 				/////////////////////////////////////////////////////////////////////
 				// add queue message insertion and retrieval counters
 				// TODO configure
-				Counter queueInsertionCounter = componentMetricsHandler.getMetricRegistry().counter(
+				final Counter queueInsertionCounter = metricsHandler.counter(
 						MetricRegistry.name(
 								StringUtils.lowerCase(StringUtils.trim(this.processingNodeId)),
 								StringUtils.lowerCase(StringUtils.trim(cfg.getId())),
@@ -141,10 +146,10 @@ public class MicroPipelineFactory {
 								id,
 								"messages",
 								"in"
-						)
+						), true
 				);
 				
-				Counter queueRetrievalCounter = componentMetricsHandler.getMetricRegistry().counter(
+				final Counter queueRetrievalCounter = metricsHandler.counter(
 						MetricRegistry.name(
 								StringUtils.lowerCase(StringUtils.trim(this.processingNodeId)),
 								StringUtils.lowerCase(StringUtils.trim(cfg.getId())),
@@ -152,7 +157,7 @@ public class MicroPipelineFactory {
 								id,
 								"messages",
 								"out"
-						)
+						), true
 				);
 				queueInstance.setMessageInsertionCounter(queueInsertionCounter);
 				queueInstance.setMessageRetrievalCounter(queueRetrievalCounter);
@@ -196,7 +201,7 @@ public class MicroPipelineFactory {
 				final StreamingMessageQueue fromQueue = microPipeline.getQueue(StringUtils.lowerCase(StringUtils.trim(componentCfg.getFromQueue())));
 				final StreamingMessageQueue toQueue = microPipeline.getQueue(StringUtils.lowerCase(StringUtils.trim(componentCfg.getToQueue())));
 				
-				final Counter messageCounter = componentMetricsHandler.getMetricRegistry().counter(
+				final Counter messageCounter = metricsHandler.counter(
 						MetricRegistry.name(
 								StringUtils.lowerCase(StringUtils.trim(this.processingNodeId)),
 								StringUtils.lowerCase(StringUtils.trim(cfg.getId())),
@@ -204,7 +209,7 @@ public class MicroPipelineFactory {
 								id,
 								"messages",
 								"count"
-						)
+						), true
 				);
 				
 				switch(component.getType()) {
@@ -217,7 +222,7 @@ public class MicroPipelineFactory {
 					}
 					case DIRECT_RESPONSE_OPERATOR: {
 						
-						final Timer messageProcessingTimer = componentMetricsHandler.getMetricRegistry().timer(
+						final Timer messageProcessingTimer = metricsHandler.timer(
 								MetricRegistry.name(
 										StringUtils.lowerCase(StringUtils.trim(this.processingNodeId)),
 										StringUtils.lowerCase(StringUtils.trim(cfg.getId())),
@@ -242,7 +247,7 @@ public class MicroPipelineFactory {
 						break;
 					}
 					case EMITTER: {
-						final Timer messageEmitDurationTimer = componentMetricsHandler.getMetricRegistry().timer(
+						final Timer messageEmitDurationTimer = metricsHandler.timer(
 								MetricRegistry.name(
 										StringUtils.lowerCase(StringUtils.trim(this.processingNodeId)),
 										StringUtils.lowerCase(StringUtils.trim(cfg.getId())),
@@ -283,7 +288,7 @@ public class MicroPipelineFactory {
 		
 		///////////////////////////////////////////////////////////////////////////////////
 
-		microPipeline.attachComponentMetricsHandler(componentMetricsHandler);
+		microPipeline.attachComponentMetricsHandler(metricsHandler);
 		
 		///////////////////////////////////////////////////////////////////////////////////
 		// (3) start components --> ramp up their runtime environments 

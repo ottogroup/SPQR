@@ -87,6 +87,18 @@
     		<artifactId>dropwizard-client</artifactId>
     		<version>0.8.0</version>
     	</dependency>
+    	
+    	<dependency>
+    		<groupId>io.dropwizard.metrics</groupId>
+    		<artifactId>metrics-jvm</artifactId>
+    		<version>3.1.2</version>
+    	</dependency>
+    	
+    	<dependency>
+    		<groupId>com.ottogroup.bi.spqr</groupId>
+    		<artifactId>spqr-metrics</artifactId>
+    		<version>${project.version}</version>
+    	</dependency>
 
   	</dependencies>
   	

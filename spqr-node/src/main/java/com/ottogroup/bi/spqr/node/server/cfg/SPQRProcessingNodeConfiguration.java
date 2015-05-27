@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.ottogroup.bi.spqr.node.server;
+package com.ottogroup.bi.spqr.node.server.cfg;
 
 import java.io.Serializable;
 
@@ -54,6 +54,7 @@ public class SPQRProcessingNodeConfiguration implements Serializable {
 	/** admin port */
 	@JsonProperty(value="adminPort", required=true)
 	private int adminPort = 8081;
+		
 	public String getLog4jConfiguration() {
 		return log4jConfiguration;
 	}

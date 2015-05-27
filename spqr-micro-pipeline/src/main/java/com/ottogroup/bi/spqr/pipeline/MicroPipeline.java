@@ -20,7 +20,7 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import com.ottogroup.bi.spqr.metrics.ComponentMetricsHandler;
+import com.ottogroup.bi.spqr.metrics.MetricsHandler;
 import com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponent;
 import com.ottogroup.bi.spqr.pipeline.component.emitter.EmitterRuntimeEnvironment;
 import com.ottogroup.bi.spqr.pipeline.component.operator.DelayedResponseOperatorRuntimeEnvironment;
@@ -51,7 +51,7 @@ public class MicroPipeline {
 	/** references to queues interconnecting the components */
 	private final Map<String, StreamingMessageQueue> queues = new HashMap<>();
 	/** stats collector */
-	private ComponentMetricsHandler componentMetricsHandler = null;
+	private MetricsHandler metricsHandler = null;
 	
 	/**
 	 * Initializes the micro pipeline instance using the provided input 
@@ -59,14 +59,14 @@ public class MicroPipeline {
 	 */
 	public MicroPipeline(final String id) {
 		this.id = id;
-	}
+	}	
 	
 	/**
 	 * Attaches the referenced {@link ComponentMetricsHandler} to this micro pipeline
-	 * @param componentMetricsHandler
+	 * @param metricsHandler
 	 */
-	public void attachComponentMetricsHandler(final ComponentMetricsHandler componentMetricsHandler) {		
-		this.componentMetricsHandler = componentMetricsHandler;
+	public void attachComponentMetricsHandler(final MetricsHandler metricsHandler) {		
+		this.metricsHandler = metricsHandler;
 	}
 	
 	/**
@@ -168,8 +168,8 @@ public class MicroPipeline {
 		
 		//////////////////////////////////////////////////////////////////////////////////////////
 		// shutting down the metrics collector
-		if(this.componentMetricsHandler != null)
-			this.componentMetricsHandler.shutdown();
+		if(this.metricsHandler != null)
+			this.metricsHandler.shutdown();
 		//////////////////////////////////////////////////////////////////////////////////////////
 
 		//////////////////////////////////////////////////////////////////////////////////////////
@@ -260,8 +260,8 @@ public class MicroPipeline {
 		return queues;
 	}
 
-	public ComponentMetricsHandler getStatsCollector() {
-		return componentMetricsHandler;
+	public MetricsHandler getMetricsHandler() {
+		return metricsHandler;
 	}
 	
 	

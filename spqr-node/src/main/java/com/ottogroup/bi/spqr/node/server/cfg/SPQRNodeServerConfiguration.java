@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.ottogroup.bi.spqr.node.server;
+package com.ottogroup.bi.spqr.node.server.cfg;
 
 import io.dropwizard.Configuration;
 import io.dropwizard.client.JerseyClientConfiguration;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.ottogroup.bi.spqr.node.server.SPQRNodeServer;
 
 /**
  * Configuration required for setting up {@link SPQRNodeServer}

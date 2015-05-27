@@ -138,7 +138,6 @@ public class KafkaTopicEmitter implements Emitter {
 	 * @see com.ottogroup.bi.spqr.pipeline.component.MicroPipelineComponent#shutdown()
 	 */
 	public boolean shutdown() {
-		
 		if(this.kafkaProducer != null) {
 			try {
 				kafkaProducer.close();
