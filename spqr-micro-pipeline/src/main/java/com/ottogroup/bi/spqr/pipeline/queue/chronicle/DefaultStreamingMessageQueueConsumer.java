@@ -66,10 +66,9 @@ public class DefaultStreamingMessageQueueConsumer implements StreamingMessageQue
 		}
 		
 		// otherwise return null;
-		return null;
-		
+		return null;		
 	}
-
+	
 	/**
 	 * @see com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConsumer#getWaitStrategy()
 	 */
@@ -77,6 +76,9 @@ public class DefaultStreamingMessageQueueConsumer implements StreamingMessageQue
 		return this.waitStrategy;
 	}
 
+	/**
+	 * @see com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConsumer#getQueueId()
+	 */
 	public String getQueueId() {
 		return queueId;
 	}
@@ -88,5 +90,6 @@ public class DefaultStreamingMessageQueueConsumer implements StreamingMessageQue
 		this.messageRetrievalCounter = counter;
 	}
 
+	
 	
 }

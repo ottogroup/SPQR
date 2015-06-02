@@ -46,7 +46,7 @@ public class DefaultStreamingMessageQueueTest {
 
 	private static final Logger logger = Logger.getLogger(DefaultStreamingMessageQueueTest.class);
 	
-	private static final int numberOfMessagesPerfTest = 100000;
+	private static final int numberOfMessagesPerfTest = 100;
 	
 	/**
 	 * Test case for {@link DefaultStreamingMessageQueue#initialize(java.util.Properties)} being provided
@@ -128,7 +128,7 @@ public class DefaultStreamingMessageQueueTest {
 		props.put(DefaultStreamingMessageQueue.CFG_CHRONICLE_QUEUE_DELETE_ON_EXIT, "true");
 		props.put(DefaultStreamingMessageQueue.CFG_CHRONICLE_QUEUE_PATH, System.getProperty("java.io.tmpdir"));
 		DefaultStreamingMessageQueue inbox = new DefaultStreamingMessageQueue();
-		inbox.setId("testNext_withSingleMessage");
+		inbox.setId("testNext_withSingleMessages");
 		inbox.initialize(props);
 
 		long timestamp = System.currentTimeMillis();
@@ -146,7 +146,7 @@ public class DefaultStreamingMessageQueueTest {
 	 * Inserts a configurable number of messages into a {@link Chronicle} and measures the
 	 * duration it takes to read the content from it using the {@link DefaultStreamingMessageQueue} implementation
 	 */
-	@Test
+//	@Test
 	public void testNext_performanceTest() throws Exception {
 
 		Properties props = new Properties();
@@ -168,7 +168,7 @@ public class DefaultStreamingMessageQueueTest {
 		Future<Integer> producerDurationFuture = svc.submit(new Callable<Integer>() {
 			
 			public Integer call() {
-				StreamingDataMessage object = new StreamingDataMessage("Test message".getBytes(), System.currentTimeMillis());
+				StreamingDataMessage object = new StreamingDataMessage(new byte[]{01,2,3,4,5,6,7,9}, System.currentTimeMillis());
 				long s1 = System.nanoTime();
 				for(int i = 0; i < numberOfMessagesPerfTest; i++) {
 					producer.insert(object);
@@ -226,7 +226,5 @@ public class DefaultStreamingMessageQueueTest {
 		logger.info("message throughput: " + messagesPerNanoRounded + " msgs/ns, "+ messagesPerMilli + " msgs/ms, " + messagesPerSecond + " msgs/s");		
 		
 		svc.shutdownNow();
-		
-		
 	}
 }

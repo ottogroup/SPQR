@@ -18,9 +18,11 @@ package com.ottogroup.bi.spqr.pipeline.queue.chronicle;
 import java.io.File;
 import java.io.IOException;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 import net.openhft.chronicle.Chronicle;
 import net.openhft.chronicle.ChronicleQueueBuilder;
+import net.openhft.chronicle.VanillaChronicle;
 import net.openhft.chronicle.tools.ChronicleTools;
 
 import org.apache.commons.lang3.StringUtils;
@@ -49,6 +51,7 @@ public class DefaultStreamingMessageQueue implements StreamingMessageQueue {
 	
 	public static final String CFG_CHRONICLE_QUEUE_PATH = "queue.chronicle.path";
 	public static final String CFG_CHRONICLE_QUEUE_DELETE_ON_EXIT = "queue.chronicle.deleteOnExist";
+	public static final String CFG_CHRONICLE_QUEUE_ROLLING_INTERVAL = "queue.chronicle.rollingInterval";
 	public static final String CFG_QUEUE_MESSAGE_WAIT_STRATEGY = "queue.message.waitStrategy";
 
 	/** unique queue identifier */
@@ -57,6 +60,8 @@ public class DefaultStreamingMessageQueue implements StreamingMessageQueue {
 	private String basePath = null;
 	/** delete the chronicle files on start and shutdown */
 	private boolean deleteOnExit = true;
+	/** chronicle file rolling interval - provided in minutes */
+	private long queueRollingInterval = TimeUnit.MINUTES.toMillis(60);
 	/** chronicle instance - required for creating and accessing appender & tailer */
 	private Chronicle chronicle = null;	
 	/** provides read access to chronicle */
@@ -95,17 +100,29 @@ public class DefaultStreamingMessageQueue implements StreamingMessageQueue {
 			pathToChronicle = pathToChronicle + File.separator;
 		pathToChronicle = pathToChronicle + id;
 		
+		try {
+			this.queueRollingInterval = TimeUnit.MINUTES.toMillis(Long.parseLong(StringUtils.trim(properties.getProperty(CFG_CHRONICLE_QUEUE_ROLLING_INTERVAL))));
+			
+			if(this.queueRollingInterval < VanillaChronicle.MIN_CYCLE_LENGTH) {
+				this.queueRollingInterval = VanillaChronicle.MIN_CYCLE_LENGTH;
+			}
+		} catch(Exception e) {
+			logger.info("Invalid queue rolling interval found: " + e.getMessage() + ". Using default: " + TimeUnit.MINUTES.toMillis(60));
+		}
+		
 		this.queueWaitStrategy = getWaitStrategy(StringUtils.trim(properties.getProperty(CFG_QUEUE_MESSAGE_WAIT_STRATEGY)));
 		
 		//
 		////////////////////////////////////////////////////////////////////////////////
 		
 		// clears the queue if requested 
-		if(this.deleteOnExit)
+		if(this.deleteOnExit) { 
+			ChronicleTools.deleteDirOnExit(pathToChronicle);
 			ChronicleTools.deleteOnExit(pathToChronicle);
+		}
 		
         try {
-			this.chronicle = ChronicleQueueBuilder.indexed(pathToChronicle).build();
+        	this.chronicle = ChronicleQueueBuilder.vanilla(pathToChronicle).cycleLength((int)this.queueRollingInterval).cycleFormat("yyyyMMdd").build();
 			this.queueConsumer = new DefaultStreamingMessageQueueConsumer(this.getId(), this.chronicle.createTailer(), this.queueWaitStrategy);
 			this.queueProducer = new DefaultStreamingMessageQueueProducer(this.getId(), this.chronicle.createAppender(), this.queueWaitStrategy);
 		} catch (IOException e) {
