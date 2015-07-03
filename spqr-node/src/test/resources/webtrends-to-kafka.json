@@ -2,7 +2,9 @@
   "id" : "webtrends-to-kafka",
   "queues" : [ {
     "id" : "webtrends-content",
-    "queueSettings" : null
+    "queueSettings" : {
+    	"type" : "memory"
+    }
   } ],
   "components" : [ {
     "id" : "webtrends-stream-reader",
