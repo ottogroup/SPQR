@@ -51,6 +51,7 @@ import com.ottogroup.bi.spqr.pipeline.exception.UnknownWaitStrategyException;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueue;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConfiguration;
 import com.ottogroup.bi.spqr.pipeline.queue.chronicle.DefaultStreamingMessageQueue;
+import com.ottogroup.bi.spqr.pipeline.queue.memory.InMemoryStreamingMessageQueue;
 import com.ottogroup.bi.spqr.repository.ComponentRepository;
 
 /**
@@ -66,7 +67,6 @@ public class MicroPipelineFactory {
 	private final ComponentRepository componentRepository;
 	/** identifier of processing node this factory lives on */
 	private final String processingNodeId;
-	
 	
 	/**
 	 * Initializes the factory using the provided input
@@ -377,6 +377,26 @@ public class MicroPipelineFactory {
 		//
 		///////////////////////////////////////////////////////////////////////////////////
 
+		///////////////////////////////////////////////////////////////////////////////////
+		// check properties for optional settings
+		boolean inMemoryQueue = false;
+		if(queueConfiguration.getProperties() != null && !queueConfiguration.getProperties().isEmpty()) {
+			String queueType = StringUtils.lowerCase(StringUtils.trim(queueConfiguration.getProperties().getProperty(StreamingMessageQueue.CFG_QUEUE_TYPE)));
+			inMemoryQueue = StringUtils.equalsIgnoreCase(queueType, InMemoryStreamingMessageQueue.CFG_QUEUE_TYPE);
+		}
+		///////////////////////////////////////////////////////////////////////////////////
+
+		if(inMemoryQueue) {
+			try {
+				StreamingMessageQueue queue = new InMemoryStreamingMessageQueue();
+				queue.setId(StringUtils.lowerCase(StringUtils.trim(queueConfiguration.getId())));
+				queue.initialize((queueConfiguration.getProperties() != null ? queueConfiguration.getProperties() : new Properties()));
+				return queue;
+			} catch(Exception e) {
+				throw new QueueInitializationFailedException("Failed to initialize streaming message queue '"+queueConfiguration.getId()+"'. Error: " + e.getMessage());
+			}
+		}
+		
 		try {
 			StreamingMessageQueue queue = new DefaultStreamingMessageQueue(); 
 			queue.setId(StringUtils.lowerCase(StringUtils.trim(queueConfiguration.getId())));

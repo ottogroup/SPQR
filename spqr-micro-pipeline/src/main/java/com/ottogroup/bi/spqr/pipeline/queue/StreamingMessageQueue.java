@@ -33,6 +33,11 @@ import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
  */
 public interface StreamingMessageQueue  {
 
+	/////////////////////////////////////////////////////////////////////////
+	// available settings for queue instances
+	public static final String CFG_QUEUE_TYPE = "type";
+	/////////////////////////////////////////////////////////////////////////
+	
 	/**
 	 * Sets the component identifier
 	 * @param id
