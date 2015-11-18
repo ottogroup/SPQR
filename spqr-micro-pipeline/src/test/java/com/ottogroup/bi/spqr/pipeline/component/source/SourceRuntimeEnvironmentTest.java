@@ -30,7 +30,7 @@ import com.ottogroup.bi.spqr.exception.ComponentInitializationFailedException;
 import com.ottogroup.bi.spqr.exception.RequiredInputMissingException;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConsumer;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueProducer;
-import com.ottogroup.bi.spqr.pipeline.queue.chronicle.DefaultStreamingMessageQueue;
+import com.ottogroup.bi.spqr.pipeline.queue.memory.InMemoryStreamingMessageQueue;
 
 /**
  * Test case for {@link SourceRuntimeEnvironment}
@@ -113,9 +113,6 @@ public class SourceRuntimeEnvironmentTest {
 
 		
 		ExecutorService svc = Executors.newCachedThreadPool();
-		Properties queueProps = new Properties();
-		queueProps.setProperty(DefaultStreamingMessageQueue.CFG_CHRONICLE_QUEUE_DELETE_ON_EXIT, "true");
-		queueProps.setProperty(DefaultStreamingMessageQueue.CFG_CHRONICLE_QUEUE_PATH, System.getProperty("java.io.tmpdir"));
 
 		Properties rndGenProps = new Properties();		
 		rndGenProps.setProperty(RandomNumberTestSource.CFG_MAX_NUM_GENERATED, String.valueOf(numGenerated));		
@@ -124,9 +121,9 @@ public class SourceRuntimeEnvironmentTest {
 		source.initialize(rndGenProps);
 		source.setId("testRun_withFullyFunctionalSource");
 		
-		DefaultStreamingMessageQueue queue = new DefaultStreamingMessageQueue();
+		InMemoryStreamingMessageQueue queue = new InMemoryStreamingMessageQueue();
 		queue.setId("testRun_withFullyFunctionalSource");
-		queue.initialize(queueProps);
+		queue.initialize(new Properties());
 	
 		final StreamingMessageQueueConsumer consumer = queue.getConsumer();
 		
@@ -141,15 +138,13 @@ public class SourceRuntimeEnvironmentTest {
 					while(numElements > 0) {
 						if(consumer.next() != null) {
 							numElements--;
-							latch.countDown();
-									
+							latch.countDown();									
 						}
 					}
 				}
 			});
 			
-			
-			Assert.assertTrue(latch.await(10, TimeUnit.SECONDS));
+			Assert.assertTrue(latch.await(5, TimeUnit.SECONDS));
 		} finally {
 			env.shutdown();
 			svc.shutdownNow();

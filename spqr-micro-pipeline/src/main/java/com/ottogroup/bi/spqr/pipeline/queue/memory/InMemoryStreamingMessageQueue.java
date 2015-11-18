@@ -167,4 +167,7 @@ public class InMemoryStreamingMessageQueue implements StreamingMessageQueue {
 		return this.id;
 	}
 
+	public long getSize() {
+		return this.queue.size();
+	}
 }

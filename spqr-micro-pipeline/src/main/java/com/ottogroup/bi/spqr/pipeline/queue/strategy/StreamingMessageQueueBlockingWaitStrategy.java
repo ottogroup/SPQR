@@ -80,7 +80,7 @@ public class StreamingMessageQueueBlockingWaitStrategy implements StreamingMessa
 				// try to fetch the next element from the queue.
 				// if there is no entry available, wait for external notification (forceLockRelease required)
 				while((message = queue.next()) == null) {
-					condition.await();
+					condition.await(timeout, timeoutUnit);
 				}
 				
 			} finally {

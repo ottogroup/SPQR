@@ -25,8 +25,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
-import net.openhft.chronicle.Chronicle;
-
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
@@ -36,6 +35,8 @@ import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConsumer;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueProducer;
 import com.ottogroup.bi.spqr.pipeline.queue.chronicle.DefaultStreamingMessageQueue;
+
+import net.openhft.chronicle.Chronicle;
 
 /**
  * Test case for {@link DefaultStreamingMessageQueue}
@@ -135,10 +136,10 @@ public class DefaultStreamingMessageQueueTest {
 		String text = "This is a simple test message";
 		byte[] content = text.getBytes(); 
 
-		inbox.getProducer().insert(new StreamingDataMessage(content, timestamp));
+		Assert.assertTrue(inbox.getProducer().insert(new StreamingDataMessage(content, timestamp)));		
 		StreamingDataMessage msg = inbox.getConsumer().next();
 
-		Assert.assertEquals("Values must be equal", new String(content), new String(msg.getBody()));
+		Assert.assertTrue("Values must be equal", StringUtils.equalsIgnoreCase(new String(content), new String(msg.getBody())));
 		Assert.assertEquals("Values must be equal", timestamp, msg.getTimestamp());		
 	}
 	

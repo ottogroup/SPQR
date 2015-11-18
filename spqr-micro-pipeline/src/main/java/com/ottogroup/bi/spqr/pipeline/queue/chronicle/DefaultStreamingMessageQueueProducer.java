@@ -15,12 +15,12 @@
  */
 package com.ottogroup.bi.spqr.pipeline.queue.chronicle;
 
-import net.openhft.chronicle.ExcerptAppender;
-
 import com.codahale.metrics.Counter;
 import com.ottogroup.bi.spqr.pipeline.message.StreamingDataMessage;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueProducer;
 import com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueWaitStrategy;
+
+import net.openhft.chronicle.ExcerptAppender;
 
 /**
  * Default {@link StreamingMessageQueueProducer} implementation accessing {@link DefaultStreamingMessageQueue}

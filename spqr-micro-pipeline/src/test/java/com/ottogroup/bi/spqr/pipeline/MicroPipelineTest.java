@@ -30,7 +30,7 @@ import com.ottogroup.bi.spqr.pipeline.component.emitter.EmitterRuntimeEnvironmen
 import com.ottogroup.bi.spqr.pipeline.component.source.RandomNumberTestSource;
 import com.ottogroup.bi.spqr.pipeline.component.source.Source;
 import com.ottogroup.bi.spqr.pipeline.component.source.SourceRuntimeEnvironment;
-import com.ottogroup.bi.spqr.pipeline.queue.chronicle.DefaultStreamingMessageQueue;
+import com.ottogroup.bi.spqr.pipeline.queue.memory.InMemoryStreamingMessageQueue;
 
 /**
  * Test case for {@link MicroPipeline}
@@ -69,7 +69,8 @@ public class MicroPipelineTest {
 		///////////////////////////////////////////////////////////////////////
 		// queue
 		Properties queueProps = new Properties();
-		DefaultStreamingMessageQueue queue = new DefaultStreamingMessageQueue();
+//		DefaultStreamingMessageQueue queue = new DefaultStreamingMessageQueue();
+		InMemoryStreamingMessageQueue queue = new InMemoryStreamingMessageQueue();
 		queue.setId("test_performance1_queue");
 		queue.initialize(queueProps);
 

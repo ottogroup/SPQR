@@ -20,11 +20,6 @@ import java.io.IOException;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
-import net.openhft.chronicle.Chronicle;
-import net.openhft.chronicle.ChronicleQueueBuilder;
-import net.openhft.chronicle.VanillaChronicle;
-import net.openhft.chronicle.tools.ChronicleTools;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -37,6 +32,11 @@ import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueProducer;
 import com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueBlockingWaitStrategy;
 import com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueDirectPassStrategy;
 import com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueWaitStrategy;
+
+import net.openhft.chronicle.Chronicle;
+import net.openhft.chronicle.ChronicleQueueBuilder;
+import net.openhft.chronicle.VanillaChronicle;
+import net.openhft.chronicle.tools.ChronicleTools;
 
 /**
  * Implements a {@link StreamingMessageQueue} based on {@link Chronicle}
@@ -52,6 +52,7 @@ public class DefaultStreamingMessageQueue implements StreamingMessageQueue {
 	public static final String CFG_CHRONICLE_QUEUE_PATH = "queue.chronicle.path";
 	public static final String CFG_CHRONICLE_QUEUE_DELETE_ON_EXIT = "queue.chronicle.deleteOnExist";
 	public static final String CFG_CHRONICLE_QUEUE_ROLLING_INTERVAL = "queue.chronicle.rollingInterval";
+	public static final String CFG_CHRONICLE_QUEUE_CYCLE_FORMAT = "queue.chronicle.cycleFormat";
 	public static final String CFG_QUEUE_MESSAGE_WAIT_STRATEGY = "queue.message.waitStrategy";
 
 	/** unique queue identifier */
@@ -62,6 +63,8 @@ public class DefaultStreamingMessageQueue implements StreamingMessageQueue {
 	private boolean deleteOnExit = true;
 	/** chronicle file rolling interval - provided in minutes */
 	private long queueRollingInterval = TimeUnit.MINUTES.toMillis(60);
+	/** cycle format - default: yyyy-MM-dd/HH-mm */
+	private String cycleFormat = "yyyy-MM-dd-HH-mm";
 	/** chronicle instance - required for creating and accessing appender & tailer */
 	private Chronicle chronicle = null;	
 	/** provides read access to chronicle */
@@ -94,6 +97,10 @@ public class DefaultStreamingMessageQueue implements StreamingMessageQueue {
 		this.basePath = StringUtils.lowerCase(StringUtils.trim(properties.getProperty(CFG_CHRONICLE_QUEUE_PATH)));
 		if(StringUtils.isBlank(this.basePath))
 			this.basePath = System.getProperty("java.io.tmpdir");
+		
+		String tmpCycleFormat = StringUtils.trim(properties.getProperty(CFG_CHRONICLE_QUEUE_CYCLE_FORMAT, "yyyy-MM-dd-HH-mm"));
+		if(StringUtils.isNotBlank(tmpCycleFormat))
+			this.cycleFormat = tmpCycleFormat;
 
 		String pathToChronicle = this.basePath;
 		if(!StringUtils.endsWith(pathToChronicle, File.separator))
@@ -122,8 +129,8 @@ public class DefaultStreamingMessageQueue implements StreamingMessageQueue {
 		}
 		
         try {
-        	this.chronicle = ChronicleQueueBuilder.vanilla(pathToChronicle).cycleLength((int)this.queueRollingInterval).cycleFormat("yyyyMMdd").build();
-			this.queueConsumer = new DefaultStreamingMessageQueueConsumer(this.getId(), this.chronicle.createTailer(), this.queueWaitStrategy);
+        	this.chronicle = ChronicleQueueBuilder.vanilla(pathToChronicle).cycleLength((int)this.queueRollingInterval).cycleFormat(this.cycleFormat).build();
+        	this.queueConsumer = new DefaultStreamingMessageQueueConsumer(this.getId(), this.chronicle.createTailer(), this.queueWaitStrategy);
 			this.queueProducer = new DefaultStreamingMessageQueueProducer(this.getId(), this.chronicle.createAppender(), this.queueWaitStrategy);
 		} catch (IOException e) {
 			throw new RuntimeException("Failed to initialize chronicle at '"+pathToChronicle+"'. Error: " + e.getMessage());
