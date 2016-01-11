@@ -30,6 +30,7 @@ import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueProducer;
 import com.ottogroup.bi.spqr.pipeline.queue.chronicle.DefaultStreamingMessageQueue;
 import com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueBlockingWaitStrategy;
 import com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueDirectPassStrategy;
+import com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueSleepingWaitStrategy;
 import com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueWaitStrategy;
 
 /**
@@ -149,6 +150,8 @@ public class InMemoryStreamingMessageQueue implements StreamingMessageQueue {
 	protected StreamingMessageQueueWaitStrategy getWaitStrategy(final String waitStrategyName) {			
 		if(StringUtils.equalsIgnoreCase(waitStrategyName, StreamingMessageQueueDirectPassStrategy.STRATEGY_NAME))
 			return new StreamingMessageQueueDirectPassStrategy();
+		else if(StringUtils.equalsIgnoreCase(waitStrategyName, StreamingMessageQueueSleepingWaitStrategy.STRATEGY_NAME))
+			return new StreamingMessageQueueSleepingWaitStrategy();
 		return new StreamingMessageQueueBlockingWaitStrategy();
 	}
 

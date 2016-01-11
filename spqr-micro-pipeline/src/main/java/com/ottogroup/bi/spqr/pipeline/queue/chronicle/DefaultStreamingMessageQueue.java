@@ -31,6 +31,7 @@ import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueConsumer;
 import com.ottogroup.bi.spqr.pipeline.queue.StreamingMessageQueueProducer;
 import com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueBlockingWaitStrategy;
 import com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueDirectPassStrategy;
+import com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueSleepingWaitStrategy;
 import com.ottogroup.bi.spqr.pipeline.queue.strategy.StreamingMessageQueueWaitStrategy;
 
 import net.openhft.chronicle.Chronicle;
@@ -147,6 +148,8 @@ public class DefaultStreamingMessageQueue implements StreamingMessageQueue {
 	protected StreamingMessageQueueWaitStrategy getWaitStrategy(final String waitStrategyName) {			
 		if(StringUtils.equalsIgnoreCase(waitStrategyName, StreamingMessageQueueDirectPassStrategy.STRATEGY_NAME))
 			return new StreamingMessageQueueDirectPassStrategy();
+		else if(StringUtils.equalsIgnoreCase(waitStrategyName, StreamingMessageQueueSleepingWaitStrategy.STRATEGY_NAME))
+			return new StreamingMessageQueueSleepingWaitStrategy();
 		return new StreamingMessageQueueBlockingWaitStrategy();
 	}
 	
