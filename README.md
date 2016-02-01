@@ -1,6 +1,6 @@
 [![Build Status](https://travis-ci.org/ottogroup/SPQR.svg?branch=master)](https://travis-ci.org/ottogroup/SPQR)
 
-# Introduction
+# Introduction 
 The SPQR ("spooker") framework implements a dynamic framework for processing high volume data streams through pipelines. 
 Established stream processing frameworks such as [Apache Storm](https://storm.apache.org/), [Apache Spark Streaming](http://spark.apache.org/) or [Apache Samza](http://samza.incubator.apache.org/) follow a static approach to building data stream processing pipelines:
 
